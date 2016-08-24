@@ -33,6 +33,7 @@
 #ifndef LOCKCODEWATCHER_H
 #define LOCKCODEWATCHER_H
 
+#include <QObject>
 #include <QDateTime>
 #include <QSharedData>
 #include <QVector>
