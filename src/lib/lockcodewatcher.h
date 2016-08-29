@@ -49,6 +49,7 @@ public:
     void invalidateLockCodeSet();
 
     bool checkCode(const QString &code);
+    bool unlock(const QString &code);
 
     bool runPlugin(const QStringList &arguments) const;
 
