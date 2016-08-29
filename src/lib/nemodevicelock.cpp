@@ -60,7 +60,7 @@ Authorization *NemoDeviceLock::authorization()
 void NemoDeviceLock::unlock(const QVariant &authenticationToken)
 {
     if (m_authorization.status() == Authorization::ChallengeIssued
-            && m_watcher->checkCode(authenticationToken.toString())) {
+            && m_watcher->unlock(authenticationToken.toString())) {
         setState(Unlocked);
     }
 }
