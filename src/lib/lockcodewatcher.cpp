@@ -130,6 +130,11 @@ bool LockCodeWatcher::checkCode(const QString &code)
     return runPlugin(QStringList() << QStringLiteral("--check-code") << code);
 }
 
+bool LockCodeWatcher::checkCode(const QString &code)
+{
+    return runPlugin(QStringList() << QStringLiteral("--unlock") << code);
+}
+
 bool LockCodeWatcher::runPlugin(const QStringList &arguments) const
 {
     if (!m_pluginExists) {
