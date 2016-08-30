@@ -50,6 +50,7 @@ const char * const SettingsWatcher::sideloadingAllowedKey = "/desktop/nemo/devic
 const char * const SettingsWatcher::showNotificationsKey = "/desktop/nemo/devicelock/show_notification";
 const char * const SettingsWatcher::inputIsKeyboardKey = "/desktop/nemo/devicelock/code_input_is_keyboard";
 const char * const SettingsWatcher::currentIsDigitOnlyKey = "/desktop/nemo/devicelock/code_current_is_digit_only";
+const char * const SettingsWatcher::isHomeEncryptedKey = "/desktop/nemo/devicelock/encrypt_home";
 
 SettingsWatcher *SettingsWatcher::sharedInstance = nullptr;
 
@@ -64,6 +65,7 @@ SettingsWatcher::SettingsWatcher(QObject *parent)
     , showNotifications(1)
     , inputIsKeyboard(false)
     , currentCodeIsDigitOnly(true)
+    , isHomeEncrypted(false)
     , m_settingsPath(QStringLiteral("/usr/share/lipstick/devicelock/devicelock_settings.conf"))
     , m_watch(-1)
 {
@@ -163,13 +165,15 @@ static void read(
         const char *key,
         T defaultValue,
         T (SettingsWatcher::*member),
-        void (SettingsWatcher::*changed)())
+        void (SettingsWatcher::*changed)() = nullptr)
 {
     T value = settings.value(QString::fromUtf8(key), QVariant(defaultValue)).value<T>();
 
     if (watcher->*member != value) {
         watcher->*member = value;
-        emit (watcher->*changed)();
+        if (changed) {
+            emit (watcher->*changed)();
+        }
     }
 }
 
@@ -186,4 +190,5 @@ void SettingsWatcher::reloadSettings()
     read(settings, this, showNotificationsKey, 1, &SettingsWatcher::showNotifications, &SettingsWatcher::showNotificationsChanged);
     read(settings, this, inputIsKeyboardKey, false, &SettingsWatcher::inputIsKeyboard, &SettingsWatcher::inputIsKeyboardChanged);
     read(settings, this, currentIsDigitOnlyKey, true, &SettingsWatcher::currentCodeIsDigitOnly, &SettingsWatcher::currentCodeIsDigitOnlyChanged);
+    read(settings, this, isHomeEncryptedKey, false, &SettingsWatcher::isHomeEncrypted);
 }

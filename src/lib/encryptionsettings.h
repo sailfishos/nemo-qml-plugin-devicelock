@@ -30,49 +30,37 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include <QQmlExtensionPlugin>
+#ifndef ENCRYPTIONSETTINGS_H
+#define ENCRYPTIONSETTINGS_H
 
-#include "nemoauthenticator.h"
-#include "nemodevicelock.h"
-#include "nemodevicelocksettings.h"
-#include "nemodevicereset.h"
-#include "nemoencryptionsettings.h"
-#include "nemofingerprintsettings.h"
-#include "nemolockcodesettings.h"
-#include "lockcodewatcher.h"
+#include <QObject>
+#include <QSharedDataPointer>
 
-#include <qqml.h>
-#include <QQmlEngine>
+class Authorization;
+class SettingsWatcher;
 
-static QObject *createDeviceLock(QQmlEngine *, QJSEngine *)
-{
-    return new NemoDeviceLock;
-}
-
-class Q_DECL_EXPORT NemoDeviceLockPlugin : public QQmlExtensionPlugin
+class EncryptionSettings : public QObject
 {
     Q_OBJECT
-    Q_PLUGIN_METADATA(IID "org.nemomobile.devicelock")
+    Q_PROPERTY(Authorization *authorization READ authorization CONSTANT)
+    Q_PROPERTY(bool homeEncrypted READ isHomeEncrypted CONSTANT)    // One way operation, determined at startup.
 public:
-    void initializeEngine(QQmlEngine *, const char *) override
-    {
-    }
+    explicit EncryptionSettings(QObject *parent = nullptr);
+    ~EncryptionSettings();
 
-    void registerTypes(const char *uri) override
-    {
-        qmlRegisterType<FingerprintModel>();
+    virtual Authorization *authorization() = 0;
 
-        qmlRegisterSingletonType<NemoDeviceLock>(uri, 1, 0, "DeviceLock", createDeviceLock);
+    bool isHomeEncrypted() const;
 
-        qmlRegisterType<NemoAuthenticator>(uri, 1, 0, "Authenticator");
-        qmlRegisterType<NemoDeviceLockSettings>(uri, 1, 0, "DeviceLockSettings");
-        qmlRegisterType<NemoDeviceReset>(uri, 1, 0, "DeviceReset");
-        qmlRegisterType<NemoEncryptionSettings>(uri, 1, 0, "EncryptionSettings");
-        qmlRegisterType<NemoFingerprintSettings>(uri, 1, 0, "FingerprintSettings");
-        qmlRegisterType<NemoLockCodeSettings>(uri, 1, 0, "LockCodeSettings");
+    Q_INVOKABLE virtual void encryptHome(const QVariant &authenticationToken) = 0;
 
-        qmlRegisterUncreatableType<Authorization>(uri, 1, 0, "Authorization", QString());
-    }
+signals:
+    void encryptingHome();
+    void encryptHomeError();
+
+private:
+    QExplicitlySharedDataPointer<SettingsWatcher> m_settings;
+
 };
 
-#include "plugin.moc"
+#endif

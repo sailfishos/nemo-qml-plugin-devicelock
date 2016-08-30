@@ -21,6 +21,7 @@ PUBLIC_HEADERS = \
         devicelock.h \
         devicelocksettings.h \
         devicereset.h \
+        encryptionsettings.h \
         fingerprintsettings.h \
         lockcodesettings.h \
         mcedevicelock.h \
@@ -29,6 +30,7 @@ PUBLIC_HEADERS = \
         nemodevicelock.h \
         nemodevicelocksettings.h \
         nemodevicereset.h \
+        nemoencryptionsettings.h \
         nemofingerprintsettings.h \
         nemolockcodesettings.h
 
@@ -43,6 +45,7 @@ SOURCES = \
         devicelock.cpp \
         devicelocksettings.cpp \
         devicereset.cpp \
+        encryptionsettings.cpp \
         fingerprintsettings.cpp \
         lockcodesettings.cpp \
         lockcodewatcher.cpp \
@@ -52,6 +55,7 @@ SOURCES = \
         nemodevicelock.cpp \
         nemodevicelocksettings.cpp \
         nemodevicereset.cpp \
+        nemoencryptionsettings.cpp \
         nemofingerprintsettings.cpp \
         nemolockcodesettings.cpp \
         settingswatcher.cpp

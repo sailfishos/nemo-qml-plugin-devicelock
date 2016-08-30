@@ -30,49 +30,34 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include <QQmlExtensionPlugin>
-
-#include "nemoauthenticator.h"
-#include "nemodevicelock.h"
-#include "nemodevicelocksettings.h"
-#include "nemodevicereset.h"
 #include "nemoencryptionsettings.h"
-#include "nemofingerprintsettings.h"
-#include "nemolockcodesettings.h"
+
 #include "lockcodewatcher.h"
 
-#include <qqml.h>
-#include <QQmlEngine>
-
-static QObject *createDeviceLock(QQmlEngine *, QJSEngine *)
+NemoEncryptionSettings::NemoEncryptionSettings(QObject *parent)
+    : EncryptionSettings(parent)
+    , m_watcher(LockCodeWatcher::instance())
 {
-    return new NemoDeviceLock;
 }
 
-class Q_DECL_EXPORT NemoDeviceLockPlugin : public QQmlExtensionPlugin
+NemoEncryptionSettings::~NemoEncryptionSettings()
 {
-    Q_OBJECT
-    Q_PLUGIN_METADATA(IID "org.nemomobile.devicelock")
-public:
-    void initializeEngine(QQmlEngine *, const char *) override
-    {
+}
+
+Authorization *NemoEncryptionSettings::authorization()
+{
+    return &m_authorization;
+}
+
+void NemoEncryptionSettings::encryptHome(const QVariant &authenticationToken)
+{
+    if (m_authorization.status() == Authorization::ChallengeIssued) {
+        if (m_watcher->runPlugin(QStringList()
+                    << QStringLiteral("--encrypt-home")
+                    << authenticationToken.toString())) {
+            emit encryptingHome();
+        } else {
+            emit encryptHomeError();
+        }
     }
-
-    void registerTypes(const char *uri) override
-    {
-        qmlRegisterType<FingerprintModel>();
-
-        qmlRegisterSingletonType<NemoDeviceLock>(uri, 1, 0, "DeviceLock", createDeviceLock);
-
-        qmlRegisterType<NemoAuthenticator>(uri, 1, 0, "Authenticator");
-        qmlRegisterType<NemoDeviceLockSettings>(uri, 1, 0, "DeviceLockSettings");
-        qmlRegisterType<NemoDeviceReset>(uri, 1, 0, "DeviceReset");
-        qmlRegisterType<NemoEncryptionSettings>(uri, 1, 0, "EncryptionSettings");
-        qmlRegisterType<NemoFingerprintSettings>(uri, 1, 0, "FingerprintSettings");
-        qmlRegisterType<NemoLockCodeSettings>(uri, 1, 0, "LockCodeSettings");
-
-        qmlRegisterUncreatableType<Authorization>(uri, 1, 0, "Authorization", QString());
-    }
-};
-
-#include "plugin.moc"
+}

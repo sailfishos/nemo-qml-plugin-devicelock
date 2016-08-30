@@ -53,6 +53,7 @@ public:
     int showNotifications;
     bool inputIsKeyboard;
     bool currentCodeIsDigitOnly;
+    bool isHomeEncrypted;
 
     static const char * const automaticLockingKey;
     static const char * const minimumLengthKey;
@@ -63,6 +64,7 @@ public:
     static const char * const showNotificationsKey;
     static const char * const inputIsKeyboardKey;
     static const char * const currentIsDigitOnlyKey;
+    static const char * const isHomeEncryptedKey;
 
     bool event(QEvent *event);
 
