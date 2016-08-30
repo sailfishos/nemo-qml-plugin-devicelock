@@ -30,64 +30,20 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#ifndef SETTINGSWATCHER_H
-#define SETTINGSWATCHER_H
+#include "encryptionsettings.h"
+#include "settingswatcher.h"
 
-#include <QFileSystemWatcher>
-#include <QSharedData>
-
-class SettingsWatcher : public QObject, public QSharedData
+EncryptionSettings::EncryptionSettings(QObject *parent)
+    : QObject(parent)
+    , m_settings(SettingsWatcher::instance())
 {
-    Q_OBJECT
-public:
-    ~SettingsWatcher();
+}
 
-    static SettingsWatcher *instance();
+EncryptionSettings::~EncryptionSettings()
+{
+}
 
-    int automaticLocking;
-    int minimumLength;
-    int maximumLength;
-    int maximumAttempts;
-    int peekingAllowed;
-    int sideloadingAllowed;
-    int showNotifications;
-    bool inputIsKeyboard;
-    bool currentCodeIsDigitOnly;
-    bool isHomeEncrypted;
-
-    static const char * const automaticLockingKey;
-    static const char * const minimumLengthKey;
-    static const char * const maximumLengthKey;
-    static const char * const maximumAttemptsKey;
-    static const char * const peekingAllowedKey;
-    static const char * const sideloadingAllowedKey;
-    static const char * const showNotificationsKey;
-    static const char * const inputIsKeyboardKey;
-    static const char * const currentIsDigitOnlyKey;
-    static const char * const isHomeEncryptedKey;
-
-signals:
-    void automaticLockingChanged();
-    void maximumAttemptsChanged();
-    void minimumLengthChanged();
-    void maximumLengthChanged();
-    void peekingAllowedChanged();
-    void sideloadingAllowedChanged();
-    void showNotificationsChanged();
-    void inputIsKeyboardChanged();
-    void currentCodeIsDigitOnlyChanged();
-
-private:
-    explicit SettingsWatcher(QObject *parent = nullptr);
-
-    void reloadSettings();
-
-    QFileSystemWatcher m_watcher;
-    QString m_settingsPath;
-
-    static SettingsWatcher *sharedInstance;
-
-
-};
-
-#endif
+bool EncryptionSettings::isHomeEncrypted() const
+{
+    return m_settings->isHomeEncrypted;
+}

@@ -30,64 +30,34 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#ifndef SETTINGSWATCHER_H
-#define SETTINGSWATCHER_H
+#ifndef NEMOENCRYPTIONSETTINGS_H
+#define NEMOENCRYPTIONSETTINGS_H
 
-#include <QFileSystemWatcher>
-#include <QSharedData>
+#include <encryptionsettings.h>
 
-class SettingsWatcher : public QObject, public QSharedData
+#include <nemoauthorization.h>
+
+#include <QSharedDataPointer>
+
+class LockCodeWatcher;
+
+class NemoEncryptionSettings : public EncryptionSettings
 {
     Q_OBJECT
 public:
-    ~SettingsWatcher();
+    explicit NemoEncryptionSettings(QObject *parent = nullptr);
+    ~NemoEncryptionSettings();
 
-    static SettingsWatcher *instance();
+    Authorization *authorization();
 
-    int automaticLocking;
-    int minimumLength;
-    int maximumLength;
-    int maximumAttempts;
-    int peekingAllowed;
-    int sideloadingAllowed;
-    int showNotifications;
-    bool inputIsKeyboard;
-    bool currentCodeIsDigitOnly;
-    bool isHomeEncrypted;
-
-    static const char * const automaticLockingKey;
-    static const char * const minimumLengthKey;
-    static const char * const maximumLengthKey;
-    static const char * const maximumAttemptsKey;
-    static const char * const peekingAllowedKey;
-    static const char * const sideloadingAllowedKey;
-    static const char * const showNotificationsKey;
-    static const char * const inputIsKeyboardKey;
-    static const char * const currentIsDigitOnlyKey;
-    static const char * const isHomeEncryptedKey;
+    void encryptHome(const QVariant &authenticationToken) override;
 
 signals:
-    void automaticLockingChanged();
-    void maximumAttemptsChanged();
-    void minimumLengthChanged();
-    void maximumLengthChanged();
-    void peekingAllowedChanged();
-    void sideloadingAllowedChanged();
-    void showNotificationsChanged();
-    void inputIsKeyboardChanged();
-    void currentCodeIsDigitOnlyChanged();
+    void encryptHomeError();
 
 private:
-    explicit SettingsWatcher(QObject *parent = nullptr);
-
-    void reloadSettings();
-
-    QFileSystemWatcher m_watcher;
-    QString m_settingsPath;
-
-    static SettingsWatcher *sharedInstance;
-
-
+    NemoAuthorization m_authorization;
+    QExplicitlySharedDataPointer<LockCodeWatcher> m_watcher;
 };
 
 #endif

@@ -57,6 +57,10 @@ public:
 
 signals:
     void setChanged();
+    void changed();
+    void cleared();
+    void changeError();
+    void clearError();
 
 private:
     QExplicitlySharedDataPointer<SettingsWatcher> m_settings;
