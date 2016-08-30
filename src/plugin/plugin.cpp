@@ -36,6 +36,7 @@
 #include "nemodevicelock.h"
 #include "nemodevicelocksettings.h"
 #include "nemodevicereset.h"
+#include "nemoencryptionsettings.h"
 #include "nemofingerprintsettings.h"
 #include "nemolockcodesettings.h"
 #include "lockcodewatcher.h"
@@ -66,6 +67,7 @@ public:
         qmlRegisterType<NemoAuthenticator>(uri, 1, 0, "Authenticator");
         qmlRegisterType<NemoDeviceLockSettings>(uri, 1, 0, "DeviceLockSettings");
         qmlRegisterType<NemoDeviceReset>(uri, 1, 0, "DeviceReset");
+        qmlRegisterType<NemoEncryptionSettings>(uri, 1, 0, "EncryptionSettings");
         qmlRegisterType<NemoFingerprintSettings>(uri, 1, 0, "FingerprintSettings");
         qmlRegisterType<NemoLockCodeSettings>(uri, 1, 0, "LockCodeSettings");
 

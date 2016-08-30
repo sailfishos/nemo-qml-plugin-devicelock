@@ -52,6 +52,7 @@ class DeviceLockSettings : public QObject
     Q_PROPERTY(int showNotifications READ showNotifications NOTIFY showNotificationsChanged)
     Q_PROPERTY(bool inputIsKeyboard READ inputIsKeyboard NOTIFY inputIsKeyboardChanged)
     Q_PROPERTY(bool currentCodeIsDigitOnly READ currentCodeIsDigitOnly NOTIFY currentCodeIsDigitOnlyChanged)
+    Q_PROPERTY(bool isHomeEncrypted READ isHomeEncrypted CONSTANT)
 public:
     explicit DeviceLockSettings(QObject *parent = nullptr);
     ~DeviceLockSettings();
@@ -77,6 +78,8 @@ public:
     Q_INVOKABLE void setInputIsKeyboard(const QVariant &authenticationToken, bool value);
 
     bool currentCodeIsDigitOnly() const;
+
+    bool isHomeEncrypted() const;
 
 signals:
     void challengeCodeChanged();

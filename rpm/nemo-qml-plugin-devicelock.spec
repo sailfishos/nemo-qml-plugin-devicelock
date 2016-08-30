@@ -55,6 +55,7 @@ rm -rf %{buildroot}
 %{_includedir}/nemo-devicelock/devicelock.h
 %{_includedir}/nemo-devicelock/devicelocksettings.h
 %{_includedir}/nemo-devicelock/devicereset.h
+%{_includedir}/nemo-devicelock/encryptionsettings.h
 %{_includedir}/nemo-devicelock/fingerprintsettings.h
 %{_includedir}/nemo-devicelock/lockcodesettings.h
 %{_includedir}/nemo-devicelock/nemoauthenticator.h
@@ -62,6 +63,7 @@ rm -rf %{buildroot}
 %{_includedir}/nemo-devicelock/nemodevicelock.h
 %{_includedir}/nemo-devicelock/nemodevicelocksettings.h
 %{_includedir}/nemo-devicelock/nemodevicereset.h
+%{_includedir}/nemo-devicelock/nemoencryptionsettings.h
 %{_includedir}/nemo-devicelock/nemofingerprintsettings.h
 %{_includedir}/nemo-devicelock/nemolockcodesettings.h
 %{_includedir}/nemo-devicelock/mcedevicelock.h

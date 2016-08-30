@@ -30,63 +30,36 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#ifndef SETTINGSWATCHER_H
-#define SETTINGSWATCHER_H
+#ifndef ENCRYPTIONSETTINGS_H
+#define ENCRYPTIONSETTINGS_H
 
-#include <QFileSystemWatcher>
-#include <QSharedData>
+#include <QObject>
+#include <QSharedDataPointer>
 
-class SettingsWatcher : public QObject, public QSharedData
+class Authorization;
+class SettingsWatcher;
+
+class EncryptionSettings : public QObject
 {
     Q_OBJECT
+    Q_PROPERTY(Authorization *authorization READ authorization CONSTANT)
+    Q_PROPERTY(bool homeEncrypted READ isHomeEncrypted CONSTANT)    // One way operation, determined at startup.
 public:
-    ~SettingsWatcher();
+    explicit EncryptionSettings(QObject *parent = nullptr);
+    ~EncryptionSettings();
 
-    static SettingsWatcher *instance();
+    virtual Authorization *authorization() = 0;
 
-    int automaticLocking;
-    int minimumLength;
-    int maximumLength;
-    int maximumAttempts;
-    int peekingAllowed;
-    int sideloadingAllowed;
-    int showNotifications;
-    bool inputIsKeyboard;
-    bool currentCodeIsDigitOnly;
-    bool isHomeEncrypted;
+    bool isHomeEncrypted() const;
 
-    static const char * const automaticLockingKey;
-    static const char * const minimumLengthKey;
-    static const char * const maximumLengthKey;
-    static const char * const maximumAttemptsKey;
-    static const char * const peekingAllowedKey;
-    static const char * const sideloadingAllowedKey;
-    static const char * const showNotificationsKey;
-    static const char * const inputIsKeyboardKey;
-    static const char * const currentIsDigitOnlyKey;
-    static const char * const isHomeEncryptedKey;
+    Q_INVOKABLE virtual void encryptHome(const QVariant &authenticationToken) = 0;
 
 signals:
-    void automaticLockingChanged();
-    void maximumAttemptsChanged();
-    void minimumLengthChanged();
-    void maximumLengthChanged();
-    void peekingAllowedChanged();
-    void sideloadingAllowedChanged();
-    void showNotificationsChanged();
-    void inputIsKeyboardChanged();
-    void currentCodeIsDigitOnlyChanged();
+    void encryptingHome();
+    void encryptHomeError();
 
 private:
-    explicit SettingsWatcher(QObject *parent = nullptr);
-
-    void reloadSettings();
-
-    QFileSystemWatcher m_watcher;
-    QString m_settingsPath;
-
-    static SettingsWatcher *sharedInstance;
-
+    QExplicitlySharedDataPointer<SettingsWatcher> m_settings;
 
 };
 

@@ -34,6 +34,7 @@
 
 #include "nemoauthenticator.h"
 #include "lockcodewatcher.h"
+#include "settingswatcher.h"
 
 #include <QFile>
 #include <QStringList>
@@ -62,6 +63,10 @@ void NemoLockCodeSettings::change(const QString &oldCode, const QString &newCode
         if (!m_watcher->lockCodeSet()) {
             m_watcher->invalidateLockCodeSet();
         }
+
+        emit changed();
+    } else {
+        emit changeError();
     }
 }
 
@@ -69,5 +74,9 @@ void NemoLockCodeSettings::clear(const QString &currentCode)
 {
     if (m_watcher->runPlugin(QStringList() << QStringLiteral("--clear-code") << currentCode)) {
         m_watcher->invalidateLockCodeSet();
+
+        emit cleared();
+    } else {
+        emit clearError();
     }
 }
