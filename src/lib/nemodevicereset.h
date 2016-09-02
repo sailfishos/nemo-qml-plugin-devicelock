@@ -50,7 +50,7 @@ public:
 
     Authorization *authorization() override;
 
-    bool clearDevice(const QVariant &authenticationToken, ResetMode mode) override;
+    void clearDevice(const QVariant &authenticationToken, ResetMode mode) override;
 
 private:
     NemoAuthorization m_authorization;

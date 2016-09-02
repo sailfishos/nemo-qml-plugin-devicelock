@@ -58,9 +58,6 @@ public:
 
     void abort(Error error);
 
-    static QString pluginName();
-    static bool runPlugin(const QStringList &arguments);
-
 protected:
     virtual void authenticationStarted(Methods methods);
     virtual void authenticationEnded(bool confirmed);

@@ -65,7 +65,8 @@ public:
     };
 
     enum Error {
-        LockedOut
+        LockedOut,
+        SoftwareError,
     };
 
     enum Method {

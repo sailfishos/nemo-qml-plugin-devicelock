@@ -52,10 +52,15 @@ Authorization *NemoEncryptionSettings::authorization()
 void NemoEncryptionSettings::encryptHome(const QVariant &authenticationToken)
 {
     if (m_authorization.status() == Authorization::ChallengeIssued) {
-        if (m_watcher->runPlugin(QStringList()
+        if (PluginCommand *command = m_watcher->runPlugin(this, QStringList()
                     << QStringLiteral("--encrypt-home")
                     << authenticationToken.toString())) {
-            emit encryptingHome();
+            command->onSuccess([this]() {
+                emit encryptingHome();
+            });
+            command->onFailure([this]() {
+                emit encryptHomeError();
+            });
         } else {
             emit encryptHomeError();
         }
