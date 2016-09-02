@@ -59,6 +59,7 @@ signals:
 
     void locked();
     void unlocked();
+    void unlockError();
 
 private:
     QExplicitlySharedDataPointer<SettingsWatcher> m_settings;
