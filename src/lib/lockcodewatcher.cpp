@@ -48,6 +48,40 @@
 #include <QSettings>
 #include <QStandardPaths>
 
+PluginCommand::PluginCommand(QObject *caller)
+    : m_caller(caller)
+{
+    connect(static_cast<QProcess *>(this), static_cast<void (QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished),
+            this, &PluginCommand::processFinished);
+}
+
+void PluginCommand::processFinished(int exitCode, QProcess::ExitStatus status)
+{
+    deleteLater();
+
+    QByteArray output = readAllStandardOutput();
+    if (!output.isEmpty()) {
+        qDebug() << output.constData();
+    }
+
+    output = readAllStandardError();
+    if (!output.isEmpty()) {
+        qWarning() << output.constData();
+    }
+
+    if (!m_caller) {
+        return;
+    } else if (exitCode == 0 && status == QProcess::NormalExit) {
+        emit succeeded();
+    } else {
+        emit failed();
+    }
+}
+
+PluginCommand::~PluginCommand()
+{
+}
+
 static QString pluginName()
 {
     static const QString pluginName = []() {
@@ -103,8 +137,12 @@ bool LockCodeWatcher::lockCodeSet() const
 {
     if (m_codeSetInvalidated) {
         m_codeSetInvalidated = false;
-        m_lockCodeSet = runPlugin(QStringList()
-                    << QStringLiteral("--is-set") << QStringLiteral("lockcode"));
+        m_lockCodeSet = false;
+        if (PluginCommand *command = runPlugin(nullptr, QStringList()
+                    << QStringLiteral("--is-set") << QStringLiteral("lockcode"))) {
+            command->waitForFinished();
+            m_lockCodeSet = command->exitCode() == 0;
+        }
     }
     return m_lockCodeSet;
 }
@@ -125,42 +163,28 @@ void LockCodeWatcher::invalidateLockCodeSet()
     }
 }
 
-bool LockCodeWatcher::checkCode(const QString &code)
+PluginCommand *LockCodeWatcher::checkCode(QObject *caller, const QString &code)
 {
-    return runPlugin(QStringList() << QStringLiteral("--check-code") << code);
+    return runPlugin(caller, QStringList() << QStringLiteral("--check-code") << code);
 }
 
-bool LockCodeWatcher::unlock(const QString &code)
+PluginCommand *LockCodeWatcher::unlock(QObject *caller, const QString &code)
 {
-    return runPlugin(QStringList() << QStringLiteral("--unlock") << code);
+    return runPlugin(caller, QStringList() << QStringLiteral("--unlock") << code);
 }
 
-bool LockCodeWatcher::runPlugin(const QStringList &arguments) const
+PluginCommand *LockCodeWatcher::runPlugin(QObject *caller, const QStringList &arguments) const
 {
     if (!m_pluginExists) {
-        return false;
+        return nullptr;
     }
 
-    QProcess process;
-    process.start(pluginName(), arguments);
-    if (!process.waitForFinished()) {
-        qWarning("DeviceLock: plugin did not finish in time");
-        return false;
-    }
+    PluginCommand *const process = new PluginCommand(caller);
 
-    QByteArray output = process.readAllStandardOutput();
-    if (!output.isEmpty()) {
-        qDebug() << output.constData();
-    }
+    process->start(pluginName(), arguments);
 
-    output = process.readAllStandardError();
-    if (!output.isEmpty()) {
-        qWarning() << output.constData();
-    }
-
-    return process.exitCode() == 0;
+    return process;
 }
-
 
 void LockCodeWatcher::lockCodeSetInvalidated()
 {

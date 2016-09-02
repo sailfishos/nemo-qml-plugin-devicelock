@@ -59,8 +59,17 @@ Authorization *NemoDeviceLock::authorization()
 
 void NemoDeviceLock::unlock(const QVariant &authenticationToken)
 {
-    if (m_authorization.status() == Authorization::ChallengeIssued
-            && m_watcher->unlock(authenticationToken.toString())) {
-        setState(Unlocked);
+    if (m_authorization.status() == Authorization::ChallengeIssued) {
+        if (PluginCommand *command = m_watcher->unlock(this, authenticationToken.toString())) {
+            command->onSuccess([this]() {
+                setState(Unlocked);
+            });
+
+            command->onFailure([this]() {
+                emit unlockError();
+            });
+        } else {
+            emit unlockError();
+        }
     }
 }
