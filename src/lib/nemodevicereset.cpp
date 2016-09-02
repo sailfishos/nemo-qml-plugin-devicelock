@@ -51,7 +51,7 @@ Authorization *NemoDeviceReset::authorization()
     return &m_authorization;
 }
 
-bool NemoDeviceReset::clearDevice(const QVariant &authenticationToken, ResetMode mode)
+void NemoDeviceReset::clearDevice(const QVariant &authenticationToken, ResetMode mode)
 {
     if (m_authorization.status() == Authorization::ChallengeIssued) {
         QStringList arguments = QStringList()
@@ -60,8 +60,15 @@ bool NemoDeviceReset::clearDevice(const QVariant &authenticationToken, ResetMode
         if (mode == Reboot) {
             arguments << QStringLiteral("--reboot");
         }
-        return m_watcher->runPlugin(arguments);
+        if (PluginCommand *command = m_watcher->runPlugin(this, arguments)) {
+            command->onSuccess([this]() {
+                emit clearingDevice();
+            });
+            command->onFailure([this]() {
+                emit clearDeviceError();
+            });
+        };
     } else {
-        return false;
+        emit clearDeviceError();
     }
 }

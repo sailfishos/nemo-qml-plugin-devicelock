@@ -59,12 +59,18 @@ bool NemoLockCodeSettings::isSet() const
 
 void NemoLockCodeSettings::change(const QString &oldCode, const QString &newCode)
 {
-    if (m_watcher->runPlugin(QStringList() << QStringLiteral("--set-code") << oldCode << newCode)) {
-        if (!m_watcher->lockCodeSet()) {
-            m_watcher->invalidateLockCodeSet();
-        }
+    if (PluginCommand *command = m_watcher->runPlugin(
+                this, QStringList() << QStringLiteral("--set-code") << oldCode << newCode)) {
+        command->onSuccess([this]() {
+            if (!m_watcher->lockCodeSet()) {
+                m_watcher->invalidateLockCodeSet();
+            }
 
-        emit changed();
+            emit changed();
+        });
+        command->onFailure([this]() {
+            emit changeError();
+        });
     } else {
         emit changeError();
     }
@@ -72,10 +78,16 @@ void NemoLockCodeSettings::change(const QString &oldCode, const QString &newCode
 
 void NemoLockCodeSettings::clear(const QString &currentCode)
 {
-    if (m_watcher->runPlugin(QStringList() << QStringLiteral("--clear-code") << currentCode)) {
-        m_watcher->invalidateLockCodeSet();
+    if (PluginCommand *command = m_watcher->runPlugin(
+                this, QStringList() << QStringLiteral("--clear-code") << currentCode)) {
+        command->onSuccess([this]() {
+            m_watcher->invalidateLockCodeSet();
 
-        emit cleared();
+            emit cleared();
+        });
+        command->onFailure([this]() {
+            emit clearError();
+        });
     } else {
         emit clearError();
     }

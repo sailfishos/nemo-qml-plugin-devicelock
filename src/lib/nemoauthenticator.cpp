@@ -109,30 +109,36 @@ void NemoAuthenticator::enterLockCode(const QString &code)
         return;
     }
 
-    if (m_watcher->checkCode(code)) {
-        confirmAuthentication(code);
-    } else {
-        const int maximum = maximumAttempts();
+    if (PluginCommand *command = m_watcher->checkCode(this, code)) {
+        command->onSuccess([this, code]() {
+            confirmAuthentication(code);
+        });
 
-        if (maximum > 0) {
-            const int attempts = m_attemptCount.value(0).toInt() + 1;
-            m_attemptCount.set(attempts);
+        command->onFailure([this]() {
+            const int maximum = maximumAttempts();
 
-            emit feedback(IncorrectLockCode, qMax(0, maximum - attempts));
+            if (maximum > 0) {
+                const int attempts = m_attemptCount.value(0).toInt() + 1;
+                m_attemptCount.set(attempts);
 
-            if (attempts >= maximum) {
-                m_authenticating = false;
-                m_utilizedMethods = Methods();
+                emit feedback(IncorrectLockCode, qMax(0, maximum - attempts));
 
-                authenticationEnded(false);
+                if (attempts >= maximum) {
+                    m_authenticating = false;
+                    m_utilizedMethods = Methods();
 
-                emit error(LockedOut);
-                emit authenticatingChanged();
-                emit utilizedMethodsChanged();
+                    authenticationEnded(false);
+
+                    emit error(LockedOut);
+                    emit authenticatingChanged();
+                    emit utilizedMethodsChanged();
+                }
+            } else {
+                emit feedback(IncorrectLockCode, -1);
             }
-        } else {
-            emit feedback(IncorrectLockCode, -1);
-        }
+        });
+    } else {
+        emit error(SoftwareError);
     }
 }
 
