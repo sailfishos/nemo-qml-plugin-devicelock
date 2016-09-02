@@ -54,11 +54,11 @@ public:
 
     virtual Authorization *authorization() = 0;
 
-    Q_INVOKABLE virtual bool clearDevice(const QVariant &authenticationToken, ResetMode mode = Shutdown) = 0;
+    Q_INVOKABLE virtual void clearDevice(const QVariant &authenticationToken, ResetMode mode = Shutdown) = 0;
 
 signals:
-    void challengeIssued();
-    void challengeCodeChanged();
+    void clearingDevice();
+    void clearDeviceError();
 };
 
 #endif

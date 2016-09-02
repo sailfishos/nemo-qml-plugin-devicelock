@@ -53,7 +53,7 @@ void NemoDeviceLockSettings::changeSetting(
         const QVariant &authenticationToken, const QString &key, const QVariant &value)
 {
     if (m_authorization.status() == Authorization::ChallengeIssued) {
-        m_watcher->runPlugin(QStringList()
+        m_watcher->runPlugin(this, QStringList()
                     << QStringLiteral("--set-config-key")
                     << authenticationToken.toString()
                     << key

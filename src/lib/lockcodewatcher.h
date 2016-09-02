@@ -34,8 +34,40 @@
 #define LOCKCODEWATCHER_H
 
 #include <QDateTime>
+#include <QPointer>
+#include <QProcess>
 #include <QSharedData>
 #include <QVector>
+
+class PluginCommand : public QProcess
+{
+    Q_OBJECT
+public:
+    PluginCommand(QObject *caller);
+
+    template <typename Success>  void onSuccess(const Success &success)
+    {
+        connect(this, &PluginCommand::succeeded, success);
+    }
+
+    template <typename Failure>  void onFailure(const Failure &failure)
+    {
+        connect(this, &PluginCommand::failed, failure);
+    }
+
+signals:
+    void succeeded();
+    void failed();
+
+private:
+    friend class LockCodeWatcher;
+
+    ~PluginCommand();
+
+    void processFinished(int exitCode, QProcess::ExitStatus status);
+
+    QPointer<QObject> m_caller;
+};
 
 class LockCodeWatcher : public QObject, public QSharedData
 {
@@ -48,10 +80,10 @@ public:
     bool lockCodeSet() const;
     void invalidateLockCodeSet();
 
-    bool checkCode(const QString &code);
-    bool unlock(const QString &code);
+    PluginCommand *checkCode(QObject *caller, const QString &code);
+    PluginCommand *unlock(QObject *caller, const QString &code);
 
-    bool runPlugin(const QStringList &arguments) const;
+    PluginCommand *runPlugin(QObject *caller, const QStringList &arguments) const;
 
 signals:
     void lockCodeSetChanged();
