@@ -30,33 +30,56 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#ifndef NEMODEVICELOCK_H
-#define NEMODEVICELOCK_H
+#ifndef CLIFINGERPRINTSETTINGS_H
+#define CLIFINGERPRINTSETTINGS_H
 
-#include "mcedevicelock.h"
+#include <fingerprintsettings.h>
 
-#include <nemoauthorization.h>
+#include <cliauthorization.h>
 
-class LockCodeWatcher;
+#include <QSharedDataPointer>
 
-class NemoDeviceLock : public MceDeviceLock
+class CliFingerprintModel : public FingerprintModel
 {
     Q_OBJECT
 public:
-    explicit NemoDeviceLock(
-            Authenticator::Methods allowedMethods = Authenticator::LockCode,
-            QObject *parent = nullptr);
-    ~NemoDeviceLock();
+    explicit CliFingerprintModel(QObject *parent = nullptr);
+    ~CliFingerprintModel();
 
-    bool isEnabled() const override;
+    Authorization *authorization() override;
 
-    Authorization *authorization();
+    void remove(const QVariant &authenticationToken, const QVariant &id) override;
+    void rename(const QVariant &id, const QString &name) override;
 
-    void unlock(const QVariant &authenticationToken) override;
+    int rowCount(const QModelIndex &parent = QModelIndex()) const override;
+    QVariant data(const QModelIndex &index, int role) const override;
+
+    CliAuthorization m_authorization;
+};
+
+class CliFingerprintSettings : public FingerprintSettings
+{
+    Q_OBJECT
+public:
+    explicit CliFingerprintSettings(QObject *parent = nullptr);
+    ~CliFingerprintSettings();
+
+    bool hasSensor() const override;
+    bool isAcquiring() const override;
+
+    int samplesRemaining() const override;
+    int samplesRequired() const override;
+
+    Authorization *authorization() override;
+
+    void acquireFinger(const QVariant &authenticationToken) override;
+    void cancelAcquisition() override;
+
+    FingerprintModel *fingers() override;
 
 private:
-    NemoAuthorization m_authorization;
-    QExplicitlySharedDataPointer<LockCodeWatcher> m_watcher;
+    CliAuthorization m_authorization;
+    CliFingerprintModel m_model;
 };
 
 #endif

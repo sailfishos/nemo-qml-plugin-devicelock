@@ -30,56 +30,33 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#ifndef NEMOFINGERPRINTSETTINGS_H
-#define NEMOFINGERPRINTSETTINGS_H
+#ifndef CLIDEVICELOCK_H
+#define CLIDEVICELOCK_H
 
-#include <fingerprintsettings.h>
+#include "mcedevicelock.h"
 
-#include <nemoauthorization.h>
+#include <cliauthorization.h>
 
-#include <QSharedDataPointer>
+class LockCodeWatcher;
 
-class NemoFingerprintModel : public FingerprintModel
+class CliDeviceLock : public MceDeviceLock
 {
     Q_OBJECT
 public:
-    explicit NemoFingerprintModel(QObject *parent = nullptr);
-    ~NemoFingerprintModel();
+    explicit CliDeviceLock(
+            Authenticator::Methods allowedMethods = Authenticator::LockCode,
+            QObject *parent = nullptr);
+    ~CliDeviceLock();
 
-    Authorization *authorization() override;
+    bool isEnabled() const override;
 
-    void remove(const QVariant &authenticationToken, const QVariant &id) override;
-    void rename(const QVariant &id, const QString &name) override;
+    Authorization *authorization();
 
-    int rowCount(const QModelIndex &parent = QModelIndex()) const override;
-    QVariant data(const QModelIndex &index, int role) const override;
-
-    NemoAuthorization m_authorization;
-};
-
-class NemoFingerprintSettings : public FingerprintSettings
-{
-    Q_OBJECT
-public:
-    explicit NemoFingerprintSettings(QObject *parent = nullptr);
-    ~NemoFingerprintSettings();
-
-    bool hasSensor() const override;
-    bool isAcquiring() const override;
-
-    int samplesRemaining() const override;
-    int samplesRequired() const override;
-
-    Authorization *authorization() override;
-
-    void acquireFinger(const QVariant &authenticationToken) override;
-    void cancelAcquisition() override;
-
-    FingerprintModel *fingers() override;
+    void unlock(const QVariant &authenticationToken) override;
 
 private:
-    NemoAuthorization m_authorization;
-    NemoFingerprintModel m_model;
+    CliAuthorization m_authorization;
+    QExplicitlySharedDataPointer<LockCodeWatcher> m_watcher;
 };
 
 #endif
