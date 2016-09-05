@@ -30,13 +30,13 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include "nemoauthenticator.h"
+#include "cliauthenticator.h"
 
 #include "lockcodewatcher.h"
 
 #include <QVariant>
 
-NemoAuthenticator::NemoAuthenticator(QObject *parent)
+CliAuthenticator::CliAuthenticator(QObject *parent)
     : Authenticator(parent)
     , m_watcher(LockCodeWatcher::instance())
     , m_attemptCount(QStringLiteral("/desktop/nemo/devicelock/attempt_count"))
@@ -44,14 +44,14 @@ NemoAuthenticator::NemoAuthenticator(QObject *parent)
     , m_authenticating(false)
 {
     connect(m_watcher.data(), &LockCodeWatcher::lockCodeSetChanged,
-            this, &NemoAuthenticator::availableMethodsChanged);
+            this, &CliAuthenticator::availableMethodsChanged);
 }
 
-NemoAuthenticator::~NemoAuthenticator()
+CliAuthenticator::~CliAuthenticator()
 {
 }
 
-Authenticator::Methods NemoAuthenticator::availableMethods() const
+Authenticator::Methods CliAuthenticator::availableMethods() const
 {
     Methods methods;
 
@@ -62,12 +62,12 @@ Authenticator::Methods NemoAuthenticator::availableMethods() const
     return methods;
 }
 
-Authenticator::Methods NemoAuthenticator::utilizedMethods() const
+Authenticator::Methods CliAuthenticator::utilizedMethods() const
 {
     return m_utilizedMethods;
 }
 
-void NemoAuthenticator::setUtilizedMethods(Methods methods)
+void CliAuthenticator::setUtilizedMethods(Methods methods)
 {
     if (m_utilizedMethods != methods) {
         m_utilizedMethods = methods;
@@ -76,12 +76,12 @@ void NemoAuthenticator::setUtilizedMethods(Methods methods)
     }
 }
 
-bool NemoAuthenticator::isAuthenticating() const
+bool CliAuthenticator::isAuthenticating() const
 {
     return m_authenticating;
 }
 
-void NemoAuthenticator::authenticate(const QVariant &, Methods methods)
+void CliAuthenticator::authenticate(const QVariant &, Methods methods)
 {
     if (m_watcher->lockCodeSet()) {
         const int maximum = maximumAttempts();
@@ -103,7 +103,7 @@ void NemoAuthenticator::authenticate(const QVariant &, Methods methods)
 }
 
 
-void NemoAuthenticator::enterLockCode(const QString &code)
+void CliAuthenticator::enterLockCode(const QString &code)
 {
     if (!m_authenticating) {
         return;
@@ -142,7 +142,7 @@ void NemoAuthenticator::enterLockCode(const QString &code)
     }
 }
 
-void NemoAuthenticator::cancel()
+void CliAuthenticator::cancel()
 {
     m_authenticating = false;
     m_utilizedMethods = Methods();
@@ -153,16 +153,16 @@ void NemoAuthenticator::cancel()
     emit utilizedMethodsChanged();
 }
 
-void NemoAuthenticator::authenticationStarted(Methods methods)
+void CliAuthenticator::authenticationStarted(Methods methods)
 {
     setUtilizedMethods(methods & LockCode);
 }
 
-void NemoAuthenticator::authenticationEnded(bool)
+void CliAuthenticator::authenticationEnded(bool)
 {
 }
 
-void NemoAuthenticator::confirmAuthentication(const QVariant &authenticationToken)
+void CliAuthenticator::confirmAuthentication(const QVariant &authenticationToken)
 {
     m_authenticating = false;
 

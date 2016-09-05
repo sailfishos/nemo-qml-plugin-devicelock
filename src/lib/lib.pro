@@ -15,7 +15,8 @@ QT += dbus
 PKGCONFIG += \
         keepalive \
         mlite5
-PUBLIC_HEADERS = \
+
+PUBLIC_HEADERS += \
         authenticator.h \
         authorization.h \
         devicelock.h \
@@ -23,23 +24,9 @@ PUBLIC_HEADERS = \
         devicereset.h \
         encryptionsettings.h \
         fingerprintsettings.h \
-        lockcodesettings.h \
-        mcedevicelock.h \
-        nemoauthenticator.h \
-        nemoauthorization.h \
-        nemodevicelock.h \
-        nemodevicelocksettings.h \
-        nemodevicereset.h \
-        nemoencryptionsettings.h \
-        nemofingerprintsettings.h \
-        nemolockcodesettings.h
+        mcedevicelock.h
 
-HEADERS = \
-        $$PUBLIC_HEADERS \
-        lockcodewatcher.h \
-        settingswatcher.h
-
-SOURCES = \
+SOURCES += \
         authenticator.cpp \
         authorization.cpp \
         devicelock.cpp \
@@ -48,17 +35,14 @@ SOURCES = \
         encryptionsettings.cpp \
         fingerprintsettings.cpp \
         lockcodesettings.cpp \
-        lockcodewatcher.cpp \
         mcedevicelock.cpp \
-        nemoauthenticator.cpp \
-        nemoauthorization.cpp \
-        nemodevicelock.cpp \
-        nemodevicelocksettings.cpp \
-        nemodevicereset.cpp \
-        nemoencryptionsettings.cpp \
-        nemofingerprintsettings.cpp \
-        nemolockcodesettings.cpp \
         settingswatcher.cpp
+
+include (cli/cli.pri)
+
+HEADERS += \
+        $$PUBLIC_HEADERS \
+        settingswatcher.h
 
 headers.files = $$PUBLIC_HEADERS
 headers.path = /usr/include/nemo-devicelock

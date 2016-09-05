@@ -32,8 +32,8 @@
 
 #include "lockcodewatcher.h"
 
-#include "nemoauthenticator.h"
-#include "nemofingerprintsettings.h"
+#include "cliauthenticator.h"
+#include "clifingerprintsettings.h"
 
 #include <QDBusConnection>
 #include <QDBusMessage>

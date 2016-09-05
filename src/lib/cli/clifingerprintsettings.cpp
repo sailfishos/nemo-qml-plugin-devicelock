@@ -30,33 +30,83 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include "nemodevicelocksettings.h"
+#include "clifingerprintsettings.h"
 
-#include "lockcodewatcher.h"
-
-NemoDeviceLockSettings::NemoDeviceLockSettings(QObject *parent)
-    : DeviceLockSettings(parent)
-    , m_watcher(LockCodeWatcher::instance())
+CliFingerprintModel::CliFingerprintModel(QObject *parent)
+    : FingerprintModel(parent)
 {
 }
 
-NemoDeviceLockSettings::~NemoDeviceLockSettings()
+CliFingerprintModel::~CliFingerprintModel()
 {
 }
 
-Authorization *NemoDeviceLockSettings::authorization()
+Authorization *CliFingerprintModel::authorization()
 {
     return &m_authorization;
 }
 
-void NemoDeviceLockSettings::changeSetting(
-        const QVariant &authenticationToken, const QString &key, const QVariant &value)
+void CliFingerprintModel::remove(const QVariant &, const QVariant &)
 {
-    if (m_authorization.status() == Authorization::ChallengeIssued) {
-        m_watcher->runPlugin(this, QStringList()
-                    << QStringLiteral("--set-config-key")
-                    << authenticationToken.toString()
-                    << key
-                    << value.toString());
-    }
+}
+
+void CliFingerprintModel::rename(const QVariant &, const QString &)
+{
+}
+
+int CliFingerprintModel::rowCount(const QModelIndex &) const
+{
+    return 0;
+}
+
+QVariant CliFingerprintModel::data(const QModelIndex &, int) const
+{
+    return QVariant();
+}
+
+CliFingerprintSettings::CliFingerprintSettings(QObject *parent)
+    : FingerprintSettings(parent)
+{
+}
+
+CliFingerprintSettings::~CliFingerprintSettings()
+{
+}
+
+Authorization *CliFingerprintSettings::authorization()
+{
+    return &m_authorization;
+}
+
+bool CliFingerprintSettings::hasSensor() const
+{
+    return false;
+}
+
+bool CliFingerprintSettings::isAcquiring() const
+{
+    return false;
+}
+
+int CliFingerprintSettings::samplesRemaining() const
+{
+    return 0;
+}
+
+int CliFingerprintSettings::samplesRequired() const
+{
+    return 0;
+}
+
+void CliFingerprintSettings::acquireFinger(const QVariant &)
+{
+}
+
+void CliFingerprintSettings::cancelAcquisition()
+{
+}
+
+FingerprintModel *CliFingerprintSettings::fingers()
+{
+    return &m_model;
 }

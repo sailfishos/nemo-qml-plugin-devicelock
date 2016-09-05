@@ -30,39 +30,45 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include "nemoencryptionsettings.h"
+#include "clidevicereset.h"
 
 #include "lockcodewatcher.h"
 
-NemoEncryptionSettings::NemoEncryptionSettings(QObject *parent)
-    : EncryptionSettings(parent)
+#include <QFile>
+
+CliDeviceReset::CliDeviceReset(QObject *parent)
+    : DeviceReset(parent)
     , m_watcher(LockCodeWatcher::instance())
 {
 }
 
-NemoEncryptionSettings::~NemoEncryptionSettings()
+CliDeviceReset::~CliDeviceReset()
 {
 }
 
-Authorization *NemoEncryptionSettings::authorization()
+Authorization *CliDeviceReset::authorization()
 {
     return &m_authorization;
 }
 
-void NemoEncryptionSettings::encryptHome(const QVariant &authenticationToken)
+void CliDeviceReset::clearDevice(const QVariant &authenticationToken, ResetMode mode)
 {
     if (m_authorization.status() == Authorization::ChallengeIssued) {
-        if (PluginCommand *command = m_watcher->runPlugin(this, QStringList()
-                    << QStringLiteral("--encrypt-home")
-                    << authenticationToken.toString())) {
+        QStringList arguments = QStringList()
+                << QStringLiteral("--clear-device")
+                << authenticationToken.toString();
+        if (mode == Reboot) {
+            arguments << QStringLiteral("--reboot");
+        }
+        if (PluginCommand *command = m_watcher->runPlugin(this, arguments)) {
             command->onSuccess([this]() {
-                emit encryptingHome();
+                emit clearingDevice();
             });
             command->onFailure([this]() {
-                emit encryptHomeError();
+                emit clearDeviceError();
             });
-        } else {
-            emit encryptHomeError();
-        }
+        };
+    } else {
+        emit clearDeviceError();
     }
 }
