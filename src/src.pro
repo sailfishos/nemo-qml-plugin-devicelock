@@ -2,7 +2,7 @@ TEMPLATE = subdirs
 
 SUBDIRS = \
         lib \
-        plugin
+        plugins
 
-plugin.depends = \
+plugins.depends = \
         lib

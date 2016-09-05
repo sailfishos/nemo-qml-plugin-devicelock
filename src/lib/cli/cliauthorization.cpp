@@ -30,31 +30,49 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#ifndef NEMODEVICELOCKSETTINGS_H
-#define NEMODEVICELOCKSETTINGS_H
+#include "cliauthorization.h"
 
-#include <devicelocksettings.h>
-
-#include <nemoauthorization.h>
-
-#include <QSharedDataPointer>
-
-class LockCodeWatcher;
-
-class NemoDeviceLockSettings : public DeviceLockSettings
+CliAuthorization::CliAuthorization(Authenticator::Methods allowedMethods, QObject *parent)
+    : Authorization(parent)
+    , m_allowedMethods(allowedMethods)
+    , m_status(NoChallenge)
 {
-    Q_OBJECT
-public:
-    explicit NemoDeviceLockSettings(QObject *parent = nullptr);
-    ~NemoDeviceLockSettings();
+}
 
-    Authorization *authorization();
+CliAuthorization::~CliAuthorization()
+{
+}
 
-    void changeSetting(const QVariant &authenticationToken, const QString &key, const QVariant &value) override;
+Authenticator::Methods CliAuthorization::allowedMethods() const
+{
+    return m_allowedMethods;
+}
 
-private:
-    NemoAuthorization m_authorization;
-    QExplicitlySharedDataPointer<LockCodeWatcher> m_watcher;
-};
+CliAuthorization::Status CliAuthorization::status() const
+{
+    return m_status;
+}
 
-#endif
+void CliAuthorization::requestChallenge()
+{
+    if (m_status != ChallengeIssued) {
+        m_status = ChallengeIssued;
+
+        emit challengeIssued();
+        emit statusChanged();
+    }
+}
+
+void CliAuthorization::relinquishChallenge()
+{
+    if (m_status == ChallengeIssued) {
+        m_status = NoChallenge;
+
+        emit statusChanged();
+    }
+}
+
+QVariant CliAuthorization::challengeCode() const
+{
+    return QVariant();
+}

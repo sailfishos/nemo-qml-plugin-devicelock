@@ -30,30 +30,30 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#ifndef NEMODEVICERESET_H
-#define NEMODEVICERESET_H
+#ifndef CLIDEVICERESET_H
+#define CLIDEVICERESET_H
 
 #include <devicereset.h>
 
-#include <nemoauthorization.h>
+#include <cliauthorization.h>
 
 #include <QSharedDataPointer>
 
 class LockCodeWatcher;
 
-class NemoDeviceReset : public DeviceReset
+class CliDeviceReset : public DeviceReset
 {
     Q_OBJECT
 public:
-    explicit NemoDeviceReset(QObject *parent = nullptr);
-    ~NemoDeviceReset();
+    explicit CliDeviceReset(QObject *parent = nullptr);
+    ~CliDeviceReset();
 
     Authorization *authorization() override;
 
     void clearDevice(const QVariant &authenticationToken, ResetMode mode) override;
 
 private:
-    NemoAuthorization m_authorization;
+    CliAuthorization m_authorization;
     QExplicitlySharedDataPointer<LockCodeWatcher> m_watcher;
 };
 

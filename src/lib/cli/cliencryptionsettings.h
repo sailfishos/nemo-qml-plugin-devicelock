@@ -30,46 +30,34 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include "nemodevicelock.h"
+#ifndef CLIENCRYPTIONSETTINGS_H
+#define CLIENCRYPTIONSETTINGS_H
 
-#include "lockcodewatcher.h"
+#include <encryptionsettings.h>
 
-NemoDeviceLock::NemoDeviceLock(Authenticator::Methods allowedMethods, QObject *parent)
-    : MceDeviceLock(parent)
-    , m_authorization(allowedMethods)
-    , m_watcher(LockCodeWatcher::instance())
+#include <cliauthorization.h>
+
+#include <QSharedDataPointer>
+
+class LockCodeWatcher;
+
+class CliEncryptionSettings : public EncryptionSettings
 {
-    connect(m_watcher.data(), &LockCodeWatcher::lockCodeSetChanged,
-            this, &DeviceLock::enabledChanged);
-}
+    Q_OBJECT
+public:
+    explicit CliEncryptionSettings(QObject *parent = nullptr);
+    ~CliEncryptionSettings();
 
-NemoDeviceLock::~NemoDeviceLock()
-{
-}
+    Authorization *authorization();
 
-bool NemoDeviceLock::isEnabled() const
-{
-    return m_watcher->lockCodeSet();
-}
+    void encryptHome(const QVariant &authenticationToken) override;
 
-Authorization *NemoDeviceLock::authorization()
-{
-    return &m_authorization;
-}
+signals:
+    void encryptHomeError();
 
-void NemoDeviceLock::unlock(const QVariant &authenticationToken)
-{
-    if (m_authorization.status() == Authorization::ChallengeIssued) {
-        if (PluginCommand *command = m_watcher->unlock(this, authenticationToken.toString())) {
-            command->onSuccess([this]() {
-                setState(Unlocked);
-            });
+private:
+    CliAuthorization m_authorization;
+    QExplicitlySharedDataPointer<LockCodeWatcher> m_watcher;
+};
 
-            command->onFailure([this]() {
-                emit unlockError();
-            });
-        } else {
-            emit unlockError();
-        }
-    }
-}
+#endif

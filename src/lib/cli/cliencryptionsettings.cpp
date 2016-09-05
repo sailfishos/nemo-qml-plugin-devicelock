@@ -30,46 +30,39 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#ifndef NEMOAUTHENTICATOR_H
-#define NEMOAUTHENTICATOR_H
+#include "cliencryptionsettings.h"
 
-#include <authenticator.h>
+#include "lockcodewatcher.h"
 
-#include <MGConfItem>
-
-#include <QSharedDataPointer>
-
-class LockCodeWatcher;
-
-class NemoAuthenticator : public Authenticator
+CliEncryptionSettings::CliEncryptionSettings(QObject *parent)
+    : EncryptionSettings(parent)
+    , m_watcher(LockCodeWatcher::instance())
 {
-    Q_OBJECT
-public:
-    explicit NemoAuthenticator(QObject *parent = nullptr);
-    ~NemoAuthenticator();
+}
 
-    Methods availableMethods() const override;
-    Methods utilizedMethods() const override;
-    bool isAuthenticating() const override;
+CliEncryptionSettings::~CliEncryptionSettings()
+{
+}
 
-    void authenticate(const QVariant &challengeCode, Methods methods) override;
-    void enterLockCode(const QString &code) override;
-    void cancel() override;
+Authorization *CliEncryptionSettings::authorization()
+{
+    return &m_authorization;
+}
 
-    void abort(Error error);
-
-protected:
-    virtual void authenticationStarted(Methods methods);
-    virtual void authenticationEnded(bool confirmed);
-
-    void setUtilizedMethods(Methods methods);
-    void confirmAuthentication(const QVariant &authenticationToken);
-
-private:
-    QExplicitlySharedDataPointer<LockCodeWatcher> m_watcher;
-    MGConfItem m_attemptCount;
-    Methods m_utilizedMethods;
-    bool m_authenticating;
-};
-
-#endif
+void CliEncryptionSettings::encryptHome(const QVariant &authenticationToken)
+{
+    if (m_authorization.status() == Authorization::ChallengeIssued) {
+        if (PluginCommand *command = m_watcher->runPlugin(this, QStringList()
+                    << QStringLiteral("--encrypt-home")
+                    << authenticationToken.toString())) {
+            command->onSuccess([this]() {
+                emit encryptingHome();
+            });
+            command->onFailure([this]() {
+                emit encryptHomeError();
+            });
+        } else {
+            emit encryptHomeError();
+        }
+    }
+}
