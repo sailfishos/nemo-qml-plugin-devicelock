@@ -30,34 +30,34 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include "nemolockcodesettings.h"
+#include "clilockcodesettings.h"
 
-#include "nemoauthenticator.h"
+#include "cliauthenticator.h"
 #include "lockcodewatcher.h"
 #include "settingswatcher.h"
 
 #include <QFile>
 #include <QStringList>
 
-NemoLockCodeSettings::NemoLockCodeSettings(QObject *parent)
+CliLockCodeSettings::CliLockCodeSettings(QObject *parent)
     : LockCodeSettings(parent)
     , m_watcher(LockCodeWatcher::instance())
 
 {
     connect(m_watcher.data(), &LockCodeWatcher::lockCodeSetChanged,
-            this, &NemoLockCodeSettings::setChanged);
+            this, &CliLockCodeSettings::setChanged);
 }
 
-NemoLockCodeSettings::~NemoLockCodeSettings()
+CliLockCodeSettings::~CliLockCodeSettings()
 {
 }
 
-bool NemoLockCodeSettings::isSet() const
+bool CliLockCodeSettings::isSet() const
 {
     return m_watcher->lockCodeSet();
 }
 
-void NemoLockCodeSettings::change(const QString &oldCode, const QString &newCode)
+void CliLockCodeSettings::change(const QString &oldCode, const QString &newCode)
 {
     if (PluginCommand *command = m_watcher->runPlugin(
                 this, QStringList() << QStringLiteral("--set-code") << oldCode << newCode)) {
@@ -76,7 +76,7 @@ void NemoLockCodeSettings::change(const QString &oldCode, const QString &newCode
     }
 }
 
-void NemoLockCodeSettings::clear(const QString &currentCode)
+void CliLockCodeSettings::clear(const QString &currentCode)
 {
     if (PluginCommand *command = m_watcher->runPlugin(
                 this, QStringList() << QStringLiteral("--clear-code") << currentCode)) {

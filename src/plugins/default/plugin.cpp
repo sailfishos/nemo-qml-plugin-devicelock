@@ -30,28 +30,48 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#ifndef NEMOLOCKCODESETTINGS_H
-#define NEMOLOCKCODESETTINGS_H
+#include <QQmlExtensionPlugin>
 
-#include <lockcodesettings.h>
+#include "cliauthenticator.h"
+#include "clidevicelock.h"
+#include "clidevicelocksettings.h"
+#include "clidevicereset.h"
+#include "cliencryptionsettings.h"
+#include "clifingerprintsettings.h"
+#include "clilockcodesettings.h"
 
-#include <QSharedDataPointer>
+#include <qqml.h>
+#include <QQmlEngine>
 
-class LockCodeWatcher;
+static QObject *createDeviceLock(QQmlEngine *, QJSEngine *)
+{
+    return new NemoDeviceLock;
+}
 
-class NemoLockCodeSettings : public LockCodeSettings
+class Q_DECL_EXPORT NemoDeviceLockPlugin : public QQmlExtensionPlugin
 {
     Q_OBJECT
+    Q_PLUGIN_METADATA(IID "org.nemomobile.devicelock")
 public:
-    explicit NemoLockCodeSettings(QObject *parent = nullptr);
-    ~NemoLockCodeSettings();
+    void initializeEngine(QQmlEngine *, const char *) override
+    {
+    }
 
-    bool isSet() const override;
-    void change(const QString &oldCode, const QString &newCode) override;
-    void clear(const QString &currentCode) override;
+    void registerTypes(const char *uri) override
+    {
+        qmlRegisterType<FingerprintModel>();
 
-private:
-    QExplicitlySharedDataPointer<LockCodeWatcher> m_watcher;
+        qmlRegisterSingletonType<CliDeviceLock>(uri, 1, 0, "DeviceLock", createDeviceLock);
+
+        qmlRegisterType<CliAuthenticator>(uri, 1, 0, "Authenticator");
+        qmlRegisterType<CliDeviceLockSettings>(uri, 1, 0, "DeviceLockSettings");
+        qmlRegisterType<CliDeviceReset>(uri, 1, 0, "DeviceReset");
+        qmlRegisterType<CliEncryptionSettings>(uri, 1, 0, "EncryptionSettings");
+        qmlRegisterType<CliFingerprintSettings>(uri, 1, 0, "FingerprintSettings");
+        qmlRegisterType<CliLockCodeSettings>(uri, 1, 0, "LockCodeSettings");
+
+        qmlRegisterUncreatableType<Authorization>(uri, 1, 0, "Authorization", QString());
+    }
 };
 
-#endif
+#include "plugin.moc"

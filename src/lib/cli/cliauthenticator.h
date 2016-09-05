@@ -30,83 +30,46 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include "nemofingerprintsettings.h"
+#ifndef CLIAUTHENTICATOR_H
+#define CLIAUTHENTICATOR_H
 
-NemoFingerprintModel::NemoFingerprintModel(QObject *parent)
-    : FingerprintModel(parent)
-{
-}
+#include <authenticator.h>
 
-NemoFingerprintModel::~NemoFingerprintModel()
-{
-}
+#include <MGConfItem>
 
-Authorization *NemoFingerprintModel::authorization()
-{
-    return &m_authorization;
-}
+#include <QSharedDataPointer>
 
-void NemoFingerprintModel::remove(const QVariant &, const QVariant &)
-{
-}
+class LockCodeWatcher;
 
-void NemoFingerprintModel::rename(const QVariant &, const QString &)
+class CliAuthenticator : public Authenticator
 {
-}
+    Q_OBJECT
+public:
+    explicit CliAuthenticator(QObject *parent = nullptr);
+    ~CliAuthenticator();
 
-int NemoFingerprintModel::rowCount(const QModelIndex &) const
-{
-    return 0;
-}
+    Methods availableMethods() const override;
+    Methods utilizedMethods() const override;
+    bool isAuthenticating() const override;
 
-QVariant NemoFingerprintModel::data(const QModelIndex &, int) const
-{
-    return QVariant();
-}
+    void authenticate(const QVariant &challengeCode, Methods methods) override;
+    void enterLockCode(const QString &code) override;
+    void cancel() override;
 
-NemoFingerprintSettings::NemoFingerprintSettings(QObject *parent)
-    : FingerprintSettings(parent)
-{
-}
+    void abort(Error error);
 
-NemoFingerprintSettings::~NemoFingerprintSettings()
-{
-}
+protected:
+    virtual void authenticationStarted(Methods methods);
+    virtual void authenticationEnded(bool confirmed);
 
-Authorization *NemoFingerprintSettings::authorization()
-{
-    return &m_authorization;
-}
+    void setUtilizedMethods(Methods methods);
+    void confirmAuthentication(const QVariant &authenticationToken);
 
-bool NemoFingerprintSettings::hasSensor() const
-{
-    return false;
-}
+private:
+    QExplicitlySharedDataPointer<LockCodeWatcher> m_watcher;
+    MGConfItem m_attemptCount;
+    Methods m_utilizedMethods;
+    bool m_authenticating;
+};
 
-bool NemoFingerprintSettings::isAcquiring() const
-{
-    return false;
-}
-
-int NemoFingerprintSettings::samplesRemaining() const
-{
-    return 0;
-}
-
-int NemoFingerprintSettings::samplesRequired() const
-{
-    return 0;
-}
-
-void NemoFingerprintSettings::acquireFinger(const QVariant &)
-{
-}
-
-void NemoFingerprintSettings::cancelAcquisition()
-{
-}
-
-FingerprintModel *NemoFingerprintSettings::fingers()
-{
-    return &m_model;
-}
+#endif
