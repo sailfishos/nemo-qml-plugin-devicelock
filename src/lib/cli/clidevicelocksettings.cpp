@@ -30,45 +30,33 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include "nemodevicereset.h"
+#include "clidevicelocksettings.h"
 
 #include "lockcodewatcher.h"
 
-#include <QFile>
-
-NemoDeviceReset::NemoDeviceReset(QObject *parent)
-    : DeviceReset(parent)
+CliDeviceLockSettings::CliDeviceLockSettings(QObject *parent)
+    : DeviceLockSettings(parent)
     , m_watcher(LockCodeWatcher::instance())
 {
 }
 
-NemoDeviceReset::~NemoDeviceReset()
+CliDeviceLockSettings::~CliDeviceLockSettings()
 {
 }
 
-Authorization *NemoDeviceReset::authorization()
+Authorization *CliDeviceLockSettings::authorization()
 {
     return &m_authorization;
 }
 
-void NemoDeviceReset::clearDevice(const QVariant &authenticationToken, ResetMode mode)
+void CliDeviceLockSettings::changeSetting(
+        const QVariant &authenticationToken, const QString &key, const QVariant &value)
 {
     if (m_authorization.status() == Authorization::ChallengeIssued) {
-        QStringList arguments = QStringList()
-                << QStringLiteral("--clear-device")
-                << authenticationToken.toString();
-        if (mode == Reboot) {
-            arguments << QStringLiteral("--reboot");
-        }
-        if (PluginCommand *command = m_watcher->runPlugin(this, arguments)) {
-            command->onSuccess([this]() {
-                emit clearingDevice();
-            });
-            command->onFailure([this]() {
-                emit clearDeviceError();
-            });
-        };
-    } else {
-        emit clearDeviceError();
+        m_watcher->runPlugin(this, QStringList()
+                    << QStringLiteral("--set-config-key")
+                    << authenticationToken.toString()
+                    << key
+                    << value.toString());
     }
 }

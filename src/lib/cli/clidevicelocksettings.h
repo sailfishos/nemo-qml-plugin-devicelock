@@ -30,32 +30,31 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#ifndef NEMOAUTHENTICATION_H
-#define NEMOAUTHENTICATION_H
+#ifndef CLIDEVICELOCKSETTINGS_H
+#define CLIDEVICELOCKSETTINGS_H
 
-#include <authorization.h>
+#include <devicelocksettings.h>
 
-class NemoAuthorization : public Authorization
+#include <cliauthorization.h>
+
+#include <QSharedDataPointer>
+
+class LockCodeWatcher;
+
+class CliDeviceLockSettings : public DeviceLockSettings
 {
     Q_OBJECT
 public:
-    explicit NemoAuthorization(
-            Authenticator::Methods allowedMethods = Authenticator::LockCode,
-            QObject *parent = nullptr);
-    ~NemoAuthorization();
+    explicit CliDeviceLockSettings(QObject *parent = nullptr);
+    ~CliDeviceLockSettings();
 
-    Authenticator::Methods allowedMethods() const override;
+    Authorization *authorization();
 
-    Status status() const override;
-    QVariant challengeCode() const override;
-
-    void requestChallenge() override;
-    void relinquishChallenge() override;
+    void changeSetting(const QVariant &authenticationToken, const QString &key, const QVariant &value) override;
 
 private:
-    const Authenticator::Methods m_allowedMethods;
-    Status m_status;
+    CliAuthorization m_authorization;
+    QExplicitlySharedDataPointer<LockCodeWatcher> m_watcher;
 };
 
 #endif
-
