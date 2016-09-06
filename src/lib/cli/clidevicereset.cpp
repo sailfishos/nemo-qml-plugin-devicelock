@@ -67,7 +67,7 @@ void CliDeviceReset::clearDevice(const QVariant &authenticationToken, ResetMode 
             command->onFailure([this]() {
                 emit clearDeviceError();
             });
-        };
+        }
     } else {
         emit clearDeviceError();
     }

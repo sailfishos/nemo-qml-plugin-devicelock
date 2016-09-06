@@ -1,0 +1,16 @@
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<node name="/fingerprint/settings">
+ <interface name="org.nemomobile.devicelock.Fingerprint.Settings">
+  <property name="Fingerprints" type="a{vss}" access="read"/>
+  <method name="Remove">
+   <arg name="requester" type="o" direction="in"/>
+   <arg name="authentication_token" type="v" direction="in"/>
+   <arg name="id" type="v" direction="in"/>
+  </method>
+  <method name="Rename">
+   <arg name="id" type="v" direction="in"/>
+   <arg name="name" type="s" direction="in"/>
+  </method>
+ </interface>
+</node>

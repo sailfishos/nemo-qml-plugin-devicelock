@@ -45,7 +45,7 @@
 
 static QObject *createDeviceLock(QQmlEngine *, QJSEngine *)
 {
-    return new NemoDeviceLock;
+    return new CliDeviceLock;
 }
 
 class Q_DECL_EXPORT NemoDeviceLockPlugin : public QQmlExtensionPlugin

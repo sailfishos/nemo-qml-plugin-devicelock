@@ -1,0 +1,12 @@
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<node name="/devicelock/settings">
+ <interface name="org.nemomobile.devicelock.DeviceLock.Settings">
+  <method name="ChangeSetting">
+   <arg name="requestor" type="o" direction="in"/>
+   <arg name="authentication_token" type="v" direction="in"/>
+   <arg name="key" type="s" direction="in"/>
+   <arg name="value" type="v" direction="in"/>
+  </method>
+ </interface>
+</node>

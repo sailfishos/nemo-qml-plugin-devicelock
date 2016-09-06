@@ -64,7 +64,6 @@ public:
 
 signals:
     void countChanged();
-    void challengeCodeChanged();
 };
 
 class FingerprintSettings : public QObject
@@ -120,7 +119,6 @@ signals:
     void samplesRequiredChanged();
     void hasSensorChanged();
     void acquiringChanged();
-    void challengeCodeChanged();
 };
 
 #endif
