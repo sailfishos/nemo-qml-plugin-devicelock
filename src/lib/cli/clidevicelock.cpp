@@ -34,11 +34,18 @@
 
 #include "lockcodewatcher.h"
 
+#include <QCoreApplication>
+
+#include <QDebug>
+
 CliDeviceLock::CliDeviceLock(Authenticator::Methods allowedMethods, QObject *parent)
     : MceDeviceLock(parent)
     , m_authorization(allowedMethods)
     , m_watcher(LockCodeWatcher::instance())
-{
+{    
+    // Note: deviceLockState stays Undefined until init() gets called
+    connect(qApp, SIGNAL(homeReady()), this, SLOT(init()));
+
     connect(m_watcher.data(), &LockCodeWatcher::lockCodeSetChanged,
             this, &DeviceLock::enabledChanged);
 }
