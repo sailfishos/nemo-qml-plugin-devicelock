@@ -43,6 +43,7 @@ class DeviceReset : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(Authorization *authorization READ authorization CONSTANT)
+    Q_ENUMS(ResetMode)
 public:
     enum ResetMode {
         Shutdown,
