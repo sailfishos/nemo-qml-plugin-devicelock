@@ -42,7 +42,7 @@ class Authorization : public QObject
     Q_OBJECT
     Q_ENUMS(Status)
     Q_FLAGS(Authenticator::Methods)
-    Q_PROPERTY(Authenticator::Methods allowedMethods READ allowedMethods CONSTANT)
+    Q_PROPERTY(Authenticator::Methods allowedMethods READ allowedMethods NOTIFY allowedMethodsChanged)
     Q_PROPERTY(Status status READ status NOTIFY statusChanged)
     Q_PROPERTY(QVariant challengeCode READ challengeCode NOTIFY challengeCodeChanged)
 public:
@@ -66,8 +66,10 @@ public:
 signals:
     void challengeIssued();
     void challengeDeclined();
+    void challengeExpired();
 
     void statusChanged();
+    void allowedMethodsChanged();
     void challengeCodeChanged();
 };
 

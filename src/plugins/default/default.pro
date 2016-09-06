@@ -21,6 +21,9 @@ INCLUDEPATH += \
         $$PWD/../../lib \
         $$PWD/../../lib/cli
 
+PRE_TARGETDEPS += \
+        $$PWD/../../lib/libnemodevicelock.a
+
 LIBS += -L$$OUT_PWD/../../lib -lnemodevicelock
 
 SOURCES = \
