@@ -1,0 +1,15 @@
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<node name="/fingerprint/sensor">
+ <interface name="org.nemomobile.devicelock.Fingerprint.Sensor">
+  <property name="HasSensor" type="b" access="read"/>
+  <method name="AcquireFinger">
+   <arg name="requester" type="o" direction="in"/>
+   <arg name="authentication_token" type="v" direction="in"/>
+   <arg name="samples_required" type="u" direction="out"/>
+  </method>
+  <method name="CancelAcquisition">
+   <arg name="requester" type="o" direction="in"/>
+  </method>
+ </interface>
+</node>

@@ -60,9 +60,6 @@ MceDeviceLock::MceDeviceLock(QObject *parent)
     , m_userActivity(true)
     , m_verbosityLevel(1)
 {
-    // Note: deviceLockState stays Undefined until init() gets called
-    connect(qApp, SIGNAL(homeReady()), this, SLOT(init()));
-
     connect(&m_hbTimer, &BackgroundActivity::running, this, &MceDeviceLock::lock);
 
     connect(this, &DeviceLock::automaticLockingChanged, this, &MceDeviceLock::setStateAndSetupLockTimer);

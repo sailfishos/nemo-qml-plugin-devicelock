@@ -22,10 +22,10 @@ INCLUDEPATH += \
         $$PWD/../../lib/cli
 
 DEPENDPATH += \
-        $$PWD/../lib
+        $$PWD/../../lib
 
-PRE_TARGETDEPS += \ \
-        $$PWD/../lib/libnemodevicelock.a
+PRE_TARGETDEPS += \
+        $$PWD/../../lib/libnemodevicelock.a
 
 LIBS += -L$$OUT_PWD/../../lib -lnemodevicelock
 

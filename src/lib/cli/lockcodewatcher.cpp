@@ -127,9 +127,6 @@ LockCodeWatcher::~LockCodeWatcher()
 
 LockCodeWatcher *LockCodeWatcher::instance()
 {
-    if (sharedInstance)
-        return sharedInstance;
-
     return sharedInstance ? sharedInstance : new LockCodeWatcher;
 }
 
