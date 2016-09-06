@@ -13,8 +13,10 @@ QT -= gui
 QT += dbus
 
 PKGCONFIG += \
+        dbus-1 \
         keepalive \
-        mlite5
+        mlite5 \
+        libsystemd-daemon
 
 PUBLIC_HEADERS += \
         authenticator.h \
@@ -24,6 +26,7 @@ PUBLIC_HEADERS += \
         devicereset.h \
         encryptionsettings.h \
         fingerprintsettings.h \
+        lockcodesettings.h \
         mcedevicelock.h
 
 SOURCES += \
@@ -39,6 +42,8 @@ SOURCES += \
         settingswatcher.cpp
 
 include (cli/cli.pri)
+include (host/host.pri)
+include (tools/tools.pri)
 
 HEADERS += \
         $$PUBLIC_HEADERS \
@@ -54,7 +59,6 @@ QMAKE_PKGCONFIG_DESCRIPTION = Library for creating a device lock QML plugin
 QMAKE_PKGCONFIG_LIBDIR = $$target.path
 QMAKE_PKGCONFIG_INCDIR = $$headers.path
 QMAKE_PKGCONFIG_DESTDIR = pkgconfig
-
 
 INSTALLS += \
         headers \

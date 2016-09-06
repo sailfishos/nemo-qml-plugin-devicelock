@@ -34,7 +34,6 @@
 
 #include "cliauthenticator.h"
 #include "lockcodewatcher.h"
-#include "settingswatcher.h"
 
 #include <QFile>
 #include <QStringList>

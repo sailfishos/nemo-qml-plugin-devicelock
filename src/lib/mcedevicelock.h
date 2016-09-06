@@ -84,7 +84,7 @@ public:
 protected:
     void setState(LockState state);
 
-private slots:
+protected slots:
 
     void init();
     void lock();
