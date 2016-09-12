@@ -12,12 +12,6 @@ CONFIG += \
 QT -= gui
 QT += dbus
 
-PKGCONFIG += \
-        dbus-1 \
-        keepalive \
-        mlite5 \
-        libsystemd-daemon
-
 PUBLIC_HEADERS += \
         authenticator.h \
         authorization.h \
@@ -26,8 +20,7 @@ PUBLIC_HEADERS += \
         devicereset.h \
         encryptionsettings.h \
         fingerprintsettings.h \
-        lockcodesettings.h \
-        mcedevicelock.h
+        lockcodesettings.h
 
 SOURCES += \
         authenticator.cpp \
@@ -37,17 +30,12 @@ SOURCES += \
         devicereset.cpp \
         encryptionsettings.cpp \
         fingerprintsettings.cpp \
-        lockcodesettings.cpp \
-        mcedevicelock.cpp \
-        settingswatcher.cpp
+        lockcodesettings.cpp
 
-include (cli/cli.pri)
-include (host/host.pri)
-include (tools/tools.pri)
+include(private/private.pri)
 
 HEADERS += \
-        $$PUBLIC_HEADERS \
-        settingswatcher.h
+        $$PUBLIC_HEADERS
 
 headers.files = $$PUBLIC_HEADERS
 headers.path = /usr/include/nemo-devicelock
@@ -55,7 +43,7 @@ headers.path = /usr/include/nemo-devicelock
 target.path = /usr/lib
 
 QMAKE_PKGCONFIG_NAME = nemodevicelock
-QMAKE_PKGCONFIG_DESCRIPTION = Library for creating a device lock QML plugin
+QMAKE_PKGCONFIG_DESCRIPTION = Library for Nemo device lock.
 QMAKE_PKGCONFIG_LIBDIR = $$target.path
 QMAKE_PKGCONFIG_INCDIR = $$headers.path
 QMAKE_PKGCONFIG_DESTDIR = pkgconfig

@@ -30,48 +30,65 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include "devicereset.h"
+#include "hostdevicelock.h"
 
-DeviceReset::DeviceReset(QObject *parent)
-    : QObject(parent)
-    , ConnectionClient(
-          this,
-          QStringLiteral("/devicereset"),
-          QStringLiteral("org.nemomobile.devicelock.DeviceReset"))
-    , m_authorization(m_localPath, m_remotePath)
-    , m_authorizationAdaptor(&m_authorization, this)
-{
-    connect(m_connection.data(), &Connection::connected, this, &DeviceReset::connected);
+#include "settingswatcher.h"
 
-     if (m_connection->isConnected()) {
-         connected();
-     }
-}
-
-DeviceReset::~DeviceReset()
+HostDeviceLockAdaptor::HostDeviceLockAdaptor(HostDeviceLock *deviceLock)
+    : QDBusAbstractAdaptor(deviceLock)
+    , m_deviceLock(deviceLock)
 {
 }
 
-Authorization *DeviceReset::authorization()
+uint HostDeviceLockAdaptor::state() const
 {
-    return &m_authorization;
+    return m_deviceLock->state();
 }
 
-void DeviceReset::clearDevice(const QVariant &authenticationToken, ResetMode mode)
+bool HostDeviceLockAdaptor::isEnabled() const
 {
-    if (m_authorization.status() == Authorization::ChallengeIssued) {
-        auto response = call(QStringLiteral("ClearDevice"), m_localPath, authenticationToken, uint(mode));
-
-        response->onFinished([this]() {
-            emit clearingDevice();
-        });
-        response->onError([this]() {
-            emit clearDeviceError();
-        });
-    }
+    return m_deviceLock->isEnabled();
 }
 
-void DeviceReset::connected()
+void HostDeviceLockAdaptor::Unlock(const QDBusObjectPath &path, const QDBusVariant &authenticationToken)
 {
-    registerObject();
+    m_deviceLock->unlock(path.path(), authenticationToken.variant());
+}
+
+HostDeviceLock::HostDeviceLock(Authenticator::Methods allowedMethods, QObject *parent)
+    : HostAuthorization(QStringLiteral("/devicelock/lock"), allowedMethods, parent)
+    , m_adaptor(this)
+    , m_settings(SettingsWatcher::instance())
+{
+    connect(m_settings.data(), &SettingsWatcher::automaticLockingChanged,
+            this, &HostDeviceLock::automaticLockingChanged);
+}
+
+HostDeviceLock::~HostDeviceLock()
+{
+}
+
+int HostDeviceLock::automaticLocking() const
+{
+    return isEnabled() ? m_settings->automaticLocking : -1;
+}
+
+void HostDeviceLock::stateChanged()
+{
+    propertyChanged(
+                QStringLiteral("org.nemomobile.devicelock.DeviceLock"),
+                QStringLiteral("State"),
+                QVariant::fromValue(uint(state())));
+}
+
+void HostDeviceLock::enabledChanged()
+{
+    propertyChanged(
+                QStringLiteral("org.nemomobile.devicelock.DeviceLock"),
+                QStringLiteral("Enabled"),
+                isEnabled());
+}
+
+void HostDeviceLock::automaticLockingChanged()
+{
 }

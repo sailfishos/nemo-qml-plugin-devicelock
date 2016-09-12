@@ -33,11 +33,26 @@
 #ifndef FINGERPRINTSETTINGS_H
 #define FINGERPRINTSETTINGS_H
 
+#include <clientauthorization.h>
+
 #include <QAbstractListModel>
+#include <QDateTime>
+#include <QDBusArgument>
 
-class Authorization;
+struct Fingerprint
+{
+    QVariant id;
+    QString name;
+    QDateTime acquisitionDate;
+};
 
-class FingerprintModel : public QAbstractListModel
+Q_DECLARE_METATYPE(Fingerprint)
+Q_DECLARE_METATYPE(QVector<Fingerprint>)
+
+QDBusArgument &operator<<(QDBusArgument &argument, const Fingerprint &fingerprint);
+const QDBusArgument &operator>>(const QDBusArgument &argument, Fingerprint &fingerprint);
+
+class FingerprintModel : public QAbstractListModel, private ConnectionClient
 {
     Q_OBJECT
     Q_PROPERTY(int count READ rowCount NOTIFY countChanged)
@@ -52,21 +67,47 @@ public:
     explicit FingerprintModel(QObject *parent = nullptr);
     ~FingerprintModel();
 
-    virtual Authorization *authorization() = 0;
+    Authorization *authorization();
 
-    Q_INVOKABLE virtual void remove(const QVariant &authenticationToken, const QVariant &id) = 0;
-    Q_INVOKABLE virtual void rename(const QVariant &id, const QString &name) = 0;
+    Q_INVOKABLE void remove(const QVariant &authenticationToken, const QVariant &id);
+    Q_INVOKABLE void rename(const QVariant &id, const QString &name);
 
     QHash<int, QByteArray> roleNames() const override;
 
-    int rowCount(const QModelIndex &parent = QModelIndex()) const override = 0;
-    QVariant data(const QModelIndex &index, int role) const override = 0;
+    int rowCount(const QModelIndex &parent = QModelIndex()) const override;
+    QVariant data(const QModelIndex &index, int role) const override;
 
 signals:
     void countChanged();
+
+private:
+    void connected();
+
+    ClientAuthorization m_authorization;
+    ClientAuthorizationAdaptor m_authorizationAdaptor;
+    QVector<Fingerprint> m_fingerprints;
 };
 
-class FingerprintSettings : public QObject
+class FingerprintSettings;
+class FingerprintSettingsAdaptor : public QDBusAbstractAdaptor
+{
+    Q_OBJECT
+    Q_CLASSINFO("D-Bus Interface", "org.nemomobile.devicelock.client.Fingerprint.Sensor")
+public:
+    explicit FingerprintSettingsAdaptor(FingerprintSettings *settings);
+
+public slots:
+    Q_NOREPLY void SampleAcquired(uint samplesRemaining);
+    Q_NOREPLY void AcquisitionCompleted();
+    Q_NOREPLY void AcquisitionFeedback(uint feedback);
+    Q_NOREPLY void Error(uint error);
+    Q_NOREPLY void Canceled();
+
+private:
+    FingerprintSettings *m_settings;
+};
+
+class FingerprintSettings : public QObject, private ConnectionClient
 {
     Q_OBJECT
     Q_PROPERTY(int samplesRemaining READ samplesRemaining NOTIFY samplesRemainingChanged)
@@ -97,18 +138,18 @@ public:
     explicit FingerprintSettings(QObject *parent = nullptr);
     ~FingerprintSettings();
 
-    virtual bool hasSensor() const = 0;
-    virtual bool isAcquiring() const = 0;
+    bool hasSensor() const;
+    bool isAcquiring() const;
 
-    virtual Authorization *authorization() = 0;
+    Authorization *authorization();
 
-    virtual int samplesRemaining() const = 0;
-    virtual int samplesRequired() const = 0;
+    int samplesRemaining() const;
+    int samplesRequired() const;
 
-    Q_INVOKABLE virtual void acquireFinger(const QVariant &authenticationToken) = 0;
-    Q_INVOKABLE virtual void cancelAcquisition() = 0;
+    Q_INVOKABLE void acquireFinger(const QVariant &authenticationToken);
+    Q_INVOKABLE void cancelAcquisition();
 
-    virtual FingerprintModel *fingers() = 0;
+    virtual FingerprintModel *fingers();
 
 signals:
     void acquisitionCompleted();
@@ -119,6 +160,24 @@ signals:
     void samplesRequiredChanged();
     void hasSensorChanged();
     void acquiringChanged();
+
+private:
+    friend class FingerprintSettingsAdaptor;
+
+    void connected();
+
+    void handleSampleAcquired(int samplesRemaining);
+    void handleAcquisitionCompleted();
+    void handleError(Error error);
+    void handleCanceled();
+
+    ClientAuthorization m_authorization;
+    ClientAuthorizationAdaptor m_authorizationAdaptor;
+    FingerprintModel m_fingerprintModel;
+    int m_samplesRemaining;
+    int m_samplesRequired;
+    bool m_hasSensor;
+    bool m_isAcquiring;
 };
 
 #endif
