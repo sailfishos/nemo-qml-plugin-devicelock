@@ -30,13 +30,13 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include <clihostauthenticator.h>
-#include <clihostdevicelock.h>
-#include <clihostdevicelocksettings.h>
-#include <clihostdevicereset.h>
-#include <clihostencryptionsettings.h>
-#include <clihostfingerprintsettings.h>
-#include <clihostlockcodesettings.h>
+#include <cliauthenticator.h>
+#include <clidevicelock.h>
+#include <clidevicelocksettings.h>
+#include <clidevicereset.h>
+#include <cliencryptionsettings.h>
+#include <clifingerprintsettings.h>
+#include <clilockcodesettings.h>
 #include <hostservice.h>
 
 #include <QCoreApplication>
@@ -45,14 +45,14 @@ int main(int argc, char *argv[])
 {
     QCoreApplication application(argc, argv);
 
-    CliHostAuthenticator authenticator;
-    CliHostDeviceLock deviceLock;
-    CliHostDeviceLockSettings deviceLockSettings;
-    CliHostDeviceReset deviceReset;
-    CliHostEncryptionSettings encryptionSettings;
-    CliHostFingerprintSensor fingerprintSensor;
-    CliHostFingerprintSettings fingerprintSettings;
-    CliHostLockCodeSettings lockCodeSettings;
+    CliAuthenticator authenticator;
+    CliDeviceLock deviceLock;
+    CliDeviceLockSettings deviceLockSettings;
+    CliDeviceReset deviceReset;
+    CliEncryptionSettings encryptionSettings;
+    CliFingerprintSensor fingerprintSensor;
+    CliFingerprintSettings fingerprintSettings;
+    CliLockCodeSettings lockCodeSettings;
 
     HostService service(
                 &authenticator,

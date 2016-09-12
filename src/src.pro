@@ -1,10 +1,16 @@
 TEMPLATE = subdirs
 
 SUBDIRS = \
+        daemon \
+        hostlib \
         lib \
-        plugins
+        plugin
 
-contains(DEVICELOCK_DAEMON, yes): SUBDIRS += daemon
+daemon.depends = \
+        hostlib
 
-plugins.depends = \
+hostlib.depends = \
+        lib
+
+plugin.depends = \
         lib

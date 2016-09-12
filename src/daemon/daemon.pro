@@ -15,17 +15,22 @@ PKGCONFIG += \
 
 INCLUDEPATH += \
         $$PWD/../lib \
-        $$PWD/../lib/cli \
-        $$PWD/../lib/host \
-        $$PWD/../lib/tools
+        $$PWD/../lib/private \
+        $$PWD/../hostlib \
+        $$PWD/../hostlib/cli \
+        $$PWD/../hostlib/mce
 
 DEPENDPATH += \
-        $$PWD/../lib
+        $$PWD/../lib \
+        $$PWD/../hostlib
 
-PRE_TARGETDEPS += \
+PRE_TARGETDEPS += \ \
         $$PWD/../lib/libnemodevicelock.a
+        $$PWD/../lib/libnemodevicelock-host.a
 
-LIBS += -L$$OUT_PWD/../lib -lnemodevicelock
+LIBS += \
+        -L$$OUT_PWD/../lib -lnemodevicelock\
+        -L$$OUT_PWD/../hostlib -lnemodevicelock-host
 
 SOURCES = \
         main.cpp

@@ -30,48 +30,28 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include "devicereset.h"
+#ifndef CLIHOSTDEVICELOCK_H
+#define CLIHOSTDEVICELOCK_H
 
-DeviceReset::DeviceReset(QObject *parent)
-    : QObject(parent)
-    , ConnectionClient(
-          this,
-          QStringLiteral("/devicereset"),
-          QStringLiteral("org.nemomobile.devicelock.DeviceReset"))
-    , m_authorization(m_localPath, m_remotePath)
-    , m_authorizationAdaptor(&m_authorization, this)
+#include <mcedevicelock.h>
+
+#include <QSharedDataPointer>
+
+class LockCodeWatcher;
+
+class CliDeviceLock : public MceDeviceLock
 {
-    connect(m_connection.data(), &Connection::connected, this, &DeviceReset::connected);
+    Q_OBJECT
+public:
+    CliDeviceLock(QObject *parent = nullptr);
+    ~CliDeviceLock();
 
-     if (m_connection->isConnected()) {
-         connected();
-     }
-}
+    bool isEnabled() const override;
 
-DeviceReset::~DeviceReset()
-{
-}
+    void unlock(const QString &requestor, const QVariant &authenticationToken) override;
 
-Authorization *DeviceReset::authorization()
-{
-    return &m_authorization;
-}
+private:
+    QExplicitlySharedDataPointer<LockCodeWatcher> m_watcher;
+};
 
-void DeviceReset::clearDevice(const QVariant &authenticationToken, ResetMode mode)
-{
-    if (m_authorization.status() == Authorization::ChallengeIssued) {
-        auto response = call(QStringLiteral("ClearDevice"), m_localPath, authenticationToken, uint(mode));
-
-        response->onFinished([this]() {
-            emit clearingDevice();
-        });
-        response->onError([this]() {
-            emit clearDeviceError();
-        });
-    }
-}
-
-void DeviceReset::connected()
-{
-    registerObject();
-}
+#endif

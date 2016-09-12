@@ -35,15 +35,50 @@
 
 EncryptionSettings::EncryptionSettings(QObject *parent)
     : QObject(parent)
+    , ConnectionClient(
+          this,
+          QStringLiteral("/encryptionsettings"),
+          QStringLiteral("org.nemomobile.devicelock.EncryptionSettings"))
+    , m_authorization(m_localPath, m_remotePath)
+    , m_authorizationAdaptor(&m_authorization, this)
     , m_settings(SettingsWatcher::instance())
 {
+    connect(m_connection.data(), &Connection::connected, this, &EncryptionSettings::connected);
+
+    if (m_connection->isConnected()) {
+        connected();
+    }
 }
 
 EncryptionSettings::~EncryptionSettings()
 {
 }
 
+Authorization *EncryptionSettings::authorization()
+{
+    return &m_authorization;
+}
+
 bool EncryptionSettings::isHomeEncrypted() const
 {
     return m_settings->isHomeEncrypted;
+}
+
+void EncryptionSettings::encryptHome(const QVariant &authenticationToken)
+{
+    if (m_authorization.status() == Authorization::ChallengeIssued) {
+        auto response = call(QStringLiteral("EncryptHome"),  m_localPath, authenticationToken);
+
+        response->onFinished([this]() {
+            emit encryptingHome();
+        });
+        response->onError([this]() {
+            emit encryptHomeError();
+        });
+    }
+}
+
+void EncryptionSettings::connected()
+{
+    void registerObject();
 }

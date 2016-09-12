@@ -30,48 +30,62 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include "devicereset.h"
+#ifndef HOSTDEVICELOCK_H
+#define HOSTDEVICELOCK_H
 
-DeviceReset::DeviceReset(QObject *parent)
-    : QObject(parent)
-    , ConnectionClient(
-          this,
-          QStringLiteral("/devicereset"),
-          QStringLiteral("org.nemomobile.devicelock.DeviceReset"))
-    , m_authorization(m_localPath, m_remotePath)
-    , m_authorizationAdaptor(&m_authorization, this)
+#include <devicelock.h>
+#include <hostauthorization.h>
+
+#include <QDBusVariant>
+
+class HostDeviceLock;
+class HostDeviceLockAdaptor : public QDBusAbstractAdaptor
 {
-    connect(m_connection.data(), &Connection::connected, this, &DeviceReset::connected);
+    Q_OBJECT
+    Q_PROPERTY(uint State READ state)
+    Q_PROPERTY(bool Enabled READ isEnabled)
+    Q_CLASSINFO("D-Bus Interface", "org.nemomobile.devicelock.DeviceLock")
+public:
+    explicit HostDeviceLockAdaptor(HostDeviceLock *deviceLock);
 
-     if (m_connection->isConnected()) {
-         connected();
-     }
-}
+    uint state() const;
+    bool isEnabled() const;
 
-DeviceReset::~DeviceReset()
+public slots:
+    void Unlock(const QDBusObjectPath &path, const QDBusVariant &authenticationToken);
+
+private:
+    HostDeviceLock * const m_deviceLock;
+};
+
+class SettingsWatcher;
+
+class HostDeviceLock : public HostAuthorization
 {
-}
+    Q_OBJECT
+public:
+    explicit HostDeviceLock(Authenticator::Methods allowedMethods, QObject *parent = nullptr);
+    ~HostDeviceLock();
 
-Authorization *DeviceReset::authorization()
-{
-    return &m_authorization;
-}
+protected:
+    virtual DeviceLock::LockState state() const = 0;
+    virtual bool isEnabled() const = 0;
 
-void DeviceReset::clearDevice(const QVariant &authenticationToken, ResetMode mode)
-{
-    if (m_authorization.status() == Authorization::ChallengeIssued) {
-        auto response = call(QStringLiteral("ClearDevice"), m_localPath, authenticationToken, uint(mode));
+    int automaticLocking() const;
 
-        response->onFinished([this]() {
-            emit clearingDevice();
-        });
-        response->onError([this]() {
-            emit clearDeviceError();
-        });
-    }
-}
+    virtual void unlock(const QString &requestor, const QVariant &authenticationToken) = 0;
 
-void DeviceReset::connected()
-{
-    registerObject();
-}
+    void stateChanged();
+    void enabledChanged();
+
+    virtual void automaticLockingChanged();
+
+private:
+
+    friend class HostDeviceLockAdaptor;
+
+    HostDeviceLockAdaptor m_adaptor;
+    QExplicitlySharedDataPointer<SettingsWatcher> m_settings;
+};
+
+#endif

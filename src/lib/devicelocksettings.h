@@ -33,15 +33,11 @@
 #ifndef DEVICELOCKSETTINGS_H
 #define DEVICELOCKSETTINGS_H
 
-#include <QObject>
+#include <clientauthorization.h>
 
-#include <QSharedDataPointer>
-#include <QVariant>
-
-class Authorization;
 class SettingsWatcher;
 
-class DeviceLockSettings : public QObject
+class DeviceLockSettings : public QObject,  private ConnectionClient
 {
     Q_OBJECT
     Q_PROPERTY(Authorization *authorization READ authorization CONSTANT)
@@ -57,7 +53,7 @@ public:
     explicit DeviceLockSettings(QObject *parent = nullptr);
     ~DeviceLockSettings();
 
-    virtual Authorization *authorization() = 0;
+    Authorization *authorization();
 
     int automaticLocking() const;
     Q_INVOKABLE void setAutomaticLocking(const QVariant &authenticationToken, int value);
@@ -93,10 +89,13 @@ signals:
     void currentCodeIsDigitOnlyChanged();
 
 protected:
-
-    virtual void changeSetting(const QVariant &authenticationToken, const QString &key, const QVariant &value) = 0;
+    void changeSetting(const QVariant &authenticationToken, const QString &key, const QVariant &value);
 
 private:
+    void connected();
+
+    ClientAuthorization m_authorization;
+    ClientAuthorizationAdaptor m_authorizationAdaptor;
     QExplicitlySharedDataPointer<SettingsWatcher> m_settings;
 };
 

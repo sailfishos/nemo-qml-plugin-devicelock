@@ -30,48 +30,36 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include "devicereset.h"
+#ifndef CLIHOSTFINGERPRINTSETTINGS_H
+#define CLIHOSTFINGERPRINTSETTINGS_H
 
-DeviceReset::DeviceReset(QObject *parent)
-    : QObject(parent)
-    , ConnectionClient(
-          this,
-          QStringLiteral("/devicereset"),
-          QStringLiteral("org.nemomobile.devicelock.DeviceReset"))
-    , m_authorization(m_localPath, m_remotePath)
-    , m_authorizationAdaptor(&m_authorization, this)
+#include <hostfingerprintsettings.h>
+
+class CliFingerprintSettings : public HostFingerprintSettings
 {
-    connect(m_connection.data(), &Connection::connected, this, &DeviceReset::connected);
+    Q_OBJECT
+public:
+    explicit CliFingerprintSettings(QObject *parent = nullptr);
+    ~CliFingerprintSettings();
 
-     if (m_connection->isConnected()) {
-         connected();
-     }
-}
+    QVector<Fingerprint> fingerprints() const override;
 
-DeviceReset::~DeviceReset()
+    void remove(
+            const QString &requestor, const QVariant &authenticationToken, const QVariant &id) override;
+    void rename(const QVariant &id, const QString &name) override;
+};
+
+class CliFingerprintSensor : public HostFingerprintSensor
 {
-}
+    Q_OBJECT
+public:
+    explicit CliFingerprintSensor(QObject *parent = nullptr);
+    ~CliFingerprintSensor();
 
-Authorization *DeviceReset::authorization()
-{
-    return &m_authorization;
-}
+    bool hasSensor() const override;
 
-void DeviceReset::clearDevice(const QVariant &authenticationToken, ResetMode mode)
-{
-    if (m_authorization.status() == Authorization::ChallengeIssued) {
-        auto response = call(QStringLiteral("ClearDevice"), m_localPath, authenticationToken, uint(mode));
+    int acquireFinger(const QString &requestor, const QVariant &authenticationToken) override;
+    void cancelAcquisition(const QString &requestor) override;
+};
 
-        response->onFinished([this]() {
-            emit clearingDevice();
-        });
-        response->onError([this]() {
-            emit clearDeviceError();
-        });
-    }
-}
-
-void DeviceReset::connected()
-{
-    registerObject();
-}
+#endif

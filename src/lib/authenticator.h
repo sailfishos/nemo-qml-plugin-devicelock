@@ -33,13 +33,32 @@
 #ifndef AUTHENTICATOR_H
 #define AUTHENTICATOR_H
 
-#include <QObject>
-
+#include <QDBusAbstractAdaptor>
+#include <QDBusObjectPath>
 #include <QSharedDataPointer>
+
+#include <connection.h>
 
 class SettingsWatcher;
 
-class Authenticator : public QObject
+class Authenticator;
+class AuthenticatorAdaptor : public QDBusAbstractAdaptor
+{
+    Q_OBJECT
+    Q_CLASSINFO("D-Bus Interface", "org.nemomobile.devicelock.client.Authenticator")
+public:
+    explicit AuthenticatorAdaptor(Authenticator *authenticator);
+
+public slots:
+    Q_NOREPLY void Authenticated(const QDBusVariant &authenticationToken);
+    Q_NOREPLY void Feedback(uint feedback, uint attemptsRemaining);
+    Q_NOREPLY void Error(uint error);
+
+private:
+    Authenticator *m_authenticator;
+};
+
+class Authenticator : public QObject, private ConnectionClient
 {
     Q_OBJECT
     Q_PROPERTY(Methods availableMethods READ availableMethods NOTIFY availableMethodsChanged)
@@ -80,19 +99,19 @@ public:
     explicit Authenticator(QObject *parent = nullptr);
     ~Authenticator();
 
-    virtual Methods availableMethods() const = 0;
-    virtual Methods utilizedMethods() const = 0;
-    virtual bool isAuthenticating() const = 0;
+    Methods availableMethods() const;
+    Methods utilizedMethods() const;
+    bool isAuthenticating() const;
 
     int minimumCodeLength() const;
     int maximumCodeLength() const;
     int maximumAttempts() const;
     bool codeInputIsKeyboard() const;
 
-    Q_INVOKABLE virtual void authenticate(
-            const QVariant &challengeCode, Methods methods = Methods(LockCode | Fingerprint)) = 0;
-    Q_INVOKABLE virtual void enterLockCode(const QString &code) = 0;
-    Q_INVOKABLE virtual void cancel() = 0;
+    Q_INVOKABLE void authenticate(
+            const QVariant &challengeCode, Methods methods = Methods(LockCode | Fingerprint));
+    Q_INVOKABLE void enterLockCode(const QString &code);
+    Q_INVOKABLE void cancel();
 
 signals:
     void availableMethodsChanged();
@@ -106,7 +125,19 @@ signals:
     void error(Error error);
 
 private:
+    friend class AuthenticatorAdaptor;
+
+    void connected();
+    void disconnected();
+
+    void handleAuthentication(const QVariant &authenticationToken);
+    void handleError(Error error);
+
+    AuthenticatorAdaptor m_adaptor;
     QExplicitlySharedDataPointer<SettingsWatcher> m_settings;
+    Methods m_availableMethods;
+    Methods m_utilizedMethods;
+    bool m_authenticating;
 };
 
 Q_DECLARE_OPERATORS_FOR_FLAGS(Authenticator::Methods)
