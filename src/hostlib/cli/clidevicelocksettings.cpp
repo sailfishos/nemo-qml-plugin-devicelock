@@ -30,48 +30,43 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include "devicereset.h"
+#include <clidevicelocksettings.h>
 
-DeviceReset::DeviceReset(QObject *parent)
-    : QObject(parent)
-    , ConnectionClient(
-          this,
-          QStringLiteral("/devicereset"),
-          QStringLiteral("org.nemomobile.devicelock.DeviceReset"))
-    , m_authorization(m_localPath, m_remotePath)
-    , m_authorizationAdaptor(&m_authorization, this)
-{
-    connect(m_connection.data(), &Connection::connected, this, &DeviceReset::connected);
+#include "lockcodewatcher.h"
 
-     if (m_connection->isConnected()) {
-         connected();
-     }
-}
+#include <QDBusConnection>
+#include <QDBusMessage>
 
-DeviceReset::~DeviceReset()
+CliDeviceLockSettings::CliDeviceLockSettings(QObject *parent)
+    : HostDeviceLockSettings(Authenticator::LockCode, parent)
+    , m_watcher(LockCodeWatcher::instance())
 {
 }
 
-Authorization *DeviceReset::authorization()
+CliDeviceLockSettings::~CliDeviceLockSettings()
 {
-    return &m_authorization;
 }
 
-void DeviceReset::clearDevice(const QVariant &authenticationToken, ResetMode mode)
+void CliDeviceLockSettings::changeSetting(
+        const QString &, const QVariant &authenticationToken, const QString &key, const QVariant &value)
 {
-    if (m_authorization.status() == Authorization::ChallengeIssued) {
-        auto response = call(QStringLiteral("ClearDevice"), m_localPath, authenticationToken, uint(mode));
+    if (PluginCommand *command = m_watcher->runPlugin(this, QStringList()
+                << QStringLiteral("--set-config-key")
+                << authenticationToken.toString()
+                << key
+                << value.toString())) {
+        auto connection = QDBusContext::connection();
+        auto message = QDBusContext::message();
 
-        response->onFinished([this]() {
-            emit clearingDevice();
+        QDBusContext::setDelayedReply(true);
+
+        command->onSuccess([this, connection, message]() {
+            connection.send(message.createReply());
         });
-        response->onError([this]() {
-            emit clearDeviceError();
+        command->onFailure([this, connection, message]() {
+            connection.send(message.createErrorReply(QDBusError::AccessDenied, QString()));
         });
+    } else {
+        QDBusContext::sendErrorReply(QDBusError::InternalError);
     }
-}
-
-void DeviceReset::connected()
-{
-    registerObject();
 }

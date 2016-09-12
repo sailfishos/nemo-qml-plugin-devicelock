@@ -30,48 +30,54 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include "devicereset.h"
+#include "clifingerprintsettings.h"
 
-DeviceReset::DeviceReset(QObject *parent)
-    : QObject(parent)
-    , ConnectionClient(
-          this,
-          QStringLiteral("/devicereset"),
-          QStringLiteral("org.nemomobile.devicelock.DeviceReset"))
-    , m_authorization(m_localPath, m_remotePath)
-    , m_authorizationAdaptor(&m_authorization, this)
-{
-    connect(m_connection.data(), &Connection::connected, this, &DeviceReset::connected);
-
-     if (m_connection->isConnected()) {
-         connected();
-     }
-}
-
-DeviceReset::~DeviceReset()
+CliFingerprintSettings::CliFingerprintSettings(QObject *parent)
+    :  HostFingerprintSettings(Authenticator::LockCode, parent)
 {
 }
 
-Authorization *DeviceReset::authorization()
+CliFingerprintSettings::~CliFingerprintSettings()
 {
-    return &m_authorization;
 }
 
-void DeviceReset::clearDevice(const QVariant &authenticationToken, ResetMode mode)
+QVector<Fingerprint> CliFingerprintSettings::fingerprints() const
 {
-    if (m_authorization.status() == Authorization::ChallengeIssued) {
-        auto response = call(QStringLiteral("ClearDevice"), m_localPath, authenticationToken, uint(mode));
-
-        response->onFinished([this]() {
-            emit clearingDevice();
-        });
-        response->onError([this]() {
-            emit clearDeviceError();
-        });
-    }
+    return QVector<Fingerprint>();
 }
 
-void DeviceReset::connected()
+void CliFingerprintSettings::remove(const QString &, const QVariant &, const QVariant &)
 {
-    registerObject();
+    QDBusContext::connection().send(QDBusContext::message().createErrorReply(QDBusError::NotSupported, QString()));
+}
+
+void CliFingerprintSettings::rename(const QVariant &, const QString &)
+{
+    QDBusContext::connection().send(QDBusContext::message().createErrorReply(QDBusError::NotSupported, QString()));
+}
+
+CliFingerprintSensor::CliFingerprintSensor(QObject *parent)
+    : HostFingerprintSensor(Authenticator::LockCode, parent)
+{
+}
+
+CliFingerprintSensor::~CliFingerprintSensor()
+{
+}
+
+bool CliFingerprintSensor::hasSensor() const
+{
+    return false;
+}
+
+int CliFingerprintSensor::acquireFinger(const QString &, const QVariant &)
+{
+
+    QDBusContext::connection().send(QDBusContext::message().createErrorReply(QDBusError::NotSupported, QString()));
+    return 0;
+}
+
+void CliFingerprintSensor::cancelAcquisition(const QString &)
+{
+    QDBusContext::connection().send(QDBusContext::message().createErrorReply(QDBusError::NotSupported, QString()));
 }
