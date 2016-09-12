@@ -16,15 +16,9 @@
 #ifndef DEVICELOCK_H
 #define DEVICELOCK_H
 
-#include <QObject>
+#include <clientauthorization.h>
 
-#include <QSharedDataPointer>
-#include <QVariant>
-
-class Authorization;
-class SettingsWatcher;
-
-class DeviceLock : public QObject
+class DeviceLock : public QObject, private ConnectionClient
 {
     Q_OBJECT
     Q_ENUMS(LockState)
@@ -43,14 +37,14 @@ public:
         Undefined               /*!< Undefined - The state of the lock is unknown */
     };
 
-    virtual bool isEnabled() const = 0;
-    virtual LockState state() const = 0;
+    bool isEnabled() const;
+    LockState state() const;
 
     int automaticLocking() const;
 
-    virtual Authorization *authorization() = 0;
+    Authorization *authorization();
 
-    Q_INVOKABLE virtual void unlock(const QVariant &authenticationToken) = 0;
+    Q_INVOKABLE void unlock(const QVariant &authenticationToken);
 
 signals:
     void enabledChanged();
@@ -62,7 +56,13 @@ signals:
     void unlockError();
 
 private:
+    void connected();
+
+    ClientAuthorization m_authorization;
+    ClientAuthorizationAdaptor m_authorizationAdaptor;
     QExplicitlySharedDataPointer<SettingsWatcher> m_settings;
+    LockState m_state;
+    bool m_enabled;
 };
 
 #endif

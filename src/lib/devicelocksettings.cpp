@@ -37,6 +37,12 @@
 
 DeviceLockSettings::DeviceLockSettings(QObject *parent)
     : QObject(parent)
+    , ConnectionClient(
+          this,
+          QStringLiteral("/devicelock/settings"),
+          QStringLiteral("org.nemomobile.devicelock.DeviceLock.Settings"))
+    , m_authorization(m_localPath, m_remotePath)
+    , m_authorizationAdaptor(&m_authorization, this)
     , m_settings(SettingsWatcher::instance())
 {
     connect(m_settings.data(), &SettingsWatcher::automaticLockingChanged,
@@ -53,10 +59,21 @@ DeviceLockSettings::DeviceLockSettings(QObject *parent)
             this, &DeviceLockSettings::inputIsKeyboardChanged);
     connect(m_settings.data(), &SettingsWatcher::currentCodeIsDigitOnlyChanged,
             this, &DeviceLockSettings::currentCodeIsDigitOnlyChanged);
+
+    connect(m_connection.data(), &Connection::connected, this, &DeviceLockSettings::connected);
+
+    if (m_connection->isConnected()) {
+        connected();
+    }
 }
 
 DeviceLockSettings::~DeviceLockSettings()
 {
+}
+
+Authorization *DeviceLockSettings::authorization()
+{
+    return &m_authorization;
 }
 
 int DeviceLockSettings::automaticLocking() const
@@ -122,4 +139,17 @@ void DeviceLockSettings::setInputIsKeyboard(const QVariant &authenticationToken,
 bool DeviceLockSettings::currentCodeIsDigitOnly() const
 {
     return m_settings->currentCodeIsDigitOnly;
+}
+
+void DeviceLockSettings::changeSetting(
+        const QVariant &authenticationToken, const QString &key, const QVariant &value)
+{
+    if (m_authorization.status() == Authorization::ChallengeIssued) {
+        call(QStringLiteral("ChangeSetting"), m_localPath, authenticationToken, key, value);
+    }
+}
+
+void DeviceLockSettings::connected()
+{
+    registerObject();
 }

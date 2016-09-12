@@ -14,16 +14,18 @@ BuildRequires:  pkgconfig(keepalive)
 BuildRequires:  pkgconfig(mce)
 BuildRequires:  pkgconfig(mlite5)
 BuildRequires:  pkgconfig(libsystemd-daemon)
+Obsoletes:      nemo-qml-plugin-devicelock-default
+Requires:       nemo-devicelock-daemon
 
 %description
 %{summary}.
 
-%package default
-Summary:    The default lock code based device lock plugin for Nemo Mobile
+%package -n nemo-devicelock-daemon-cli
+Summary:    The default command line lock code device lock daemon for Nemo Mobile
 Group:      System/GUI/Other
-Provides:   nemo-qml-plugin-devicelock = %{version}-%{release}
+Provides:   nemo-devicelock-daemon = %{name}-%{version}
 
-%description default
+%description -n nemo-devicelock-daemon-cli
 %{summary}.
 
 %package devel
@@ -37,7 +39,6 @@ Group:      Development/Libraries
 %setup -q -n %{name}-%{version}
 
 %build
-rm .qmake.cache || true
 %qmake5
 make %{?jobs:-j%jobs}
 
@@ -45,14 +46,24 @@ make %{?jobs:-j%jobs}
 rm -rf %{buildroot}
 %qmake5_install
 
-%files default
+%files
 %defattr(-,root,root,-)
 %dir %{_libdir}/qt5/qml/org/nemomobile/devicelock
 %{_libdir}/qt5/qml/org/nemomobile/devicelock/libnemodevicelockplugin.so
 %{_libdir}/qt5/qml/org/nemomobile/devicelock/qmldir
 
+%files -n nemo-devicelock-daemon-cli
+%defattr(-,root,root,-)
+%{_bindir}/nemodevicelockd
+/lib/systemd/system/nemodevicelock.service
+/lib/systemd/system/nemodevicelock.socket
+%{_sysconfdir}/dbus-1/system.d/org.nemomobile.devicelock.conf
+
 %files devel
 %dir %{_includedir}/nemo-devicelock
 %{_includedir}/nemo-devicelock/*.h
+%{_includedir}/nemo-devicelock/host/*.h
 %{_libdir}/libnemodevicelock.a
+%{_libdir}/libnemodevicelock-host.a
 %{_libdir}/pkgconfig/nemodevicelock.pc
+%{_libdir}/pkgconfig/nemodevicelock-host.pc

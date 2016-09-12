@@ -30,48 +30,49 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include "devicereset.h"
+#ifndef CLIHOSTAUTHENTICATOR_H
+#define CLIHOSTAUTHENTICATOR_H
 
-DeviceReset::DeviceReset(QObject *parent)
-    : QObject(parent)
-    , ConnectionClient(
-          this,
-          QStringLiteral("/devicereset"),
-          QStringLiteral("org.nemomobile.devicelock.DeviceReset"))
-    , m_authorization(m_localPath, m_remotePath)
-    , m_authorizationAdaptor(&m_authorization, this)
+#include <hostauthenticator.h>
+
+#include <MGConfItem>
+
+#include <QDBusConnection>
+#include <QSharedDataPointer>
+
+class LockCodeWatcher;
+
+class CliAuthenticator : public HostAuthenticator
 {
-    connect(m_connection.data(), &Connection::connected, this, &DeviceReset::connected);
+    Q_OBJECT
+public:
+    CliAuthenticator(QObject *parent = nullptr);
+    ~CliAuthenticator();
 
-     if (m_connection->isConnected()) {
-         connected();
-     }
-}
+    Authenticator::Methods availableMethods() const override;
+    Authenticator::Methods authenticate(
+            const QString &authenticator,
+            const QVariant &challengeCode,
+            Authenticator::Methods methods) override;
+    void enterLockCode(const QString &authenticator, const QString &code) override;
+    void cancel(const QString &authenticator) override;
 
-DeviceReset::~DeviceReset()
-{
-}
+    void clientDisconnected(const QString &connectionName) override;
 
-Authorization *DeviceReset::authorization()
-{
-    return &m_authorization;
-}
+protected:
+    void confirmAuthentication(const QVariant &authenticationToken);
 
-void DeviceReset::clearDevice(const QVariant &authenticationToken, ResetMode mode)
-{
-    if (m_authorization.status() == Authorization::ChallengeIssued) {
-        auto response = call(QStringLiteral("ClearDevice"), m_localPath, authenticationToken, uint(mode));
+    virtual Authenticator::Methods authenticationStarted(Authenticator::Methods methods);
+    virtual void authenticationEnded(bool confirmed);
 
-        response->onFinished([this]() {
-            emit clearingDevice();
-        });
-        response->onError([this]() {
-            emit clearDeviceError();
-        });
-    }
-}
+private:
+    bool checkConnection(const QString &connection, const QString &path);
+    void clearConnection();
 
-void DeviceReset::connected()
-{
-    registerObject();
-}
+    QExplicitlySharedDataPointer<LockCodeWatcher> m_watcher;
+    MGConfItem m_attemptCount;
+    QString m_authenticatorConnection;
+    QString m_authenticatorPath;
+};
+
+#endif

@@ -30,48 +30,53 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include "devicereset.h"
+#include <QQmlExtensionPlugin>
 
-DeviceReset::DeviceReset(QObject *parent)
-    : QObject(parent)
-    , ConnectionClient(
-          this,
-          QStringLiteral("/devicereset"),
-          QStringLiteral("org.nemomobile.devicelock.DeviceReset"))
-    , m_authorization(m_localPath, m_remotePath)
-    , m_authorizationAdaptor(&m_authorization, this)
+#include <authenticator.h>
+#include <devicelock.h>
+#include <devicelocksettings.h>
+#include <devicereset.h>
+#include <encryptionsettings.h>
+#include <fingerprintsettings.h>
+#include <lockcodesettings.h>
+
+#include <qqml.h>
+#include <QQmlEngine>
+
+#include <QDBusMetaType>
+
+static QObject *createDeviceLock(QQmlEngine *, QJSEngine *)
 {
-    connect(m_connection.data(), &Connection::connected, this, &DeviceReset::connected);
-
-     if (m_connection->isConnected()) {
-         connected();
-     }
+    return new DeviceLock;
 }
 
-DeviceReset::~DeviceReset()
+class Q_DECL_EXPORT NemoDeviceLockPlugin : public QQmlExtensionPlugin
 {
-}
-
-Authorization *DeviceReset::authorization()
-{
-    return &m_authorization;
-}
-
-void DeviceReset::clearDevice(const QVariant &authenticationToken, ResetMode mode)
-{
-    if (m_authorization.status() == Authorization::ChallengeIssued) {
-        auto response = call(QStringLiteral("ClearDevice"), m_localPath, authenticationToken, uint(mode));
-
-        response->onFinished([this]() {
-            emit clearingDevice();
-        });
-        response->onError([this]() {
-            emit clearDeviceError();
-        });
+    Q_OBJECT
+    Q_PLUGIN_METADATA(IID "org.nemomobile.devicelock")
+public:
+    void initializeEngine(QQmlEngine *, const char *) override
+    {
     }
-}
 
-void DeviceReset::connected()
-{
-    registerObject();
-}
+    void registerTypes(const char *uri) override
+    {
+        qDBusRegisterMetaType<Fingerprint>();
+        qDBusRegisterMetaType<QVector<Fingerprint>>();
+
+        qmlRegisterType<FingerprintModel>();
+
+        qmlRegisterSingletonType<DeviceLock>(uri, 1, 0, "DeviceLock", createDeviceLock);
+
+        qmlRegisterType<Authenticator>(uri, 1, 0, "Authenticator");
+        qmlRegisterType<DeviceLockSettings>(uri, 1, 0, "DeviceLockSettings");
+        qmlRegisterType<DeviceReset>(uri, 1, 0, "DeviceReset");
+        qmlRegisterType<EncryptionSettings>(uri, 1, 0, "EncryptionSettings");
+        qmlRegisterType<FingerprintSettings>(uri, 1, 0, "FingerprintSettings");
+        qmlRegisterType<LockCodeSettings>(uri, 1, 0, "LockCodeSettings");
+
+        qmlRegisterUncreatableType<Authorization>(uri, 1, 0, "Authorization", QString());
+    }
+};
+
+#include "plugin.moc"
