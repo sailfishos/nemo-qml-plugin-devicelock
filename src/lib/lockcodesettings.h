@@ -33,12 +33,11 @@
 #ifndef LOCKCODESETTINGS_H
 #define LOCKCODESETTINGS_H
 
-#include <QObject>
-#include <QSharedDataPointer>
+#include <connection.h>
 
 class SettingsWatcher;
 
-class LockCodeSettings : public QObject
+class LockCodeSettings : public QObject, private ConnectionClient
 {
     Q_OBJECT
     Q_PROPERTY(bool set READ isSet NOTIFY setChanged)
@@ -48,12 +47,12 @@ public:
     explicit LockCodeSettings(QObject *parent = nullptr);
     ~LockCodeSettings();
 
-    virtual bool isSet() const = 0;
+    bool isSet() const;
     int minimumLength() const;
     int maximumLength() const;
 
-    Q_INVOKABLE virtual void change(const QString &oldCode, const QString &newCode) = 0;
-    Q_INVOKABLE virtual void clear(const QString &currentCode) = 0;
+    Q_INVOKABLE void change(const QString &oldCode, const QString &newCode);
+    Q_INVOKABLE void clear(const QString &currentCode);
 
 signals:
     void setChanged();
@@ -63,8 +62,11 @@ signals:
     void clearError();
 
 private:
+    void connected();
+
     QExplicitlySharedDataPointer<SettingsWatcher> m_settings;
 
+    bool m_set;
 };
 
 #endif

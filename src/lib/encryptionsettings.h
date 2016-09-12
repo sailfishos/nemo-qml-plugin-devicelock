@@ -33,13 +33,11 @@
 #ifndef ENCRYPTIONSETTINGS_H
 #define ENCRYPTIONSETTINGS_H
 
-#include <QObject>
-#include <QSharedDataPointer>
+#include <clientauthorization.h>
 
-class Authorization;
 class SettingsWatcher;
 
-class EncryptionSettings : public QObject
+class EncryptionSettings : public QObject, private ConnectionClient
 {
     Q_OBJECT
     Q_PROPERTY(Authorization *authorization READ authorization CONSTANT)
@@ -48,19 +46,22 @@ public:
     explicit EncryptionSettings(QObject *parent = nullptr);
     ~EncryptionSettings();
 
-    virtual Authorization *authorization() = 0;
+    Authorization *authorization();
 
     bool isHomeEncrypted() const;
 
-    Q_INVOKABLE virtual void encryptHome(const QVariant &authenticationToken) = 0;
+    Q_INVOKABLE void encryptHome(const QVariant &authenticationToken);
 
 signals:
     void encryptingHome();
     void encryptHomeError();
 
 private:
-    QExplicitlySharedDataPointer<SettingsWatcher> m_settings;
+    void connected();
 
+    ClientAuthorization m_authorization;
+    ClientAuthorizationAdaptor m_authorizationAdaptor;
+    QExplicitlySharedDataPointer<SettingsWatcher> m_settings;
 };
 
 #endif

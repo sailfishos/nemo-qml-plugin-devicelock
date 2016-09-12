@@ -33,13 +33,9 @@
 #ifndef DEVICERESET_H
 #define DEVICERESET_H
 
-#include <QObject>
+#include <clientauthorization.h>
 
-#include <QVariant>
-
-class Authorization;
-
-class DeviceReset : public QObject
+class DeviceReset : public QObject, private ConnectionClient
 {
     Q_OBJECT
     Q_PROPERTY(Authorization *authorization READ authorization CONSTANT)
@@ -52,13 +48,19 @@ public:
     explicit DeviceReset(QObject *parent = nullptr);
     ~DeviceReset();
 
-    virtual Authorization *authorization() = 0;
+    Authorization *authorization();
 
-    Q_INVOKABLE virtual void clearDevice(const QVariant &authenticationToken, ResetMode mode = Shutdown) = 0;
+    Q_INVOKABLE void clearDevice(const QVariant &authenticationToken, ResetMode mode = Shutdown);
 
 signals:
     void clearingDevice();
     void clearDeviceError();
+
+private:
+    void connected();
+
+    ClientAuthorization m_authorization;
+    ClientAuthorizationAdaptor m_authorizationAdaptor;
 };
 
 #endif

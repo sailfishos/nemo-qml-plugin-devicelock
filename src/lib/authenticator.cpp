@@ -33,14 +33,50 @@
 #include "authenticator.h"
 #include "settingswatcher.h"
 
+AuthenticatorAdaptor::AuthenticatorAdaptor(Authenticator *authenticator)
+    : QDBusAbstractAdaptor(authenticator)
+    , m_authenticator(authenticator)
+{
+}
+
+void AuthenticatorAdaptor::Authenticated(const QDBusVariant &authenticationToken)
+{
+    m_authenticator->handleAuthentication(authenticationToken.variant());
+}
+
+void AuthenticatorAdaptor::Feedback(uint feedback, uint attemptsRemaining)
+{
+    m_authenticator->feedback(Authenticator::Feedback(feedback), attemptsRemaining);
+}
+
+void AuthenticatorAdaptor::Error(uint error)
+{
+    m_authenticator->handleError(Authenticator::Error(error));
+}
+
 Authenticator::Authenticator(QObject *parent)
     : QObject(parent)
+    , ConnectionClient(
+          this,
+          QStringLiteral("/authenticator"),
+          QStringLiteral("org.nemomobile.devicelock.Authenticator"))
+    , m_adaptor(this)
     , m_settings(SettingsWatcher::instance())
+    , m_availableMethods()
+    , m_utilizedMethods()
+    , m_authenticating(false)
 {
     connect(m_settings.data(), &SettingsWatcher::maximumAttemptsChanged,
             this, &Authenticator::maximumAttemptsChanged);
     connect(m_settings.data(), &SettingsWatcher::inputIsKeyboardChanged,
             this, &Authenticator::codeInputIsKeyboardChanged);
+
+    connect(m_connection.data(), &Connection::connected, this, &Authenticator::connected);
+    connect(m_connection.data(), &Connection::disconnected, this, &Authenticator::disconnected);
+
+    if (m_connection->isConnected()) {
+        connected();
+    }
 }
 
 Authenticator::~Authenticator()
@@ -64,4 +100,95 @@ int Authenticator::maximumAttempts() const
 bool Authenticator::codeInputIsKeyboard() const
 {
     return m_settings->inputIsKeyboard;
+}
+
+Authenticator::Methods Authenticator::availableMethods() const
+{
+    return m_availableMethods;
+}
+
+Authenticator::Methods Authenticator::utilizedMethods() const
+{
+    return m_utilizedMethods;
+}
+
+bool Authenticator::isAuthenticating() const
+{
+    return m_authenticating;
+}
+
+void Authenticator::authenticate(const QVariant &challengeCode, Methods methods)
+{
+    const auto response = call(QStringLiteral("Authenticate"), m_localPath, challengeCode, uint(methods));
+
+    m_authenticating = true;
+
+    response->onFinished<uint>([this](uint methods) {
+        if (m_utilizedMethods != Methods(methods)) {
+            m_utilizedMethods = Methods(methods);
+
+            emit utilizedMethodsChanged();
+        }
+    });
+
+    response->onError([this]() {
+        m_authenticating = false;
+
+        emit error(SoftwareError);
+        emit authenticatingChanged();
+    });
+
+    emit authenticatingChanged();
+}
+
+void Authenticator::enterLockCode(const QString &code)
+{
+    call(QStringLiteral("EnterLockCode"), m_localPath, code);
+}
+
+void Authenticator::cancel()
+{
+    if (m_authenticating) {
+        m_authenticating = false;
+
+        call(QStringLiteral("Cancel"), m_localPath);
+
+        emit authenticatingChanged();
+    }
+}
+
+void Authenticator::handleAuthentication(const QVariant &authenticationToken)
+{
+    if (m_authenticating) {
+        m_authenticating = false;
+
+        emit authenticated(authenticationToken);
+        emit authenticatingChanged();
+    }
+}
+
+void Authenticator::handleError(Error error)
+{
+    if (m_authenticating) {
+        m_authenticating = false;
+
+        emit Authenticator::error(error);
+        emit authenticatingChanged();
+    }
+}
+
+void Authenticator::connected()
+{
+    registerObject();
+    subscribeToProperty<uint>(QStringLiteral("AvailableMethods"), [this](uint methods) {
+        if (m_availableMethods != Methods(methods)) {
+            m_availableMethods = Methods(methods);
+            emit availableMethodsChanged();
+        }
+    });
+}
+
+void Authenticator::disconnected()
+{
+    handleError(SoftwareError);
 }
