@@ -10,8 +10,7 @@ CONFIG += \
 
 PKGCONFIG += \
         keepalive \
-        mlite5 \
-        libsystemd-daemon
+        mlite5
 
 INCLUDEPATH += \
         $$PWD/../lib \
