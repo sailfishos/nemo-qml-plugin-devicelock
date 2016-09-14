@@ -36,6 +36,9 @@
 #include <QFileSystemWatcher>
 #include <QSharedData>
 
+namespace NemoDeviceLock
+{
+
 class SettingsWatcher : public QObject, public QSharedData
 {
     Q_OBJECT
@@ -86,8 +89,8 @@ private:
     QString m_settingsPath;
 
     static SettingsWatcher *sharedInstance;
-
-
 };
+
+}
 
 #endif

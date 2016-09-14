@@ -47,7 +47,7 @@
 
 static QObject *createDeviceLock(QQmlEngine *, QJSEngine *)
 {
-    return new DeviceLock;
+    return new NemoDeviceLock::DeviceLock;
 }
 
 class Q_DECL_EXPORT NemoDeviceLockPlugin : public QQmlExtensionPlugin
@@ -61,21 +61,21 @@ public:
 
     void registerTypes(const char *uri) override
     {
-        qDBusRegisterMetaType<Fingerprint>();
-        qDBusRegisterMetaType<QVector<Fingerprint>>();
+        qDBusRegisterMetaType<NemoDeviceLock::Fingerprint>();
+        qDBusRegisterMetaType<QVector<NemoDeviceLock::Fingerprint>>();
 
-        qmlRegisterType<FingerprintModel>();
+        qmlRegisterType<NemoDeviceLock::FingerprintModel>();
 
-        qmlRegisterSingletonType<DeviceLock>(uri, 1, 0, "DeviceLock", createDeviceLock);
+        qmlRegisterSingletonType<NemoDeviceLock::DeviceLock>(uri, 1, 0, "DeviceLock", createDeviceLock);
 
-        qmlRegisterType<Authenticator>(uri, 1, 0, "Authenticator");
-        qmlRegisterType<DeviceLockSettings>(uri, 1, 0, "DeviceLockSettings");
-        qmlRegisterType<DeviceReset>(uri, 1, 0, "DeviceReset");
-        qmlRegisterType<EncryptionSettings>(uri, 1, 0, "EncryptionSettings");
-        qmlRegisterType<FingerprintSettings>(uri, 1, 0, "FingerprintSettings");
-        qmlRegisterType<LockCodeSettings>(uri, 1, 0, "LockCodeSettings");
+        qmlRegisterType<NemoDeviceLock::Authenticator>(uri, 1, 0, "Authenticator");
+        qmlRegisterType<NemoDeviceLock::DeviceLockSettings>(uri, 1, 0, "DeviceLockSettings");
+        qmlRegisterType<NemoDeviceLock::DeviceReset>(uri, 1, 0, "DeviceReset");
+        qmlRegisterType<NemoDeviceLock::EncryptionSettings>(uri, 1, 0, "EncryptionSettings");
+        qmlRegisterType<NemoDeviceLock::FingerprintSettings>(uri, 1, 0, "FingerprintSettings");
+        qmlRegisterType<NemoDeviceLock::LockCodeSettings>(uri, 1, 0, "LockCodeSettings");
 
-        qmlRegisterUncreatableType<Authorization>(uri, 1, 0, "Authorization", QString());
+        qmlRegisterUncreatableType<NemoDeviceLock::Authorization>(uri, 1, 0, "Authorization", QString());
     }
 };
 

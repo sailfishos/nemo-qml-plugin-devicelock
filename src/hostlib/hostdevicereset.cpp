@@ -32,6 +32,9 @@
 
 #include "hostdevicereset.h"
 
+namespace NemoDeviceLock
+{
+
 HostDeviceResetAdaptor::HostDeviceResetAdaptor(HostDeviceReset *reset)
     : QDBusAbstractAdaptor(reset)
     , m_reset(reset)
@@ -52,4 +55,6 @@ HostDeviceReset::HostDeviceReset(Authenticator::Methods allowedMethods, QObject 
 
 HostDeviceReset::~HostDeviceReset()
 {
+}
+
 }

@@ -38,6 +38,9 @@
 
 #include <hostobject.h>
 
+namespace NemoDeviceLock
+{
+
 class HostLockCodeSettings;
 class HostLockCodeSettingsAdaptor : public QDBusAbstractAdaptor
 {
@@ -80,5 +83,7 @@ private:
 
     HostLockCodeSettingsAdaptor m_adaptor;
 };
+
+}
 
 #endif

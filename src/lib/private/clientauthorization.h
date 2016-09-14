@@ -39,6 +39,9 @@
 
 #include <QDBusAbstractAdaptor>
 
+namespace NemoDeviceLock
+{
+
 class ClientAuthorization;
 class ClientAuthorizationAdaptor : public QDBusAbstractAdaptor
 {
@@ -78,5 +81,7 @@ private:
     Authenticator::Methods m_allowedMethods;
     Status m_status;
 };
+
+}
 
 #endif

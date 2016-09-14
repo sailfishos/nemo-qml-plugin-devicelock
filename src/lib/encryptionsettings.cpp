@@ -33,6 +33,9 @@
 #include "encryptionsettings.h"
 #include "settingswatcher.h"
 
+namespace NemoDeviceLock
+{
+
 EncryptionSettings::EncryptionSettings(QObject *parent)
     : QObject(parent)
     , ConnectionClient(
@@ -81,4 +84,6 @@ void EncryptionSettings::encryptHome(const QVariant &authenticationToken)
 void EncryptionSettings::connected()
 {
     void registerObject();
+}
+
 }

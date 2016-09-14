@@ -39,6 +39,9 @@
 
 #include <QDebug>
 
+namespace NemoDeviceLock
+{
+
 CliAuthenticator::CliAuthenticator(QObject *parent)
     : HostAuthenticator(parent)
     , m_watcher(LockCodeWatcher::instance())
@@ -205,4 +208,6 @@ void CliAuthenticator::clearConnection()
 {
     m_authenticatorConnection.clear();
     m_authenticatorPath.clear();
+}
+
 }

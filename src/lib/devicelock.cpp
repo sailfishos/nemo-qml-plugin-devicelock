@@ -17,6 +17,9 @@
 
 #include "settingswatcher.h"
 
+namespace NemoDeviceLock
+{
+
 DeviceLock::DeviceLock(QObject *parent)
     : QObject(parent)
     , ConnectionClient(
@@ -97,4 +100,6 @@ void DeviceLock::connected()
             }
         }
     });
+}
+
 }
