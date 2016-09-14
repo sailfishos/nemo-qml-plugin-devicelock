@@ -51,7 +51,7 @@ public:
 
 public slots:
     Q_NOREPLY void Authenticated(const QDBusVariant &authenticationToken);
-    Q_NOREPLY void Feedback(uint feedback, uint attemptsRemaining);
+    Q_NOREPLY void Feedback(uint feedback, uint attemptsRemaining, uint utilizedMethods);
     Q_NOREPLY void Error(uint error);
 
 private:
@@ -86,6 +86,7 @@ public:
     enum Error {
         LockedOut,
         SoftwareError,
+        Canceled
     };
 
     enum Method {
@@ -131,6 +132,7 @@ private:
     void disconnected();
 
     void handleAuthentication(const QVariant &authenticationToken);
+    void handleFeedback(Feedback feedback, int attemptsRemaining, Methods utilizedMethods);
     void handleError(Error error);
 
     AuthenticatorAdaptor m_adaptor;

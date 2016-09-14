@@ -41,6 +41,10 @@
 
 struct Fingerprint
 {
+    Fingerprint() = default;
+    Fingerprint(const QVariant &id, const QString &name, const QDateTime &acquisitionDate)
+        : id(id), name(name), acquisitionDate(acquisitionDate) {}
+
     QVariant id;
     QString name;
     QDateTime acquisitionDate;

@@ -119,7 +119,7 @@ void PropertyChanges::propertiesChanged(
     }
 }
 
-Connection *Connection::sharedInstance = 0;
+Connection *Connection::sharedInstance = nullptr;
 
 static const auto systemdService = QStringLiteral("org.freedesktop.systemd1");
 
