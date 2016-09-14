@@ -32,6 +32,9 @@
 
 #include "hostencryptionsettings.h"
 
+namespace NemoDeviceLock
+{
+
 HostEncryptionSettingsAdaptor::HostEncryptionSettingsAdaptor(HostEncryptionSettings *settings)
     : QDBusAbstractAdaptor(settings)
     , m_settings(settings)
@@ -52,4 +55,6 @@ HostEncryptionSettings::HostEncryptionSettings(Authenticator::Methods allowedMet
 
 HostEncryptionSettings::~HostEncryptionSettings()
 {
+}
+
 }

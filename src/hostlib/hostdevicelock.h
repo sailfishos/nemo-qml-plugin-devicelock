@@ -38,6 +38,9 @@
 
 #include <QDBusVariant>
 
+namespace NemoDeviceLock
+{
+
 class HostDeviceLock;
 class HostDeviceLockAdaptor : public QDBusAbstractAdaptor
 {
@@ -87,5 +90,7 @@ private:
     HostDeviceLockAdaptor m_adaptor;
     QExplicitlySharedDataPointer<SettingsWatcher> m_settings;
 };
+
+}
 
 #endif

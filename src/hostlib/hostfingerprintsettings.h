@@ -37,6 +37,9 @@
 #include <hostauthorization.h>
 #include <dbusutilities.h>
 
+namespace NemoDeviceLock
+{
+
 class HostFingerprintSettings;
 class HostFingerprintSettingsAdaptor : public QDBusAbstractAdaptor
 {
@@ -124,5 +127,7 @@ private:
 
     HostFingerprintSensorAdaptor m_adaptor;
 };
+
+}
 
 #endif

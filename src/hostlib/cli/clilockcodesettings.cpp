@@ -39,6 +39,9 @@
 
 #include <QDebug>
 
+namespace NemoDeviceLock
+{
+
 CliLockCodeSettings::CliLockCodeSettings(QObject *parent)
     : HostLockCodeSettings(parent)
     , m_watcher(LockCodeWatcher::instance())
@@ -100,4 +103,6 @@ void CliLockCodeSettings::clear(const QString &code)
     } else {
         QDBusContext::sendErrorReply(QDBusError::InternalError);
     }
+}
+
 }

@@ -45,16 +45,16 @@ int main(int argc, char *argv[])
 {
     QCoreApplication application(argc, argv);
 
-    CliAuthenticator authenticator;
-    CliDeviceLock deviceLock;
-    CliDeviceLockSettings deviceLockSettings;
-    CliDeviceReset deviceReset;
-    CliEncryptionSettings encryptionSettings;
-    CliFingerprintSensor fingerprintSensor;
-    CliFingerprintSettings fingerprintSettings;
-    CliLockCodeSettings lockCodeSettings;
+    NemoDeviceLock::CliAuthenticator authenticator;
+    NemoDeviceLock::CliDeviceLock deviceLock;
+    NemoDeviceLock::CliDeviceLockSettings deviceLockSettings;
+    NemoDeviceLock::CliDeviceReset deviceReset;
+    NemoDeviceLock::CliEncryptionSettings encryptionSettings;
+    NemoDeviceLock::CliFingerprintSensor fingerprintSensor;
+    NemoDeviceLock::CliFingerprintSettings fingerprintSettings;
+    NemoDeviceLock::CliLockCodeSettings lockCodeSettings;
 
-    HostService service(
+    NemoDeviceLock::HostService service(
                 &authenticator,
                 &deviceLock,
                 &deviceLockSettings,

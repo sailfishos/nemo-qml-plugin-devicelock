@@ -37,6 +37,9 @@
 #include <QDBusConnection>
 #include <QDBusMessage>
 
+namespace NemoDeviceLock
+{
+
 CliDeviceReset::CliDeviceReset(QObject *parent)
     : HostDeviceReset(Authenticator::LockCode, parent)
     , m_watcher(LockCodeWatcher::instance())
@@ -72,4 +75,6 @@ void CliDeviceReset::clearDevice(
     } else {
         QDBusContext::sendErrorReply(QDBusError::InternalError);
     }
+}
+
 }

@@ -35,6 +35,9 @@
 
 #include <QDBusContext>
 
+namespace NemoDeviceLock
+{
+
 class HostObject : public QObject, protected QDBusContext
 {
     Q_OBJECT
@@ -54,5 +57,7 @@ private:
     const QString m_path;
     QStringList m_connections;
 };
+
+}
 
 #endif

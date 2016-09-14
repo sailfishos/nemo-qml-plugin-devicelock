@@ -32,6 +32,9 @@
 
 #include "hostlockcodesettings.h"
 
+namespace NemoDeviceLock
+{
+
 HostLockCodeSettingsAdaptor::HostLockCodeSettingsAdaptor(HostLockCodeSettings *settings)
     : QDBusAbstractAdaptor(settings)
     , m_settings(settings)
@@ -69,4 +72,6 @@ void HostLockCodeSettings::setChanged()
                 QStringLiteral("org.nemomobile.devicelock.LockCodeSettings"),
                 QStringLiteral("LockCodeSet"),
                 isSet());
+}
+
 }

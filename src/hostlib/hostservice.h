@@ -37,6 +37,9 @@
 
 #include <QVector>
 
+namespace NemoDeviceLock
+{
+
 class HostAuthenticator;
 class HostDeviceLock;
 class HostDeviceLockSettings;
@@ -82,5 +85,7 @@ private:
         HostObject * const m_objects[8];
     };
 };
+
+}
 
 #endif

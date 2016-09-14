@@ -33,6 +33,9 @@
 #include "authenticator.h"
 #include "settingswatcher.h"
 
+namespace NemoDeviceLock
+{
+
 AuthenticatorAdaptor::AuthenticatorAdaptor(Authenticator *authenticator)
     : QDBusAbstractAdaptor(authenticator)
     , m_authenticator(authenticator)
@@ -213,4 +216,6 @@ void Authenticator::connected()
 void Authenticator::disconnected()
 {
     handleError(SoftwareError);
+}
+
 }
