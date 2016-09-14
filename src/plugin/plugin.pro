@@ -14,16 +14,10 @@ CONFIG += \
         link_pkgconfig
 
 INCLUDEPATH += \
-        $$PWD/../lib \
-        $$PWD/../lib/private
+        $$PWD/../ \
+        $$PWD/../nemo-devicelock
 
-DEPENDPATH += \
-        $$PWD/../../lib
-
-PRE_TARGETDEPS += \
-        $$PWD/../lib/libnemodevicelock.a
-
-LIBS += -L$$OUT_PWD/../lib -lnemodevicelock
+LIBS += -L$$OUT_PWD/../nemo-devicelock -lnemodevicelock
 
 SOURCES = \
         plugin.cpp
