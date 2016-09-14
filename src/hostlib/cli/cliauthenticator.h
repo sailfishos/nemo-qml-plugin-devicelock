@@ -60,9 +60,14 @@ public:
     void clientDisconnected(const QString &connectionName) override;
 
 protected:
-    void confirmAuthentication(const QVariant &authenticationToken);
+    QString authenticatorConnection() const { return m_authenticatorConnection; }
+    QString authenticatorPath() const { return m_authenticatorPath; }
 
-    virtual Authenticator::Methods authenticationStarted(Authenticator::Methods methods);
+    void confirmAuthentication(const QVariant &authenticationToken);
+    void abortAuthentication(Authenticator::Error error);
+
+    virtual void lockCodeValidated(const QString &lockCode);
+    virtual Authenticator::Methods authenticationStarted(const QVariant &challengeCode, Authenticator::Methods methods);
     virtual void authenticationEnded(bool confirmed);
 
 private:

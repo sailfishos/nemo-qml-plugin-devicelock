@@ -88,9 +88,19 @@ void HostAuthenticator::sendAuthenticated(
 }
 
 void HostAuthenticator::sendFeedback(
-        const QString &connection, const QString &path, Authenticator::Feedback feedback, int attemptsRemaining)
+        const QString &connection,
+        const QString &path,
+        Authenticator::Feedback feedback,
+        int attemptsRemaining,
+        Authenticator::Methods utilizedMethods)
 {
-    send(connection, path, clientInterface, QStringLiteral("Feedback"), uint(feedback), uint(attemptsRemaining));
+    send(connection,
+                path,
+                clientInterface,
+                QStringLiteral("Feedback"),
+                uint(feedback),
+                uint(attemptsRemaining),
+                uint(utilizedMethods));
 }
 
 void HostAuthenticator::sendError(

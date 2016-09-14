@@ -90,9 +90,9 @@ protected:
             const QString &connectionName,
             const QString &path,
             Authenticator::Feedback feedback,
-            int attemptsRemaining);
-    void sendError(
-            const QString &connection, const QString &path, Authenticator::Error error);
+            int attemptsRemaining,
+            Authenticator::Methods utilizedMethods = Authenticator::Methods());
+    void sendError(const QString &connection, const QString &path, Authenticator::Error error);
 
     void availableMethodsChanged();
 
