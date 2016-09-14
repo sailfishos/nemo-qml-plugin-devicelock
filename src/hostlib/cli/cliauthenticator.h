@@ -40,6 +40,9 @@
 #include <QDBusConnection>
 #include <QSharedDataPointer>
 
+namespace NemoDeviceLock
+{
+
 class LockCodeWatcher;
 
 class CliAuthenticator : public HostAuthenticator
@@ -79,5 +82,7 @@ private:
     QString m_authenticatorConnection;
     QString m_authenticatorPath;
 };
+
+}
 
 #endif

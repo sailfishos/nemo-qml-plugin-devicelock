@@ -41,6 +41,9 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
+namespace NemoDeviceLock
+{
+
 const char * const SettingsWatcher::automaticLockingKey = "/desktop/nemo/devicelock/automatic_locking";
 const char * const SettingsWatcher::minimumLengthKey = "/desktop/nemo/devicelock/code_min_length";
 const char * const SettingsWatcher::maximumLengthKey = "/desktop/nemo/devicelock/code_max_length";
@@ -157,4 +160,6 @@ void SettingsWatcher::reloadSettings()
     read(settings, this, inputIsKeyboardKey, false, &SettingsWatcher::inputIsKeyboard, &SettingsWatcher::inputIsKeyboardChanged);
     read(settings, this, currentIsDigitOnlyKey, true, &SettingsWatcher::currentCodeIsDigitOnly, &SettingsWatcher::currentCodeIsDigitOnlyChanged);
     read(settings, this, isHomeEncryptedKey, false, &SettingsWatcher::isHomeEncrypted);
+}
+
 }

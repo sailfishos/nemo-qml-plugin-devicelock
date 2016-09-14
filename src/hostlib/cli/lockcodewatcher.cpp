@@ -48,6 +48,9 @@
 #include <QSettings>
 #include <QStandardPaths>
 
+namespace NemoDeviceLock
+{
+
 PluginCommand::PluginCommand(QObject *caller)
     : m_caller(caller)
 {
@@ -172,4 +175,6 @@ void LockCodeWatcher::lockCodeSetInvalidated()
         m_codeSetInvalidated = true;
         emit lockCodeSetChanged();
     }
+}
+
 }

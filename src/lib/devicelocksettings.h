@@ -35,12 +35,15 @@
 
 #include <clientauthorization.h>
 
+namespace NemoDeviceLock
+{
+
 class SettingsWatcher;
 
 class DeviceLockSettings : public QObject,  private ConnectionClient
 {
     Q_OBJECT
-    Q_PROPERTY(Authorization *authorization READ authorization CONSTANT)
+    Q_PROPERTY(NemoDeviceLock::Authorization *authorization READ authorization CONSTANT)
     Q_PROPERTY(int automaticLocking READ automaticLocking NOTIFY automaticLockingChanged)
     Q_PROPERTY(int maximumAttempts READ maximumAttempts NOTIFY maximumAttemptsChanged)
     Q_PROPERTY(int peekingAllowed READ peekingAllowed NOTIFY peekingAllowedChanged)
@@ -98,5 +101,7 @@ private:
     ClientAuthorizationAdaptor m_authorizationAdaptor;
     QExplicitlySharedDataPointer<SettingsWatcher> m_settings;
 };
+
+}
 
 #endif

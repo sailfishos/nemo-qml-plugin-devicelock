@@ -37,6 +37,9 @@
 #include <QDBusConnection>
 #include <QDBusMessage>
 
+namespace NemoDeviceLock
+{
+
 CliEncryptionSettings::CliEncryptionSettings(QObject *parent)
     : HostEncryptionSettings(Authenticator::LockCode, parent)
     , m_watcher(LockCodeWatcher::instance())
@@ -66,4 +69,6 @@ void CliEncryptionSettings::encryptHome(const QString &, const QVariant &authent
     } else {
         QDBusContext::sendErrorReply(QDBusError::InternalError);
     }
+}
+
 }

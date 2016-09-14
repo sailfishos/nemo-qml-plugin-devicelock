@@ -18,6 +18,9 @@
 
 #include <clientauthorization.h>
 
+namespace NemoDeviceLock
+{
+
 class DeviceLock : public QObject, private ConnectionClient
 {
     Q_OBJECT
@@ -25,7 +28,7 @@ class DeviceLock : public QObject, private ConnectionClient
     Q_PROPERTY(bool enabled READ isEnabled NOTIFY enabledChanged)
     Q_PROPERTY(LockState state READ state NOTIFY stateChanged)
     Q_PROPERTY(int automaticLocking READ automaticLocking NOTIFY automaticLockingChanged)
-    Q_PROPERTY(Authorization *authorization READ authorization CONSTANT)
+    Q_PROPERTY(NemoDeviceLock::Authorization *authorization READ authorization CONSTANT)
 public:
     explicit DeviceLock(QObject *parent = nullptr);
     ~DeviceLock();
@@ -64,5 +67,7 @@ private:
     LockState m_state;
     bool m_enabled;
 };
+
+}
 
 #endif

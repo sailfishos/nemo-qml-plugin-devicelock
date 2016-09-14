@@ -35,6 +35,9 @@
 
 #include <hostfingerprintsettings.h>
 
+namespace NemoDeviceLock
+{
+
 class CliFingerprintSettings : public HostFingerprintSettings
 {
     Q_OBJECT
@@ -61,5 +64,7 @@ public:
     int acquireFinger(const QString &requestor, const QVariant &authenticationToken) override;
     void cancelAcquisition(const QString &requestor) override;
 };
+
+}
 
 #endif
