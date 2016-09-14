@@ -1,0 +1,64 @@
+TEMPLATE = lib
+TARGET  = nemodevicelock
+
+CONFIG += \
+        c++11 \
+        hide_symbols \
+        link_pkgconfig \
+        create_pc \
+        create_prl \
+        no_install_prl
+
+QT -= gui
+QT += dbus
+
+INCLUDEPATH += ..
+
+DEFINES += \
+        NEMODEVICELOCK_BUILD_LIBRARY
+
+PUBLIC_HEADERS += \
+        authenticator.h \
+        authorization.h \
+        devicelock.h \
+        devicelocksettings.h \
+        devicereset.h \
+        encryptionsettings.h \
+        fingerprintsettings.h \
+        global.h \
+        lockcodesettings.h
+
+SOURCES += \
+        authenticator.cpp \
+        authorization.cpp \
+        devicelock.cpp \
+        devicelocksettings.cpp \
+        devicereset.cpp \
+        encryptionsettings.cpp \
+        fingerprintsettings.cpp \
+        lockcodesettings.cpp
+
+include(private/private.pri)
+
+HEADERS += \
+        $$PRIVATE_HEADERS \
+        $$PUBLIC_HEADERS
+
+public_headers.files = $$PUBLIC_HEADERS
+public_headers.path = /usr/include/nemo-devicelock
+
+private_headers.files = $$PRIVATE_HEADERS
+private_headers.path = /usr/include/nemo-devicelock/private
+
+target.path = /usr/lib
+
+QMAKE_PKGCONFIG_NAME = nemodevicelock
+QMAKE_PKGCONFIG_DESCRIPTION = Library for Nemo device lock.
+QMAKE_PKGCONFIG_LIBDIR = $$target.path
+QMAKE_PKGCONFIG_INCDIR = /usr/include
+QMAKE_PKGCONFIG_DESTDIR = pkgconfig
+
+INSTALLS += \
+        private_headers \
+        public_headers \
+        target
