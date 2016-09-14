@@ -32,6 +32,9 @@
 
 #include <hostfingerprintsettings.h>
 
+namespace NemoDeviceLock
+{
+
 static const auto clientInterface = QStringLiteral("org.nemomobile.devicelock.client.Fingerprint.Sensor");
 
 HostFingerprintSettingsAdaptor::HostFingerprintSettingsAdaptor(HostFingerprintSettings *settings)
@@ -140,4 +143,6 @@ void HostFingerprintSensor::hasSensorChanged()
                 QStringLiteral("org.nemomobile.devicelock.Fingerprint.Sensor"),
                 QStringLiteral("HasSensor"),
                 hasSensor());
+}
+
 }

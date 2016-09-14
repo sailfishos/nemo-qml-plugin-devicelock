@@ -49,6 +49,9 @@
 #include <dbus/dbus.h>
 #include <systemd/sd-daemon.h>
 
+namespace NemoDeviceLock
+{
+
 template <typename T, int N> constexpr int lengthOf(const T(&)[N]) { return N; }
 
 class ConnectionMonitor : public QObject
@@ -155,6 +158,8 @@ void HostService::connectionReady(const QDBusConnection &newConnection)
     auto *internalConnection = static_cast<DBusConnection*>(connection.internalPointer());
 
     dbus_connection_set_unix_user_function(internalConnection, authenticateUser, nullptr,  nullptr);
+}
+
 }
 
 #include "hostservice.moc"

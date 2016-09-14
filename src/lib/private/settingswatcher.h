@@ -36,6 +36,9 @@
 #include <QSharedData>
 #include <QSocketNotifier>
 
+namespace NemoDeviceLock
+{
+
 class SettingsWatcher : public QSocketNotifier, public QSharedData
 {
     Q_OBJECT
@@ -90,8 +93,8 @@ private:
     int m_watch;
 
     static SettingsWatcher *sharedInstance;
-
-
 };
+
+}
 
 #endif

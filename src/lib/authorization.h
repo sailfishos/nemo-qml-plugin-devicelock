@@ -37,12 +37,14 @@
 
 #include <QVariant>
 
+namespace NemoDeviceLock {
+
 class Authorization : public QObject
 {
     Q_OBJECT
     Q_ENUMS(Status)
-    Q_FLAGS(Authenticator::Methods)
-    Q_PROPERTY(Authenticator::Methods allowedMethods READ allowedMethods NOTIFY allowedMethodsChanged)
+    Q_FLAGS(NemoDeviceLock::Authenticator::Methods)
+    Q_PROPERTY(NemoDeviceLock::Authenticator::Methods allowedMethods READ allowedMethods NOTIFY allowedMethodsChanged)
     Q_PROPERTY(Status status READ status NOTIFY statusChanged)
     Q_PROPERTY(QVariant challengeCode READ challengeCode NOTIFY challengeCodeChanged)
 public:
@@ -72,6 +74,8 @@ signals:
     void allowedMethodsChanged();
     void challengeCodeChanged();
 };
+
+}
 
 #endif
 

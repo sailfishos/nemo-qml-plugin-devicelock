@@ -38,6 +38,9 @@
 #include <QDBusVariant>
 #include <QVector>
 
+namespace NemoDeviceLock
+{
+
 template <typename Argument> inline QVariant marshallArgument(const Argument &argument) {
     return QVariant::fromValue(argument); }
 inline QVariant marshallArgument(const QVariant &argument) {
@@ -86,7 +89,6 @@ template <typename... Arguments> inline bool send(
     return send(QDBusConnection(connectionName), path, interface, method, arguments...);
 }
 
-//bool operator ==(const QDBusConnection &left, const QDBusConnection &right);
-//bool operator !=(const QDBusConnection &left, const QDBusConnection &right);
+}
 
 #endif

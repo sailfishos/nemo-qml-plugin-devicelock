@@ -39,6 +39,9 @@
 
 #include <QDebug>
 
+namespace NemoDeviceLock
+{
+
 CliDeviceLock::CliDeviceLock(QObject *parent)
     : MceDeviceLock(Authenticator::LockCode, parent)
     , m_watcher(LockCodeWatcher::instance())
@@ -78,4 +81,6 @@ void CliDeviceLock::unlock(const QString &, const QVariant &authenticationToken)
     } else {
         QDBusContext::sendErrorReply(QDBusError::InternalError);
     }
+}
+
 }

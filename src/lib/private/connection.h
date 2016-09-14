@@ -40,6 +40,9 @@
 #include <QDBusVariant>
 #include <QSharedData>
 
+namespace NemoDeviceLock
+{
+
 class PendingCall : public QDBusPendingCallWatcher
 {
     Q_OBJECT
@@ -261,5 +264,7 @@ protected:
 private:
     static QDBusObjectPath generateLocalPath();
 };
+
+}
 
 #endif

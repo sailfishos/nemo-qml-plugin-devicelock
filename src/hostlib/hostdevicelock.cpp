@@ -34,6 +34,9 @@
 
 #include "settingswatcher.h"
 
+namespace NemoDeviceLock
+{
+
 HostDeviceLockAdaptor::HostDeviceLockAdaptor(HostDeviceLock *deviceLock)
     : QDBusAbstractAdaptor(deviceLock)
     , m_deviceLock(deviceLock)
@@ -91,4 +94,6 @@ void HostDeviceLock::enabledChanged()
 
 void HostDeviceLock::automaticLockingChanged()
 {
+}
+
 }

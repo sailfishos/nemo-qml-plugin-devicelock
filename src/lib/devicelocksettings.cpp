@@ -34,6 +34,8 @@
 
 #include "settingswatcher.h"
 
+namespace NemoDeviceLock
+{
 
 DeviceLockSettings::DeviceLockSettings(QObject *parent)
     : QObject(parent)
@@ -152,4 +154,6 @@ void DeviceLockSettings::changeSetting(
 void DeviceLockSettings::connected()
 {
     registerObject();
+}
+
 }
