@@ -15,8 +15,8 @@ QT += dbus
 PKGCONFIG += \
         dbus-1 \
         keepalive \
-        mlite5 \
-        libsystemd-daemon
+        libsystemd-daemon \
+        mlite5
 
 INCLUDEPATH += \
         $$PWD/../lib \

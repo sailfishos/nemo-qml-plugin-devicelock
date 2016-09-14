@@ -74,7 +74,6 @@ private:
 
     void handleChallengeExpired();
 
-    QExplicitlySharedDataPointer<Connection> m_connection;
     QVariant m_challengeCode;
     Authenticator::Methods m_allowedMethods;
     Status m_status;

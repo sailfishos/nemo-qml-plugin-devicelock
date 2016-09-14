@@ -64,7 +64,7 @@ Authenticator::Methods CliAuthenticator::availableMethods() const
 }
 
 Authenticator::Methods CliAuthenticator::authenticate(
-        const QString &authenticator, const QVariant &, Authenticator::Methods methods)
+        const QString &authenticator, const QVariant &challengeCode, Authenticator::Methods methods)
 {
     auto connection = QDBusContext::connection().name();
 
@@ -85,7 +85,7 @@ Authenticator::Methods CliAuthenticator::authenticate(
             m_authenticatorConnection = connection;
             m_authenticatorPath = authenticator;
 
-            return authenticationStarted(methods);
+            return authenticationStarted(challengeCode, methods);
         }
     } else {
         // No code is set. Authenticate immediately with a dummy lock code.
@@ -99,7 +99,7 @@ Authenticator::Methods CliAuthenticator::authenticate(
     }
 }
 
-Authenticator::Methods CliAuthenticator::authenticationStarted(Authenticator::Methods methods)
+Authenticator::Methods CliAuthenticator::authenticationStarted(const QVariant &, Authenticator::Methods methods)
 {
     return methods & Authenticator::LockCode;
 }
@@ -114,7 +114,7 @@ void CliAuthenticator::enterLockCode(const QString &authenticator, const QString
         command->onSuccess([this, connection, authenticator, code]() {
             // Check the connection hasn't been cancelled in the interim.
             if (checkConnection(connection, authenticator)) {
-                confirmAuthentication(code);
+                lockCodeValidated(code);
             }
         });
 
@@ -149,12 +149,27 @@ void CliAuthenticator::enterLockCode(const QString &authenticator, const QString
     }
 }
 
+void CliAuthenticator::lockCodeValidated(const QString &lockCode)
+{
+    confirmAuthentication(lockCode);
+}
+
 void CliAuthenticator::confirmAuthentication(const QVariant &authenticationToken)
 {
     m_attemptCount.set(0);
 
     sendAuthenticated(m_authenticatorConnection, m_authenticatorPath, authenticationToken);
     clearConnection();
+
+    authenticationEnded(true);
+}
+
+void CliAuthenticator::abortAuthentication(Authenticator::Error error)
+{
+    sendError(m_authenticatorConnection, m_authenticatorPath, error);
+    clearConnection();
+
+    authenticationEnded(false);
 }
 
 void CliAuthenticator::cancel(const QString &authenticator)

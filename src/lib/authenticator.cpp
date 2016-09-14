@@ -44,9 +44,12 @@ void AuthenticatorAdaptor::Authenticated(const QDBusVariant &authenticationToken
     m_authenticator->handleAuthentication(authenticationToken.variant());
 }
 
-void AuthenticatorAdaptor::Feedback(uint feedback, uint attemptsRemaining)
+void AuthenticatorAdaptor::Feedback(uint feedback, uint attemptsRemaining, uint utilizedMethods)
 {
-    m_authenticator->feedback(Authenticator::Feedback(feedback), attemptsRemaining);
+    m_authenticator->handleFeedback(
+                Authenticator::Feedback(feedback),
+                attemptsRemaining,
+                Authenticator::Methods(utilizedMethods));
 }
 
 void AuthenticatorAdaptor::Error(uint error)
@@ -164,6 +167,25 @@ void Authenticator::handleAuthentication(const QVariant &authenticationToken)
 
         emit authenticated(authenticationToken);
         emit authenticatingChanged();
+    }
+}
+
+void Authenticator::handleFeedback(Feedback feedback, int attemptsRemaining, Methods utilizedMethods)
+{
+    if (m_authenticating) {
+        if (!utilizedMethods) { // Utilized methods can be empty if there is no change.
+            utilizedMethods = m_utilizedMethods;
+        }
+
+        const bool methodsChanged = m_utilizedMethods != utilizedMethods;
+
+        m_utilizedMethods = utilizedMethods;
+
+        emit Authenticator::feedback(feedback, attemptsRemaining);
+
+        if (methodsChanged) {
+            emit utilizedMethodsChanged();
+        }
     }
 }
 
