@@ -44,6 +44,9 @@
 #include <mce/dbus-names.h>
 #include <mce/mode-names.h>
 
+namespace NemoDeviceLock
+{
+
 /** Maximum extra delay when waking up from suspend to apply devicelock */
 #define DEVICELOCK_MAX_WAKEUP_DELAY_S 12
 
@@ -456,4 +459,6 @@ int MceDeviceLockAdaptor::state()
 void MceDeviceLockAdaptor::setState(int state)
 {
     m_deviceLock->setState(DeviceLock::LockState(state));
+}
+
 }

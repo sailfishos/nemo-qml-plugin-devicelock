@@ -38,6 +38,9 @@
 
 #include <QDebug>
 
+namespace NemoDeviceLock
+{
+
 static const auto clientInterface = QStringLiteral("org.nemomobile.devicelock.client.Authorization");
 
 HostAuthorizationAdaptor::HostAuthorizationAdaptor(HostAuthorization *authorization)
@@ -84,4 +87,6 @@ void HostAuthorization::sendChallengeExpired(
         const QString &connection, const QString &path)
 {
     send(connection, path, clientInterface, QStringLiteral("ChallengeExpired"));
+}
+
 }

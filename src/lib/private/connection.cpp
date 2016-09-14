@@ -36,6 +36,9 @@
 
 #include <QDebug>
 
+namespace NemoDeviceLock
+{
+
 PendingCall::PendingCall(
         const QDBusPendingCall &call, const QString &path, const QString &interface, const QString &method, QObject *parent)
     : QDBusPendingCallWatcher(call, parent)
@@ -347,4 +350,6 @@ QDBusObjectPath ConnectionClient::generateLocalPath()
 
     return QDBusObjectPath(QStringLiteral("/%1/%2").arg(
                 QString::number(pid), QString::number(++objectCounter)));
+}
+
 }

@@ -37,6 +37,9 @@
 
 #include <QSharedDataPointer>
 
+namespace NemoDeviceLock
+{
+
 class LockCodeWatcher;
 
 class CliDeviceLock : public MceDeviceLock
@@ -53,5 +56,7 @@ public:
 private:
     QExplicitlySharedDataPointer<LockCodeWatcher> m_watcher;
 };
+
+}
 
 #endif

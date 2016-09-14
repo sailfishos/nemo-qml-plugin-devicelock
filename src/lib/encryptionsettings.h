@@ -35,12 +35,15 @@
 
 #include <clientauthorization.h>
 
+namespace NemoDeviceLock
+{
+
 class SettingsWatcher;
 
 class EncryptionSettings : public QObject, private ConnectionClient
 {
     Q_OBJECT
-    Q_PROPERTY(Authorization *authorization READ authorization CONSTANT)
+    Q_PROPERTY(NemoDeviceLock::Authorization *authorization READ authorization CONSTANT)
     Q_PROPERTY(bool homeEncrypted READ isHomeEncrypted CONSTANT)    // One way operation, determined at startup.
 public:
     explicit EncryptionSettings(QObject *parent = nullptr);
@@ -63,5 +66,7 @@ private:
     ClientAuthorizationAdaptor m_authorizationAdaptor;
     QExplicitlySharedDataPointer<SettingsWatcher> m_settings;
 };
+
+}
 
 #endif

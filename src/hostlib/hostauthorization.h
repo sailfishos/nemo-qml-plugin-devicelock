@@ -40,6 +40,9 @@
 
 #include <hostobject.h>
 
+namespace NemoDeviceLock
+{
+
 class HostAuthorization;
 class HostAuthorizationAdaptor : public QDBusAbstractAdaptor
 {
@@ -76,5 +79,7 @@ private:
     HostAuthorizationAdaptor m_adaptor;
     const Authenticator::Methods m_allowedMethods;
 };
+
+}
 
 #endif

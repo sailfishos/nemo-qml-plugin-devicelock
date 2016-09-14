@@ -35,10 +35,13 @@
 
 #include <clientauthorization.h>
 
+namespace NemoDeviceLock
+{
+
 class DeviceReset : public QObject, private ConnectionClient
 {
     Q_OBJECT
-    Q_PROPERTY(Authorization *authorization READ authorization CONSTANT)
+    Q_PROPERTY(NemoDeviceLock::Authorization *authorization READ authorization CONSTANT)
     Q_ENUMS(ResetMode)
 public:
     enum ResetMode {
@@ -63,5 +66,7 @@ private:
     ClientAuthorization m_authorization;
     ClientAuthorizationAdaptor m_authorizationAdaptor;
 };
+
+}
 
 #endif

@@ -32,6 +32,9 @@
 
 #include "hostdevicelocksettings.h"
 
+namespace NemoDeviceLock
+{
+
 HostDeviceLockSettingsAdaptor::HostDeviceLockSettingsAdaptor(HostDeviceLockSettings *settings)
     : QDBusAbstractAdaptor(settings)
     , m_settings(settings)
@@ -55,4 +58,6 @@ HostDeviceLockSettings::HostDeviceLockSettings(Authenticator::Methods allowedMet
 
 HostDeviceLockSettings::~HostDeviceLockSettings()
 {
+}
+
 }

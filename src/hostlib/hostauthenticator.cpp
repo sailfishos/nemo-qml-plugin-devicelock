@@ -35,6 +35,9 @@
 #include "dbusutilities.h"
 #include "settingswatcher.h"
 
+namespace NemoDeviceLock
+{
+
 static const auto clientInterface = QStringLiteral("org.nemomobile.devicelock.client.Authenticator");
 
 HostAuthenticatorAdaptor::HostAuthenticatorAdaptor(HostAuthenticator *authenticator)
@@ -115,4 +118,6 @@ void HostAuthenticator::availableMethodsChanged()
                 QStringLiteral("org.nemomobile.devicelock.Authenticator"),
                 QStringLiteral("AvailableMethods"),
                 QVariant::fromValue(uint(availableMethods())));
+}
+
 }

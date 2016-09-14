@@ -32,7 +32,7 @@
 
 #include "fingerprintsettings.h"
 
-QDBusArgument &operator<<(QDBusArgument &argument, const Fingerprint &fingerprint)
+QDBusArgument &operator<<(QDBusArgument &argument, const NemoDeviceLock::Fingerprint &fingerprint)
 {
     argument.beginStructure();
     argument << QDBusVariant(fingerprint.id);
@@ -43,7 +43,7 @@ QDBusArgument &operator<<(QDBusArgument &argument, const Fingerprint &fingerprin
     return argument;
 }
 
-const QDBusArgument &operator>>(const QDBusArgument &argument, Fingerprint &fingerprint)
+const QDBusArgument &operator>>(const QDBusArgument &argument, NemoDeviceLock::Fingerprint &fingerprint)
 {
     QDBusVariant id;
     QString acquisitionDate;
@@ -59,6 +59,9 @@ const QDBusArgument &operator>>(const QDBusArgument &argument, Fingerprint &fing
 
     return argument;
 }
+
+namespace NemoDeviceLock
+{
 
 FingerprintModel::FingerprintModel(QObject *parent)
     : QAbstractListModel(parent)
@@ -358,4 +361,6 @@ void FingerprintSettings::connected()
             emit hasSensorChanged();
         }
     });
+}
+
 }
