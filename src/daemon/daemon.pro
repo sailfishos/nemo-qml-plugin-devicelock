@@ -13,23 +13,20 @@ PKGCONFIG += \
         mlite5
 
 INCLUDEPATH += \
-        $$PWD/../lib \
-        $$PWD/../lib/private \
-        $$PWD/../hostlib \
-        $$PWD/../hostlib/cli \
-        $$PWD/../hostlib/mce
+        $$PWD/../ \
+        $$PWD/../nemo-devicelock/host \
+        $$PWD/../nemo-devicelock/host/cli
 
 DEPENDPATH += \
-        $$PWD/../lib \
-        $$PWD/../hostlib
+        $$PWD/../nemo-devicelock \
+        $$PWD/../nemo-devicelock/host
 
 PRE_TARGETDEPS += \ \
-        $$PWD/../lib/libnemodevicelock.a
-        $$PWD/../lib/libnemodevicelock-host.a
+        $$PWD/../nemo-devicelock/host/libnemodevicelock-host.a
 
 LIBS += \
-        -L$$OUT_PWD/../lib -lnemodevicelock\
-        -L$$OUT_PWD/../hostlib -lnemodevicelock-host
+        -L$$OUT_PWD/../nemo-devicelock -lnemodevicelock\
+        -L$$OUT_PWD/../nemo-devicelock/host -lnemodevicelock-host
 
 SOURCES = \
         main.cpp
