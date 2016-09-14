@@ -39,6 +39,9 @@
 #include <QSharedData>
 #include <QVector>
 
+namespace NemoDeviceLock
+{
+
 class PluginCommand : public QProcess
 {
     Q_OBJECT
@@ -100,5 +103,7 @@ private:
 
     static LockCodeWatcher *sharedInstance;
 };
+
+}
 
 #endif

@@ -32,6 +32,9 @@
 
 #include "devicereset.h"
 
+namespace NemoDeviceLock
+{
+
 DeviceReset::DeviceReset(QObject *parent)
     : QObject(parent)
     , ConnectionClient(
@@ -74,4 +77,6 @@ void DeviceReset::clearDevice(const QVariant &authenticationToken, ResetMode mod
 void DeviceReset::connected()
 {
     registerObject();
+}
+
 }

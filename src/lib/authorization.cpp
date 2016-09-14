@@ -32,6 +32,9 @@
 
 #include "authorization.h"
 
+namespace NemoDeviceLock
+{
+
 Authorization::Authorization(QObject *parent)
     : QObject(parent)
 {
@@ -39,4 +42,6 @@ Authorization::Authorization(QObject *parent)
 
 Authorization::~Authorization()
 {
+}
+
 }

@@ -35,6 +35,9 @@
 
 #include <connection.h>
 
+namespace NemoDeviceLock
+{
+
 class SettingsWatcher;
 
 class LockCodeSettings : public QObject, private ConnectionClient
@@ -68,5 +71,7 @@ private:
 
     bool m_set;
 };
+
+}
 
 #endif

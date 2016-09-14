@@ -38,6 +38,9 @@
 #include <QDBusPendingCallWatcher>
 #include <keepalive/backgroundactivity.h>
 
+namespace NemoDeviceLock
+{
+
 class MceDeviceLock;
 
 class MceDeviceLockAdaptor : public QDBusAbstractAdaptor
@@ -129,3 +132,5 @@ private:
     friend class Ut_DeviceLock;
 #endif
 };
+
+}

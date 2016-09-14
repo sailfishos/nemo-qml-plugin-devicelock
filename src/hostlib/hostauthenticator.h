@@ -46,6 +46,9 @@ QT_BEGIN_NAMESPACE
 class QDBusConnection;
 QT_END_NAMESPACE
 
+namespace NemoDeviceLock
+{
+
 class HostAuthenticator;
 class HostAuthenticatorAdaptor : public QDBusAbstractAdaptor
 {
@@ -102,5 +105,7 @@ private:
     HostAuthenticatorAdaptor m_adaptor;
     QExplicitlySharedDataPointer<SettingsWatcher> m_settings;
 };
+
+}
 
 #endif

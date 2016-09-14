@@ -39,6 +39,9 @@
 #include <QDateTime>
 #include <QDBusArgument>
 
+namespace NemoDeviceLock
+{
+
 struct Fingerprint
 {
     Fingerprint() = default;
@@ -50,17 +53,11 @@ struct Fingerprint
     QDateTime acquisitionDate;
 };
 
-Q_DECLARE_METATYPE(Fingerprint)
-Q_DECLARE_METATYPE(QVector<Fingerprint>)
-
-QDBusArgument &operator<<(QDBusArgument &argument, const Fingerprint &fingerprint);
-const QDBusArgument &operator>>(const QDBusArgument &argument, Fingerprint &fingerprint);
-
 class FingerprintModel : public QAbstractListModel, private ConnectionClient
 {
     Q_OBJECT
     Q_PROPERTY(int count READ rowCount NOTIFY countChanged)
-    Q_PROPERTY(Authorization *authorization READ authorization CONSTANT)
+    Q_PROPERTY(NemoDeviceLock::Authorization *authorization READ authorization CONSTANT)
 public:
     enum {
         PrintId,
@@ -118,7 +115,7 @@ class FingerprintSettings : public QObject, private ConnectionClient
     Q_PROPERTY(int samplesRequired READ samplesRequired NOTIFY samplesRequiredChanged)
     Q_PROPERTY(bool hasSensor READ hasSensor NOTIFY hasSensorChanged)
     Q_PROPERTY(bool acquiring READ isAcquiring NOTIFY acquiringChanged)
-    Q_PROPERTY(Authorization *authorization READ authorization CONSTANT)
+    Q_PROPERTY(NemoDeviceLock::Authorization *authorization READ authorization CONSTANT)
     Q_PROPERTY(FingerprintModel *fingers READ fingers CONSTANT)
     Q_ENUMS(Feedback)
     Q_ENUMS(Error)
@@ -183,5 +180,13 @@ private:
     bool m_hasSensor;
     bool m_isAcquiring;
 };
+
+}
+
+Q_DECLARE_METATYPE(NemoDeviceLock::Fingerprint)
+Q_DECLARE_METATYPE(QVector<NemoDeviceLock::Fingerprint>)
+
+QDBusArgument &operator<<(QDBusArgument &argument, const NemoDeviceLock::Fingerprint &fingerprint);
+const QDBusArgument &operator>>(const QDBusArgument &argument, NemoDeviceLock::Fingerprint &fingerprint);
 
 #endif

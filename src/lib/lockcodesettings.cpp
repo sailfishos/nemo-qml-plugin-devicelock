@@ -33,6 +33,9 @@
 #include "lockcodesettings.h"
 #include "settingswatcher.h"
 
+namespace NemoDeviceLock
+{
+
 LockCodeSettings::LockCodeSettings(QObject *parent)
     : QObject(parent)
     , ConnectionClient(
@@ -102,4 +105,6 @@ void LockCodeSettings::connected()
             emit setChanged();
         }
     });
+}
+
 }

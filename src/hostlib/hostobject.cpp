@@ -35,6 +35,9 @@
 
 #include "dbusutilities.h"
 
+namespace NemoDeviceLock
+{
+
 HostObject::HostObject(const QString &path, QObject *parent)
     : QObject(parent)
     , m_path(path)
@@ -74,4 +77,6 @@ void HostObject::propertyChanged(const QString &interface, const QString &proper
     for (const auto connectionName : m_connections) {
         QDBusConnection(connectionName).send(message);
     }
+}
+
 }

@@ -32,6 +32,9 @@
 
 #include "clientauthorization.h"
 
+namespace NemoDeviceLock
+{
+
 ClientAuthorizationAdaptor::ClientAuthorizationAdaptor(
         ClientAuthorization *authorization, QObject *parent)
     : QDBusAbstractAdaptor(parent)
@@ -144,4 +147,6 @@ void ClientAuthorization::handleChallengeExpired()
         emit challengeExpired();
         emit statusChanged();
     }
+}
+
 }

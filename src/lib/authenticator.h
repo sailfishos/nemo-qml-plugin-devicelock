@@ -39,7 +39,7 @@
 
 #include <connection.h>
 
-class SettingsWatcher;
+namespace NemoDeviceLock {
 
 class Authenticator;
 class AuthenticatorAdaptor : public QDBusAbstractAdaptor
@@ -58,6 +58,7 @@ private:
     Authenticator *m_authenticator;
 };
 
+class SettingsWatcher;
 class Authenticator : public QObject, private ConnectionClient
 {
     Q_OBJECT
@@ -142,6 +143,8 @@ private:
     bool m_authenticating;
 };
 
-Q_DECLARE_OPERATORS_FOR_FLAGS(Authenticator::Methods)
+}
+
+Q_DECLARE_OPERATORS_FOR_FLAGS(NemoDeviceLock::Authenticator::Methods)
 
 #endif

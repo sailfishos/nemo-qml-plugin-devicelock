@@ -32,6 +32,9 @@
 
 #include "clifingerprintsettings.h"
 
+namespace NemoDeviceLock
+{
+
 CliFingerprintSettings::CliFingerprintSettings(QObject *parent)
     :  HostFingerprintSettings(Authenticator::LockCode, parent)
 {
@@ -80,4 +83,6 @@ int CliFingerprintSensor::acquireFinger(const QString &, const QVariant &)
 void CliFingerprintSensor::cancelAcquisition(const QString &)
 {
     QDBusContext::connection().send(QDBusContext::message().createErrorReply(QDBusError::NotSupported, QString()));
+}
+
 }
