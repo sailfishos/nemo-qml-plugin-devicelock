@@ -32,6 +32,8 @@
 
 #include "hostlockcodesettings.h"
 
+#include <QDebug>
+
 namespace NemoDeviceLock
 {
 

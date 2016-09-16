@@ -33,6 +33,8 @@
 #include "authenticator.h"
 #include "settingswatcher.h"
 
+#include <QDebug>
+
 namespace NemoDeviceLock
 {
 
