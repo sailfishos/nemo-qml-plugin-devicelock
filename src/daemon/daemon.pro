@@ -1,5 +1,5 @@
 TEMPLATE = app
-TARGET = nemodevicelockd
+TARGET = nemo-devicelock
 
 QT -= gui
 QT += dbus
@@ -33,11 +33,11 @@ LIBS += \
 SOURCES = \
         main.cpp
 
-target.path = /usr/bin
+target.path = /usr/libexec
 
 systemd.files = \
-        systemd/nemodevicelock.service \
-        systemd/nemodevicelock.socket
+        systemd/nemo-devicelock.service \
+        systemd/nemo-devicelock.socket
 systemd.path= /lib/systemd/system
 
 policy.files = \
