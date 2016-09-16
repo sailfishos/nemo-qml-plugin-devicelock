@@ -6,4 +6,5 @@ Before=shutdown.target
 Conflicts=shutdown.target
 
 [Socket]
-ListenStream=/run/org-nemomobile-devicelock.socket
+ListenStream=/run/nemo-devicelock/socket
+Accept=false
