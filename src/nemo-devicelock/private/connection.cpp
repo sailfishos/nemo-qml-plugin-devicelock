@@ -131,7 +131,7 @@ static QDBusConnection connectToHost()
     static int counter = 0;
 
     return QDBusConnection::connectToPeer(
-                QStringLiteral("unix:path=/run/org-nemomobile-devicelock.socket"),
+                QStringLiteral("unix:path=/run/nemo-devicelock/socket"),
                 QStringLiteral("org.nemomobile.devicelock.%1").arg(counter++));
 }
 
@@ -155,7 +155,7 @@ Connection::Connection(QObject *parent)
                 QStringLiteral("/org/freedesktop/systemd1"),
                 QStringLiteral("org.freedesktop.systemd1.Manager"),
                 QStringLiteral("GetUnit"),
-                marshallArguments(QStringLiteral("nemodevicelock.socket")));
+                marshallArguments(QStringLiteral("nemo-devicelock.socket")));
     response->onFinished<QDBusObjectPath>([this](const QDBusObjectPath &unit) {
         subscribeToProperty<QString>(
                     this,

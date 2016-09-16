@@ -40,7 +40,7 @@ EncryptionSettings::EncryptionSettings(QObject *parent)
     : QObject(parent)
     , ConnectionClient(
           this,
-          QStringLiteral("/encryptionsettings"),
+          QStringLiteral("/encryption"),
           QStringLiteral("org.nemomobile.devicelock.EncryptionSettings"))
     , m_authorization(m_localPath, m_remotePath)
     , m_authorizationAdaptor(&m_authorization, this)

@@ -90,7 +90,7 @@ HostService::HostService(
         HostFingerprintSettings *fingerprintSettings,
         HostLockCodeSettings *lockCodeSettings,
         QObject *parent)
-    : QDBusServer(QStringLiteral("unix:path=/run/org-nemomobile-devicelock.socket"), parent)
+    : QDBusServer(QStringLiteral("unix:path=/run/nemo-devicelock/socket"), parent)
     , m_authenticator(authenticator)
     , m_deviceLock(deviceLock)
     , m_deviceLockSettings(deviceLockSettings)
