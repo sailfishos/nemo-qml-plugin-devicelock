@@ -79,7 +79,7 @@ Authenticator::Methods CliAuthenticator::authenticate(
 
     if (m_watcher->lockCodeSet()) {
         const int maximum = maximumAttempts();
-        const int attempts = m_attemptCount.value(0).toInt();
+        const int attempts = currentAttempts();
 
         if (maximum > 0 && attempts >= maximum) {
             QDBusContext::sendErrorReply(QStringLiteral("org.nemomobile.devicelock.Authenticator.LockedOut"));
@@ -121,29 +121,27 @@ void CliAuthenticator::enterLockCode(const QString &authenticator, const QString
             }
         });
 
-        command->onFailure([this, connection, authenticator]() {
+        command->onFailure([this, connection, authenticator](int exitCode) {
             const int maximum = maximumAttempts();
 
-            if (maximum > 0) {
-                const int attempts = m_attemptCount.value(0).toInt() + 1;
-                m_attemptCount.set(attempts);
+            if (!checkConnection(connection, authenticator)) {
+                return;
+            } else if (maximum > 0 && exitCode < 0) {
+                const int attempts = -exitCode;
+                sendFeedback(
+                            connection,
+                            authenticator,
+                            Authenticator::IncorrectLockCode,
+                            qMax(0, maximum - attempts));
 
-                if (checkConnection(connection, authenticator)) {
-                    sendFeedback(
-                                connection,
-                                authenticator,
-                                Authenticator::IncorrectLockCode,
-                                qMax(0, maximum - attempts));
+                if (attempts >= maximum) {
+                    sendError(connection, authenticator, Authenticator::LockedOut);
 
-                    if (attempts >= maximum) {
-                        sendError(connection, authenticator, Authenticator::LockedOut);
+                    clearConnection();
 
-                        clearConnection();
-
-                        authenticationEnded(false);
-                    }
+                    authenticationEnded(false);
                 }
-            } else if (checkConnection(connection, authenticator)) {
+            } else {
                 sendFeedback(connection, authenticator, Authenticator::IncorrectLockCode, -1);
             }
         });
