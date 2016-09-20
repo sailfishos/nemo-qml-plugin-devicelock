@@ -75,7 +75,7 @@ void CliDeviceLock::unlock(const QString &, const QVariant &authenticationToken)
             setState(DeviceLock::Unlocked);
         });
 
-        command->onFailure([this, connection, message]() {
+        command->onFailure([this, connection, message](int) {
             connection.send(message.createErrorReply(QDBusError::AccessDenied, QString()));
         });
     } else {

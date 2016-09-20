@@ -68,8 +68,8 @@ public:
 
     template <typename T> void onError(const T &handler)
     {
-        connect(this, &PendingCall::failure, [handler](const QDBusError &) {
-            handler();
+        connect(this, &PendingCall::failure, [handler](const QDBusError &error) {
+            handler(error);
         });
     }
 

@@ -278,7 +278,7 @@ void FingerprintSettings::acquireFinger(const QVariant &authenticationToken)
             emit samplesRemainingChanged();
         });
 
-        response->onError([this]() {
+        response->onError([this](const QDBusError &) {
             m_isAcquiring = false;
 
             emit acquisitionError(CannotContinue);
