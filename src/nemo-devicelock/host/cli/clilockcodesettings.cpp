@@ -75,7 +75,7 @@ void CliLockCodeSettings::change(const QString &oldCode, const QString &newCode)
 
             connection.send(message.createReply());
         });
-        command->onFailure([this, connection, message]() {
+        command->onFailure([this, connection, message](int) {
             connection.send(message.createErrorReply(QDBusError::AccessDenied, QString()));
         });
     } else {
@@ -97,7 +97,7 @@ void CliLockCodeSettings::clear(const QString &code)
 
             connection.send(message.createReply());
         });
-        command->onFailure([this, connection, message]() {
+        command->onFailure([this, connection, message](int) {
             connection.send(message.createErrorReply(QDBusError::AccessDenied, QString()));
         });
     } else {

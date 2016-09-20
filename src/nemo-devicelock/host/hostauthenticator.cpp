@@ -84,6 +84,11 @@ int HostAuthenticator::maximumAttempts() const
     return m_settings->maximumAttempts;
 }
 
+int HostAuthenticator::currentAttempts() const
+{
+    return m_settings->currentAttempts;
+}
+
 void HostAuthenticator::sendAuthenticated(
         const QString &connection, const QString &path, const QVariant &authenticationToken)
 {

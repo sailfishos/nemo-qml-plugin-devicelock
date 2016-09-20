@@ -86,6 +86,7 @@ protected:
     virtual void cancel(const QString &authenticator) = 0;
 
     int maximumAttempts() const;
+    int currentAttempts() const;
 
     void sendAuthenticated(
             const QString &connectionName, const QString &path, const QVariant &authenticationToken);

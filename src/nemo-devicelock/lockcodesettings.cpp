@@ -79,7 +79,7 @@ void LockCodeSettings::change(const QString &oldCode, const QString &newCode)
         emit changed();
     });
 
-    response->onError([this]() {
+    response->onError([this](const QDBusError &) {
         emit changeError();
     });
 }
@@ -92,7 +92,7 @@ void LockCodeSettings::clear(const QString &currentCode)
         emit cleared();
     });
 
-    response->onError([this]() {
+    response->onError([this](const QDBusError &) {
         emit clearError();
     });
 }
