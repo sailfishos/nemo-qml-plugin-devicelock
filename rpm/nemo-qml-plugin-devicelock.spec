@@ -20,7 +20,7 @@ BuildRequires:  pkgconfig(mlite5)
 %package default
 Summary:    The default lock code based device lock plugin for Nemo Mobile
 Group:      System/GUI/Other
-Provides:   nemo-qml-plugin-devicelock
+Provides:   nemo-qml-plugin-devicelock = %{version}-%{release}
 
 %description default
 %{summary}.
