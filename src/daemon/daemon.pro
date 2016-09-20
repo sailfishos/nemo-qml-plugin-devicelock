@@ -11,8 +11,7 @@ CONFIG += \
 PKGCONFIG += \
         dbus-1 \
         keepalive \
-        libsystemd-daemon \
-        mlite5
+        libsystemd-daemon
 
 INCLUDEPATH += \
         $$PWD/../ \
