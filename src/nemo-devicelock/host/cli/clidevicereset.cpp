@@ -69,7 +69,7 @@ void CliDeviceReset::clearDevice(
         command->onSuccess([this, connection, message]() {
             connection.send(message.createReply());
         });
-        command->onFailure([this, connection, message]() {
+        command->onFailure([this, connection, message](int) {
             connection.send(message.createErrorReply(QDBusError::AccessDenied, QString()));
         });
     } else {

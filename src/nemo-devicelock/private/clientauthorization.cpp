@@ -117,7 +117,7 @@ void ClientAuthorization::requestChallenge()
             }
         });
 
-        response->onError([this]() {
+        response->onError([this](const QDBusError &) {
             if (m_status == RequestingChallenge) {
                 m_status = NoChallenge;
 
