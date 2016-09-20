@@ -15,6 +15,7 @@ BuildRequires:  pkgconfig(mce)
 BuildRequires:  pkgconfig(mlite5)
 BuildRequires:  pkgconfig(libsystemd-daemon)
 Obsoletes:      nemo-qml-plugin-devicelock-default < 0.2.0
+Provides:      nemo-qml-plugin-devicelock-default >= 0.2.0
 Requires:       nemo-devicelock-daemon
 
 %description
