@@ -68,7 +68,7 @@ void DeviceReset::clearDevice(const QVariant &authenticationToken, ResetMode mod
         response->onFinished([this]() {
             emit clearingDevice();
         });
-        response->onError([this]() {
+        response->onError([this](const QDBusError &) {
             emit clearDeviceError();
         });
     }

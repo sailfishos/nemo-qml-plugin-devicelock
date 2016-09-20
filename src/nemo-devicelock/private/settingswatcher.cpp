@@ -48,6 +48,7 @@ const char * const SettingsWatcher::automaticLockingKey = "/desktop/nemo/devicel
 const char * const SettingsWatcher::minimumLengthKey = "/desktop/nemo/devicelock/code_min_length";
 const char * const SettingsWatcher::maximumLengthKey = "/desktop/nemo/devicelock/code_max_length";
 const char * const SettingsWatcher::maximumAttemptsKey = "/desktop/nemo/devicelock/maximum_attempts";
+const char * const SettingsWatcher::currentAttemptsKey = "/desktop/nemo/devicelock/current_attempts";
 const char * const SettingsWatcher::peekingAllowedKey = "/desktop/nemo/devicelock/peeking_allowed";
 const char * const SettingsWatcher::sideloadingAllowedKey = "/desktop/nemo/devicelock/sideloading_allowed";
 const char * const SettingsWatcher::showNotificationsKey = "/desktop/nemo/devicelock/show_notification";
@@ -63,6 +64,7 @@ SettingsWatcher::SettingsWatcher(QObject *parent)
     , minimumLength(5)
     , maximumLength(42)
     , maximumAttempts(-1)
+    , currentAttempts(0)
     , peekingAllowed(1)
     , sideloadingAllowed(-1)
     , showNotifications(1)
@@ -154,6 +156,7 @@ void SettingsWatcher::reloadSettings()
     read(settings, this, minimumLengthKey, 5, &SettingsWatcher::minimumLength, &SettingsWatcher::minimumLengthChanged);
     read(settings, this, maximumLengthKey, 42, &SettingsWatcher::maximumLength, &SettingsWatcher::maximumLengthChanged);
     read(settings, this, maximumAttemptsKey, -1, &SettingsWatcher::maximumAttempts, &SettingsWatcher::maximumAttemptsChanged);
+    read(settings, this, currentAttemptsKey, 0, &SettingsWatcher::currentAttempts, &SettingsWatcher::currentAttemptsChanged);
     read(settings, this, peekingAllowedKey, 1, &SettingsWatcher::peekingAllowed, &SettingsWatcher::peekingAllowedChanged);
     read(settings, this, sideloadingAllowedKey, -1, &SettingsWatcher::sideloadingAllowed, &SettingsWatcher::sideloadingAllowedChanged);
     read(settings, this, showNotificationsKey, 1, &SettingsWatcher::showNotifications, &SettingsWatcher::showNotificationsChanged);

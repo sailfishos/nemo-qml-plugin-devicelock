@@ -12,9 +12,8 @@ BuildRequires:  pkgconfig(Qt5Network)
 BuildRequires:  pkgconfig(Qt5Qml)
 BuildRequires:  pkgconfig(keepalive)
 BuildRequires:  pkgconfig(mce)
-BuildRequires:  pkgconfig(mlite5)
 BuildRequires:  pkgconfig(libsystemd-daemon)
-Obsoletes:      nemo-qml-plugin-devicelock-default
+Obsoletes:      nemo-qml-plugin-devicelock-default < 0.2.0
 Requires:       nemo-devicelock-daemon
 
 %description
@@ -23,7 +22,7 @@ Requires:       nemo-devicelock-daemon
 %package -n nemo-devicelock-daemon-cli
 Summary:    The default command line lock code device lock daemon for Nemo Mobile
 Group:      System/GUI/Other
-Requires:   %{name} = %{version}
+Requires:   %{name} = %{version}-%{release}
 Provides:   nemo-devicelock-daemon
 
 %description -n nemo-devicelock-daemon-cli
@@ -32,7 +31,7 @@ Provides:   nemo-devicelock-daemon
 %package devel
 Summary:    Development libraries for device lock
 Group:      Development/Libraries
-Requires:   %{name} = %{version}
+Requires:   %{name} = %{version}-%{release}
 
 %description devel
 %{summary}.
@@ -40,7 +39,7 @@ Requires:   %{name} = %{version}
 %package host-devel
 Summary:    Development libraries for device lock daemons
 Group:      Development/Libraries
-Requires:   %{name}-devel = %{version}
+Requires:   %{name}-devel = %{version}-%{release}
 
 %description host-devel
 %{summary}.

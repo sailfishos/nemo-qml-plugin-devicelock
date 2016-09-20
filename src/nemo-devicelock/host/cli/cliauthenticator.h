@@ -35,8 +35,6 @@
 
 #include <nemo-devicelock/host/hostauthenticator.h>
 
-#include <MGConfItem>
-
 #include <QDBusConnection>
 #include <QSharedDataPointer>
 
@@ -78,7 +76,6 @@ private:
     void clearConnection();
 
     QExplicitlySharedDataPointer<LockCodeWatcher> m_watcher;
-    MGConfItem m_attemptCount;
     QString m_authenticatorConnection;
     QString m_authenticatorPath;
 };

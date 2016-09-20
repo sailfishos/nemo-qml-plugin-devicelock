@@ -75,7 +75,7 @@ void EncryptionSettings::encryptHome(const QVariant &authenticationToken)
         response->onFinished([this]() {
             emit encryptingHome();
         });
-        response->onError([this]() {
+        response->onError([this](const QDBusError &) {
             emit encryptHomeError();
         });
     }

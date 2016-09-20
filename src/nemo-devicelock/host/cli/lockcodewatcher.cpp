@@ -77,7 +77,7 @@ void PluginCommand::processFinished(int exitCode, QProcess::ExitStatus status)
     } else if (exitCode == 0 && status == QProcess::NormalExit) {
         emit succeeded();
     } else {
-        emit failed();
+        emit failed(exitCode);
     }
 }
 
