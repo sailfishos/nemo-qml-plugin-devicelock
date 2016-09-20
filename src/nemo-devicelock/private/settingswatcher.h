@@ -53,6 +53,7 @@ public:
     int minimumLength;
     int maximumLength;
     int maximumAttempts;
+    int currentAttempts;
     int peekingAllowed;
     int sideloadingAllowed;
     int showNotifications;
@@ -64,6 +65,7 @@ public:
     static const char * const minimumLengthKey;
     static const char * const maximumLengthKey;
     static const char * const maximumAttemptsKey;
+    static const char * const currentAttemptsKey;
     static const char * const peekingAllowedKey;
     static const char * const sideloadingAllowedKey;
     static const char * const showNotificationsKey;
@@ -74,6 +76,7 @@ public:
 signals:
     void automaticLockingChanged();
     void maximumAttemptsChanged();
+    void currentAttemptsChanged();
     void minimumLengthChanged();
     void maximumLengthChanged();
     void peekingAllowedChanged();

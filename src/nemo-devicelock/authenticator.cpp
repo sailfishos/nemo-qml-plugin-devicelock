@@ -139,10 +139,14 @@ void Authenticator::authenticate(const QVariant &challengeCode, Methods methods)
         }
     });
 
-    response->onError([this]() {
+    response->onError([this](const QDBusError &dbusError) {
         m_authenticating = false;
 
-        emit error(SoftwareError);
+        if (dbusError.name() == QStringLiteral("org.nemomobile.devicelock.Authenticator.LockedOut")) {
+            emit error(LockedOut);
+        } else {
+            emit error(SoftwareError);
+        }
         emit authenticatingChanged();
     });
 

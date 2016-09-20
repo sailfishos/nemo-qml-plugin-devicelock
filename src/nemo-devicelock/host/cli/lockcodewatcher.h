@@ -61,7 +61,7 @@ public:
 
 signals:
     void succeeded();
-    void failed();
+    void failed(int exitCode);
 
 private:
     friend class LockCodeWatcher;
