@@ -30,7 +30,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include "fingerprintsettings.h"
+#include "fingerprintsensor.h"
 
 #include <QDebug>
 
@@ -186,33 +186,33 @@ void FingerprintModel::connected()
     });
 }
 
-FingerprintSettingsAdaptor::FingerprintSettingsAdaptor(FingerprintSettings *settings)
+FingerprintSensorAdaptor::FingerprintSensorAdaptor(FingerprintSensor *settings)
     : QDBusAbstractAdaptor(settings)
     , m_settings(settings)
 {
 }
 
-void FingerprintSettingsAdaptor::SampleAcquired(uint samplesRemaining)
+void FingerprintSensorAdaptor::SampleAcquired(uint samplesRemaining)
 {
     m_settings->handleSampleAcquired(samplesRemaining);
 }
 
-void FingerprintSettingsAdaptor::AcquisitionCompleted()
+void FingerprintSensorAdaptor::AcquisitionCompleted()
 {
     m_settings->handleAcquisitionCompleted();
 }
 
-void FingerprintSettingsAdaptor::AcquisitionFeedback(uint feedback)
+void FingerprintSensorAdaptor::AcquisitionFeedback(uint feedback)
 {
-    m_settings->acquisitionFeedback(FingerprintSettings::Feedback(feedback));
+    m_settings->acquisitionFeedback(FingerprintSensor::Feedback(feedback));
 }
 
-void FingerprintSettingsAdaptor::AcquisitionError(uint error)
+void FingerprintSensorAdaptor::AcquisitionError(uint error)
 {
-    m_settings->handleError(FingerprintSettings::Error(error));
+    m_settings->handleError(FingerprintSensor::Error(error));
 }
 
-FingerprintSettings::FingerprintSettings(QObject *parent)
+FingerprintSensor::FingerprintSensor(QObject *parent)
     : QObject(parent)
     , ConnectionClient(
           this,
@@ -226,44 +226,44 @@ FingerprintSettings::FingerprintSettings(QObject *parent)
     , m_hasSensor(false)
     , m_isAcquiring(false)
 {
-    connect(m_connection.data(), &Connection::connected, this, &FingerprintSettings::connected);
-    connect(m_connection.data(), &Connection::disconnected, this, &FingerprintSettings::disconnected);
+    connect(m_connection.data(), &Connection::connected, this, &FingerprintSensor::connected);
+    connect(m_connection.data(), &Connection::disconnected, this, &FingerprintSensor::disconnected);
 
     if (m_connection->isConnected()) {
         connected();
     }
 }
 
-FingerprintSettings::~FingerprintSettings()
+FingerprintSensor::~FingerprintSensor()
 {
 }
 
-bool FingerprintSettings::hasSensor() const
+bool FingerprintSensor::hasSensor() const
 {
     return m_hasSensor;
 }
 
-bool FingerprintSettings::isAcquiring() const
+bool FingerprintSensor::isAcquiring() const
 {
     return m_isAcquiring;
 }
 
-Authorization *FingerprintSettings::authorization()
+Authorization *FingerprintSensor::authorization()
 {
     return &m_authorization;
 }
 
-int FingerprintSettings::samplesRemaining() const
+int FingerprintSensor::samplesRemaining() const
 {
     return m_samplesRemaining;
 }
 
-int FingerprintSettings::samplesRequired() const
+int FingerprintSensor::samplesRequired() const
 {
     return m_samplesRequired;
 }
 
-void FingerprintSettings::acquireFinger(const QVariant &authenticationToken)
+void FingerprintSensor::acquireFinger(const QVariant &authenticationToken)
 {
     if (m_authorization.status() == Authorization::ChallengeIssued) {
         m_isAcquiring = true;
@@ -289,7 +289,7 @@ void FingerprintSettings::acquireFinger(const QVariant &authenticationToken)
     }
 }
 
-void FingerprintSettings::cancelAcquisition()
+void FingerprintSensor::cancelAcquisition()
 {
     if (m_isAcquiring) {
         m_isAcquiring = false;
@@ -300,19 +300,19 @@ void FingerprintSettings::cancelAcquisition()
     }
 }
 
-FingerprintModel *FingerprintSettings::fingers()
+FingerprintModel *FingerprintSensor::fingers()
 {
     return &m_fingerprintModel;
 }
 
-void FingerprintSettings::handleSampleAcquired(int samplesRemaining)
+void FingerprintSensor::handleSampleAcquired(int samplesRemaining)
 {
     m_samplesRemaining = samplesRemaining;
 
     emit samplesRemainingChanged();
 }
 
-void FingerprintSettings::handleAcquisitionCompleted()
+void FingerprintSensor::handleAcquisitionCompleted()
 {
     m_samplesRemaining = 0;
     m_samplesRequired = 0;
@@ -325,7 +325,7 @@ void FingerprintSettings::handleAcquisitionCompleted()
     emit samplesRemainingChanged();
 }
 
-void FingerprintSettings::handleError(Error error)
+void FingerprintSensor::handleError(Error error)
 {
     m_samplesRemaining = 0;
     m_samplesRequired = 0;
@@ -338,7 +338,7 @@ void FingerprintSettings::handleError(Error error)
     emit samplesRemainingChanged();
 }
 
-void FingerprintSettings::connected()
+void FingerprintSensor::connected()
 {
     registerObject();
     subscribeToProperty<bool>(QStringLiteral("HasSensor"), [this](bool hasSensor) {
@@ -349,7 +349,7 @@ void FingerprintSettings::connected()
     });
 }
 
-void FingerprintSettings::disconnected()
+void FingerprintSensor::disconnected()
 {
     m_samplesRemaining = 0;
     m_samplesRequired = 0;

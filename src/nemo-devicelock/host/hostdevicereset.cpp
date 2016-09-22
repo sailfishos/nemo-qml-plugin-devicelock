@@ -47,6 +47,11 @@ void HostDeviceResetAdaptor::ClearDevice(
     m_reset->clearDevice(path.path(), authenticationToken.variant(), DeviceReset::ResetMode(mode));
 }
 
+HostDeviceReset::HostDeviceReset(QObject *parent)
+    : HostDeviceReset(Authenticator::Methods(), parent)
+{
+}
+
 HostDeviceReset::HostDeviceReset(Authenticator::Methods allowedMethods, QObject *parent)
     : HostAuthorization(QStringLiteral("/devicereset"), allowedMethods, parent)
     , m_adaptor(this)
@@ -55,6 +60,11 @@ HostDeviceReset::HostDeviceReset(Authenticator::Methods allowedMethods, QObject 
 
 HostDeviceReset::~HostDeviceReset()
 {
+}
+
+void HostDeviceReset::clearDevice(const QString &, const QVariant &, DeviceReset::ResetMode)
+{
+    QDBusContext::sendErrorReply(QDBusError::NotSupported);
 }
 
 }

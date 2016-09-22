@@ -48,7 +48,7 @@ public:
     explicit CliEncryptionSettings(QObject *parent = nullptr);
     ~CliEncryptionSettings();
 
-    void encryptHome(const QString &requestor, const QVariant &authenticationToken);
+    void encryptHome(const QString &requestor, const QVariant &authenticationToken) override;
 
 private:
     QExplicitlySharedDataPointer<LockCodeWatcher> m_watcher;

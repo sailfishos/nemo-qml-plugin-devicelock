@@ -30,8 +30,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#ifndef NEMODEVICELOCK_FINGERPRINTSETTINGS_H
-#define NEMODEVICELOCK_FINGERPRINTSETTINGS_H
+#ifndef NEMODEVICELOCK_FINGERPRINTSENSOR_H
+#define NEMODEVICELOCK_FINGERPRINTSENSOR_H
 
 #include <nemo-devicelock/private/clientauthorization.h>
 
@@ -89,13 +89,13 @@ private:
     QVector<Fingerprint> m_fingerprints;
 };
 
-class FingerprintSettings;
-class FingerprintSettingsAdaptor : public QDBusAbstractAdaptor
+class FingerprintSensor;
+class FingerprintSensorAdaptor : public QDBusAbstractAdaptor
 {
     Q_OBJECT
     Q_CLASSINFO("D-Bus Interface", "org.nemomobile.devicelock.client.Fingerprint.Sensor")
 public:
-    explicit FingerprintSettingsAdaptor(FingerprintSettings *settings);
+    explicit FingerprintSensorAdaptor(FingerprintSensor *settings);
 
 public slots:
     Q_NOREPLY void SampleAcquired(uint samplesRemaining);
@@ -104,10 +104,10 @@ public slots:
     Q_NOREPLY void AcquisitionError(uint error);
 
 private:
-    FingerprintSettings *m_settings;
+    FingerprintSensor *m_settings;
 };
 
-class NEMODEVICELOCK_EXPORT FingerprintSettings : public QObject, private ConnectionClient
+class NEMODEVICELOCK_EXPORT FingerprintSensor : public QObject, private ConnectionClient
 {
     Q_OBJECT
     Q_PROPERTY(int samplesRemaining READ samplesRemaining NOTIFY samplesRemainingChanged)
@@ -135,8 +135,8 @@ public:
         Canceled
     };
 
-    explicit FingerprintSettings(QObject *parent = nullptr);
-    ~FingerprintSettings();
+    explicit FingerprintSensor(QObject *parent = nullptr);
+    ~FingerprintSensor();
 
     bool hasSensor() const;
     bool isAcquiring() const;
@@ -162,7 +162,7 @@ signals:
     void acquiringChanged();
 
 private:
-    friend class FingerprintSettingsAdaptor;
+    friend class FingerprintSensorAdaptor;
 
     inline void connected();
     inline void disconnected();
@@ -173,7 +173,7 @@ private:
 
     ClientAuthorization m_authorization;
     ClientAuthorizationAdaptor m_authorizationAdaptor;
-    FingerprintSettingsAdaptor m_settingsAdaptor;
+    FingerprintSensorAdaptor m_settingsAdaptor;
     FingerprintModel m_fingerprintModel;
     int m_samplesRemaining;
     int m_samplesRequired;

@@ -35,15 +35,9 @@ SOURCES = \
 target.path = /usr/libexec
 
 systemd.files = \
-        systemd/nemo-devicelock.service \
-        systemd/nemo-devicelock.socket
+        systemd/nemo-devicelock.service
 systemd.path= /lib/systemd/system
 
-policy.files = \
-        systemd/org.nemomobile.devicelock.conf
-policy.path = /etc/dbus-1/system.d
-
 INSTALLS += \
-        policy \
         systemd \
         target
