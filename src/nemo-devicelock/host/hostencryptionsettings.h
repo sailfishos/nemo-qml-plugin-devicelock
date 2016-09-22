@@ -59,11 +59,12 @@ class HostEncryptionSettings : public HostAuthorization
 {
     Q_OBJECT
 public:
+    explicit HostEncryptionSettings(QObject *parent = nullptr);
     explicit HostEncryptionSettings(Authenticator::Methods allowedMethods, QObject *parent = nullptr);
     ~HostEncryptionSettings();
 
 protected:
-    virtual void encryptHome(const QString &requestor, const QVariant &authenticationToken) = 0;
+    virtual void encryptHome(const QString &requestor, const QVariant &authenticationToken);
 
 private:
     friend class HostEncryptionSettingsAdaptor;

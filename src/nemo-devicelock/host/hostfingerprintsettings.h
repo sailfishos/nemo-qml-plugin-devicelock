@@ -33,7 +33,7 @@
 #ifndef NEMODEVICELOCK_HOSTFINGERPRINTSETTINGS_H
 #define NEMODEVICELOCK_HOSTFINGERPRINTSETTINGS_H
 
-#include <nemo-devicelock/fingerprintsettings.h>
+#include <nemo-devicelock/fingerprintsensor.h>
 #include <nemo-devicelock/host/hostauthorization.h>
 
 namespace NemoDeviceLock
@@ -63,15 +63,16 @@ class HostFingerprintSettings : public HostAuthorization
 {
     Q_OBJECT
 public:
+    explicit HostFingerprintSettings(QObject *parent = nullptr);
     explicit HostFingerprintSettings(Authenticator::Methods, QObject *parent = nullptr);
     ~HostFingerprintSettings();
 
 protected:
-    virtual QVector<Fingerprint> fingerprints() const = 0;
+    virtual QVector<Fingerprint> fingerprints() const;
 
     virtual void remove(
-            const QString &requestor, const QVariant &authenticationToken, const QVariant &id) = 0;
-    virtual void rename(const QVariant &id, const QString &name) = 0;
+            const QString &requestor, const QVariant &authenticationToken, const QVariant &id);
+    virtual void rename(const QVariant &id, const QString &name);
 
     void fingerprintsChanged();
 
@@ -79,51 +80,6 @@ private:
     friend class HostFingerprintSettingsAdaptor;
 
     HostFingerprintSettingsAdaptor m_adaptor;
-};
-
-class HostFingerprintSensor;
-class HostFingerprintSensorAdaptor : public QDBusAbstractAdaptor
-{
-    Q_OBJECT
-    Q_PROPERTY(bool HasSensor READ hasSensor)
-    Q_CLASSINFO("D-Bus Interface", "org.nemomobile.devicelock.Fingerprint.Sensor")
-public:
-    explicit HostFingerprintSensorAdaptor(HostFingerprintSensor *sensor);
-
-    bool hasSensor() const;
-
-public slots:
-    uint AcquireFinger(const QDBusObjectPath &path, const QDBusVariant &authenticationToken);
-    void CancelAcquisition(const QDBusObjectPath &path);
-
-private:
-    HostFingerprintSensor * const m_sensor;
-};
-
-class HostFingerprintSensor : public HostAuthorization
-{
-    Q_OBJECT
-public:
-    explicit HostFingerprintSensor(Authenticator::Methods allowedMethods, QObject *parent = nullptr);
-    ~HostFingerprintSensor();
-
-protected:
-    virtual bool hasSensor() const = 0;
-
-    virtual int acquireFinger(const QString &requestor, const QVariant &authenticationToken) = 0;
-    virtual void cancelAcquisition(const QString &requestor) = 0;
-
-    void sendSampleAcquired(const QString &connection, const QString &path, int samplesRemaining);
-    void sendAcquisitionCompleted(const QString &connection, const QString &path);
-    void sendAcquisitionFeedback(const QString &connection, const QString &path, FingerprintSettings::Feedback feedback);
-    void sendAcquisitionError(const QString &connection, const QString &path, FingerprintSettings::Error error);
-
-    void hasSensorChanged();
-
-private:
-    friend class HostFingerprintSensorAdaptor;
-
-    HostFingerprintSensorAdaptor m_adaptor;
 };
 
 }

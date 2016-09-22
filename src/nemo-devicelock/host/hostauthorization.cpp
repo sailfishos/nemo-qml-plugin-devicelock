@@ -73,14 +73,21 @@ HostAuthorization::~HostAuthorization()
 
 void HostAuthorization::requestChallenge(const QString &)
 {
-    QDBusContext::setDelayedReply(true);
+    if (m_allowedMethods) {
+        QDBusContext::setDelayedReply(true);
 
-    QDBusContext::connection().send(QDBusContext::message().createReply(marshallArguments(
-                QVariant(0), uint(m_allowedMethods))));
+        QDBusContext::connection().send(QDBusContext::message().createReply(marshallArguments(
+                    QVariant(0), uint(m_allowedMethods))));
+    } else {
+        QDBusContext::sendErrorReply(QDBusError::NotSupported);
+    }
 }
 
 void HostAuthorization::relinquishChallenge(const QString &)
 {
+    if (!m_allowedMethods) {
+        QDBusContext::sendErrorReply(QDBusError::NotSupported);
+    }
 }
 
 void HostAuthorization::sendChallengeExpired(

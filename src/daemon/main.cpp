@@ -35,8 +35,9 @@
 #include <clidevicelocksettings.h>
 #include <clidevicereset.h>
 #include <cliencryptionsettings.h>
-#include <clifingerprintsettings.h>
 #include <clilockcodesettings.h>
+#include <hostfingerprintsensor.h>
+#include <hostfingerprintsettings.h>
 #include <hostservice.h>
 
 #include <QCoreApplication>
@@ -50,8 +51,8 @@ int main(int argc, char *argv[])
     NemoDeviceLock::CliDeviceLockSettings deviceLockSettings;
     NemoDeviceLock::CliDeviceReset deviceReset;
     NemoDeviceLock::CliEncryptionSettings encryptionSettings;
-    NemoDeviceLock::CliFingerprintSensor fingerprintSensor;
-    NemoDeviceLock::CliFingerprintSettings fingerprintSettings;
+    NemoDeviceLock::HostFingerprintSensor fingerprintSensor;
+    NemoDeviceLock::HostFingerprintSettings fingerprintSettings;
     NemoDeviceLock::CliLockCodeSettings lockCodeSettings;
 
     NemoDeviceLock::HostService service(
