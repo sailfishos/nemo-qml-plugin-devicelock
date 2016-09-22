@@ -59,6 +59,11 @@ void HostFingerprintSettingsAdaptor::Rename(const QDBusVariant &id, const QStrin
     m_settings->rename(id.variant(), name);
 }
 
+HostFingerprintSettings::HostFingerprintSettings(QObject *parent)
+    : HostFingerprintSettings(Authenticator::Methods(), parent)
+{
+}
+
 HostFingerprintSettings::HostFingerprintSettings(Authenticator::Methods allowedMethods, QObject *parent)
     : HostAuthorization(QStringLiteral("/fingerprint/settings"), allowedMethods, parent)
     , m_adaptor(this)
@@ -69,75 +74,27 @@ HostFingerprintSettings::~HostFingerprintSettings()
 {
 }
 
+QVector<Fingerprint> HostFingerprintSettings::fingerprints() const
+{
+    return QVector<Fingerprint>();
+}
+
+void HostFingerprintSettings::remove(const QString &, const QVariant &, const QVariant &)
+{
+    QDBusContext::sendErrorReply(QDBusError::NotSupported);
+}
+
+void HostFingerprintSettings::rename(const QVariant &, const QString &)
+{
+    QDBusContext::sendErrorReply(QDBusError::NotSupported);
+}
+
 void HostFingerprintSettings::fingerprintsChanged()
 {
     propertyChanged(
                 QStringLiteral("org.nemomobile.devicelock.Fingerprint.Settings"),
                 QStringLiteral("Fingerprints"),
                 QVariant::fromValue(fingerprints()));
-}
-
-HostFingerprintSensorAdaptor::HostFingerprintSensorAdaptor(HostFingerprintSensor *sensor)
-    : QDBusAbstractAdaptor(sensor)
-    , m_sensor(sensor)
-{
-}
-
-bool HostFingerprintSensorAdaptor::hasSensor() const
-{
-    return m_sensor->hasSensor();
-}
-
-uint HostFingerprintSensorAdaptor::AcquireFinger(const QDBusObjectPath &path, const QDBusVariant &authenticationToken)
-{
-    return m_sensor->acquireFinger(path.path(), authenticationToken.variant());
-}
-
-void HostFingerprintSensorAdaptor::CancelAcquisition(const QDBusObjectPath &path)
-{
-    m_sensor->cancelAcquisition(path.path());
-}
-
-HostFingerprintSensor::HostFingerprintSensor(Authenticator::Methods allowedMethods, QObject *parent)
-    : HostAuthorization(QStringLiteral("/fingerprint/sensor"), allowedMethods, parent)
-    , m_adaptor(this)
-{
-}
-
-HostFingerprintSensor::~HostFingerprintSensor()
-{
-}
-
-void HostFingerprintSensor::sendSampleAcquired(
-        const QString &connection, const QString &path, int samplesRemaining)
-{
-    send(connection, path, clientInterface, QStringLiteral("SampleAcquired"), uint(samplesRemaining));
-}
-
-void HostFingerprintSensor::sendAcquisitionCompleted(
-        const QString &connection, const QString &path)
-{
-    send(connection, path, clientInterface, QStringLiteral("AcquisitionCompleted"));
-}
-
-void HostFingerprintSensor::sendAcquisitionFeedback(
-        const QString &connection, const QString &path, FingerprintSettings::Feedback feedback)
-{
-    send(connection, path, clientInterface, QStringLiteral("AcquisitionFeedback"), uint(feedback));
-}
-
-void HostFingerprintSensor::sendAcquisitionError(
-        const QString &connection, const QString &path, FingerprintSettings::Error error)
-{
-    send(connection, path, clientInterface, QStringLiteral("AcquisitionError"), uint(error));
-}
-
-void HostFingerprintSensor::hasSensorChanged()
-{
-    propertyChanged(
-                QStringLiteral("org.nemomobile.devicelock.Fingerprint.Sensor"),
-                QStringLiteral("HasSensor"),
-                hasSensor());
 }
 
 }

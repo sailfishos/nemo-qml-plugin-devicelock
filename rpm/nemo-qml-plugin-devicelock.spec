@@ -23,7 +23,7 @@ Requires:       nemo-devicelock-daemon
 Summary:    The default command line lock code device lock daemon for Nemo Mobile
 Group:      System/GUI/Other
 Requires:   %{name} = %{version}-%{release}
-Provides:   nemo-devicelock-daemon
+Provides:   nemo-devicelock-daemon = %{version}-%{release}
 
 %description -n nemo-devicelock-daemon-cli
 %{summary}.
@@ -40,6 +40,9 @@ Requires:   %{name} = %{version}-%{release}
 Summary:    Development libraries for device lock daemons
 Group:      Development/Libraries
 Requires:   %{name}-devel = %{version}-%{release}
+Requires:   pkgconfig(keepalive)
+Requires:   pkgconfig(mce)
+Requires:   pkgconfig(libsystemd-daemon)
 
 %description host-devel
 %{summary}.
@@ -68,14 +71,14 @@ ln -sf ../nemo-devicelock.socket %{buildroot}/lib/systemd/system/multi-user.targ
 %dir %{_libdir}/qt5/qml/org/nemomobile/devicelock
 %{_libdir}/qt5/qml/org/nemomobile/devicelock/libnemodevicelockplugin.so
 %{_libdir}/qt5/qml/org/nemomobile/devicelock/qmldir
+/lib/systemd/system/nemo-devicelock.socket
+/lib/systemd/system/multi-user.target.wants/nemo-devicelock.socket
+%config %{_sysconfdir}/dbus-1/system.d/org.nemomobile.devicelock.conf
 
 %files -n nemo-devicelock-daemon-cli
 %defattr(-,root,root,-)
 %{_libexecdir}/nemo-devicelock
 /lib/systemd/system/nemo-devicelock.service
-/lib/systemd/system/nemo-devicelock.socket
-/lib/systemd/system/multi-user.target.wants/nemo-devicelock.socket
-%config %{_sysconfdir}/dbus-1/system.d/org.nemomobile.devicelock.conf
 
 %files devel
 %defattr(-,root,root,-)
@@ -91,3 +94,4 @@ ln -sf ../nemo-devicelock.socket %{buildroot}/lib/systemd/system/multi-user.targ
 %dir %{_includedir}/nemo-devicelock/host
 %{_includedir}/nemo-devicelock/host/*.h
 %{_libdir}/libnemodevicelock-host.a
+%{_datadir}/qt5/mkspecs/features/nemo-devicelock-host.prf

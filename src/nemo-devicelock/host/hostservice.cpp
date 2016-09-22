@@ -37,6 +37,7 @@
 #include "hostdevicelocksettings.h"
 #include "hostdevicereset.h"
 #include "hostencryptionsettings.h"
+#include "hostfingerprintsensor.h"
 #include "hostfingerprintsettings.h"
 #include "hostlockcodesettings.h"
 
