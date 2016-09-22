@@ -28,6 +28,7 @@ PUBLIC_HEADERS += \
         $$PWD/hostdevicelocksettings.h \
         $$PWD/hostdevicereset.h \
         $$PWD/hostencryptionsettings.h \
+        $$PWD/hostfingerprintsensor.h \
         $$PWD/hostfingerprintsettings.h \
         $$PWD/hostlockcodesettings.h \
         $$PWD/hostobject.h \
@@ -41,6 +42,7 @@ SOURCES += \
         $$PWD/hostdevicelocksettings.cpp \
         $$PWD/hostdevicereset.cpp \
         $$PWD/hostencryptionsettings.cpp \
+        $$PWD/hostfingerprintsensor.cpp \
         $$PWD/hostfingerprintsettings.cpp \
         $$PWD/hostlockcodesettings.cpp \
         $$PWD/hostobject.cpp \
@@ -55,8 +57,14 @@ HEADERS += \
 headers.files = $$PUBLIC_HEADERS
 headers.path = /usr/include/nemo-devicelock/host
 
+# the auto generated pkgconfig file includes paths from the build tree, use a .prf to
+# publish dependencies in a maintainable way instead.
+prf.files = nemo-devicelock-host.prf
+prf.path = $$[QT_INSTALL_DATA]/mkspecs/features
+
 target.path = /usr/lib
 
 INSTALLS += \
         headers \
+        prf \
         target

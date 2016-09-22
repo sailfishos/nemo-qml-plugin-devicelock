@@ -60,12 +60,13 @@ class HostDeviceReset : public HostAuthorization
 {
     Q_OBJECT
 public:
+    explicit HostDeviceReset(QObject *parent = nullptr);
     explicit HostDeviceReset(Authenticator::Methods allowedMethods, QObject *parent = nullptr);
     ~HostDeviceReset();
 
 protected:
     virtual void clearDevice(
-            const QString &requestor, const QVariant &authenticationToken, DeviceReset::ResetMode mode) = 0;
+            const QString &requestor, const QVariant &authenticationToken, DeviceReset::ResetMode mode);
 
 private:
     friend class HostDeviceResetAdaptor;

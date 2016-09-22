@@ -47,6 +47,11 @@ void HostEncryptionSettingsAdaptor::EncryptHome(
     m_settings->encryptHome(path.path(), authenticationToken.variant());
 }
 
+HostEncryptionSettings::HostEncryptionSettings(QObject *parent)
+    : HostEncryptionSettings(Authenticator::Methods(), parent)
+{
+}
+
 HostEncryptionSettings::HostEncryptionSettings(Authenticator::Methods allowedMethods, QObject *parent)
     : HostAuthorization(QStringLiteral("/encryption"), allowedMethods, parent)
     , m_adaptor(this)
@@ -55,6 +60,11 @@ HostEncryptionSettings::HostEncryptionSettings(Authenticator::Methods allowedMet
 
 HostEncryptionSettings::~HostEncryptionSettings()
 {
+}
+
+void HostEncryptionSettings::encryptHome(const QString &, const QVariant &)
+{
+    QDBusContext::sendErrorReply(QDBusError::NotSupported);
 }
 
 }
