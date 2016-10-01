@@ -37,8 +37,6 @@
 
 #include <QDBusMessage>
 
-#include <QDebug>
-
 namespace NemoDeviceLock
 {
 

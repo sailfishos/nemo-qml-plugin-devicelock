@@ -36,6 +36,8 @@
 #include <QFile>
 #include <QSettings>
 
+#include "logging.h"
+
 namespace NemoDeviceLock
 {
 
@@ -76,7 +78,7 @@ SettingsWatcher::SettingsWatcher(QObject *parent)
     if (QFile::exists(m_settingsPath) && m_watcher.addPath(m_settingsPath)) {
         reloadSettings();
     } else {
-        qWarning() << "Unable to follow devicelock configuration file changes";
+        qCWarning(devicelock, "Unable to follow device lock configuration file changes");
     }
 }
 

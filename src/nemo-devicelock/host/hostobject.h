@@ -34,9 +34,12 @@
 #define NEMODEVICELOCK_HOSTOBJECT_H
 
 #include <QDBusContext>
+#include <QLoggingCategory>
 
 namespace NemoDeviceLock
 {
+
+Q_DECLARE_LOGGING_CATEGORY(daemon)
 
 class HostObject : public QObject, protected QDBusContext
 {

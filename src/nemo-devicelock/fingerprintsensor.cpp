@@ -32,7 +32,7 @@
 
 #include "fingerprintsensor.h"
 
-#include <QDebug>
+#include "logging.h"
 
 QDBusArgument &operator<<(QDBusArgument &argument, const NemoDeviceLock::Fingerprint &fingerprint)
 {
@@ -204,6 +204,8 @@ void FingerprintSensorAdaptor::AcquisitionCompleted()
 
 void FingerprintSensorAdaptor::AcquisitionFeedback(uint feedback)
 {
+    qCDebug(devicelock, "Fingerprint acquisition feedback: %i", feedback);
+
     m_settings->acquisitionFeedback(FingerprintSensor::Feedback(feedback));
 }
 
@@ -307,6 +309,8 @@ FingerprintModel *FingerprintSensor::fingers()
 
 void FingerprintSensor::handleSampleAcquired(int samplesRemaining)
 {
+    qCDebug(devicelock, "Fingerprint sample acquired. Samples remaining: %i.", samplesRemaining);
+
     m_samplesRemaining = samplesRemaining;
 
     emit samplesRemainingChanged();
@@ -314,6 +318,8 @@ void FingerprintSensor::handleSampleAcquired(int samplesRemaining)
 
 void FingerprintSensor::handleAcquisitionCompleted()
 {
+    qCDebug(devicelock, "Fingerprint acquisition complete.");
+
     m_samplesRemaining = 0;
     m_samplesRequired = 0;
     m_isAcquiring = false;
@@ -327,6 +333,8 @@ void FingerprintSensor::handleAcquisitionCompleted()
 
 void FingerprintSensor::handleError(Error error)
 {
+    qCDebug(devicelock, "Fingerprint acquisition error %i.", int(error));
+
     m_samplesRemaining = 0;
     m_samplesRequired = 0;
     m_isAcquiring = false;

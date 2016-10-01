@@ -36,8 +36,6 @@
 
 #include <QDBusObjectPath>
 
-#include <QDebug>
-
 namespace NemoDeviceLock
 {
 
