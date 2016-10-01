@@ -125,7 +125,6 @@ private:
     bool m_displayOn;
     bool m_tklockActive;
     bool m_userActivity;
-    int  m_verbosityLevel;
 
     friend class MceDeviceLockAdaptor;
 
