@@ -33,7 +33,7 @@
 #include "authenticator.h"
 #include "settingswatcher.h"
 
-#include <QDebug>
+#include "logging.h"
 
 namespace NemoDeviceLock
 {
@@ -186,6 +186,9 @@ void Authenticator::handleFeedback(Feedback feedback, int attemptsRemaining, Met
             utilizedMethods = m_utilizedMethods;
         }
 
+        qCDebug(devicelock, "Authentication feedback %i.  Attempts remaining: %i. Methods: %i",
+                    int(feedback), attemptsRemaining, int(utilizedMethods));
+
         const bool methodsChanged = m_utilizedMethods != utilizedMethods;
 
         m_utilizedMethods = utilizedMethods;
@@ -202,6 +205,8 @@ void Authenticator::handleError(Error error)
 {
     if (m_authenticating) {
         m_authenticating = false;
+
+        qCDebug(devicelock, "Authentication error %i.", int(error));
 
         emit Authenticator::error(error);
         emit authenticatingChanged();

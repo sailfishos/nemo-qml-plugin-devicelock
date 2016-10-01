@@ -41,6 +41,8 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
+#include "logging.h"
+
 namespace NemoDeviceLock
 {
 
@@ -149,7 +151,7 @@ void SettingsWatcher::watchForSettingsFile()
     }
 
     if (m_watch < 0) {
-        qWarning() << "Unable to follow devicelock configuration file changes";
+        qCWarning(devicelock, "Unable to follow device lock configuration file changes");
     }
 }
 

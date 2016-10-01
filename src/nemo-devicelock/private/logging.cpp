@@ -30,54 +30,11 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include "hostobject.h"
-
-#include "dbusutilities.h"
+#include "logging.h"
 
 namespace NemoDeviceLock
 {
 
-Q_LOGGING_CATEGORY(daemon, "org.nemomobile.devicelock.daemon")
-
-HostObject::HostObject(const QString &path, QObject *parent)
-    : QObject(parent)
-    , m_path(path)
-{
-}
-
-HostObject::~HostObject()
-{
-}
-
-QString HostObject::path() const
-{
-    return m_path;
-}
-
-void HostObject::clientConnected(const QString &connectionName)
-{
-    m_connections.append(connectionName);
-}
-
-void HostObject::clientDisconnected(const QString &connectionName)
-{
-    m_connections.removeOne(connectionName);
-}
-
-void HostObject::propertyChanged(const QString &interface, const QString &property, const QVariant &value)
-{
-    const QVariantMap properties = { { property, value } };
-
-    QDBusMessage message = QDBusMessage::createSignal(
-                m_path,
-                QStringLiteral("org.freedesktop.DBus.Properties"),
-                QStringLiteral("PropertiesChanged"));
-
-    message.setArguments(marshallArguments(interface, properties, QStringList()));
-
-    for (const auto connectionName : m_connections) {
-        QDBusConnection(connectionName).send(message);
-    }
-}
+Q_LOGGING_CATEGORY(devicelock, "org.nemomobile.devicelock")
 
 }
