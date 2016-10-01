@@ -50,6 +50,10 @@ namespace NemoDeviceLock
 /** Maximum extra delay when waking up from suspend to apply devicelock */
 #define DEVICELOCK_MAX_WAKEUP_DELAY_S 12
 
+#if QT_VERSION < QT_VERSION_CHECK(5, 5, 0)
+#define qCInfo qCDebug
+#endif
+
 MceDeviceLock::MceDeviceLock(Authenticator::Methods allowedMethods, QObject *parent)
     : HostDeviceLock(allowedMethods, parent)
     , m_dbus(this)
@@ -58,7 +62,6 @@ MceDeviceLock::MceDeviceLock(Authenticator::Methods allowedMethods, QObject *par
     , m_displayOn(true)
     , m_tklockActive(true)
     , m_userActivity(true)
-    , m_verbosityLevel(1)
 {
     connect(&m_hbTimer, &BackgroundActivity::running, this, &MceDeviceLock::lock);
 
@@ -68,8 +71,8 @@ MceDeviceLock::MceDeviceLock(Authenticator::Methods allowedMethods, QObject *par
     trackInactivityState();
 
     if (!QDBusConnection::systemBus().registerObject(QStringLiteral("/devicelock"), this)) {
-        qWarning("Unable to register object at path /devicelock: %s",
-                    QDBusConnection::systemBus().lastError().message().toUtf8().constData());
+        qCWarning(daemon, "Unable to register object at path /devicelock: %s",
+                    qPrintable(QDBusConnection::systemBus().lastError().message()));
     }
 }
 
@@ -84,8 +87,8 @@ void MceDeviceLock::handleTklockStateChanged(const QString &state)
     bool active = (state == MCE_TK_LOCKED);
 
     if (m_tklockActive != active) {
-        if (m_verbosityLevel >= 2)
-            qDebug() << state;
+        qCDebug(daemon, "MCE tklock state is now %s", qPrintable(state));
+
         m_tklockActive = active;
         setStateAndSetupLockTimer();
     }
@@ -95,7 +98,7 @@ void MceDeviceLock::handleTklockStateReply(QDBusPendingCallWatcher *call)
 {
     QDBusPendingReply<QString> reply = *call;
     if (reply.isError()) {
-        qCritical() << "Call to mce failed:" << reply.error();
+        qCCritical(daemon, "MCE DBus error: %s", qPrintable(call->error().message()));
     } else {
         handleTklockStateChanged(reply.value());
     }
@@ -144,8 +147,8 @@ void MceDeviceLock::handleCallStateChanged(const QString &state)
     bool active = (state == MCE_CALL_STATE_ACTIVE || state == MCE_CALL_STATE_RINGING);
 
     if (m_callActive != active) {
-        if (m_verbosityLevel >= 2)
-            qDebug() << state;
+        qCDebug(daemon, "MCE call state is now %s", qPrintable(state));
+
         m_callActive = active;
         setStateAndSetupLockTimer();
     }
@@ -155,7 +158,7 @@ void MceDeviceLock::handleCallStateReply(QDBusPendingCallWatcher *call)
 {
     QDBusPendingReply<QString> reply = *call;
     if (reply.isError()) {
-        qCritical() << "Call to mce failed:" << reply.error();
+        qCCritical(daemon, "MCE DBus error: %s", qPrintable(call->error().message()));
     } else {
         handleCallStateChanged(reply.value());
     }
@@ -179,9 +182,8 @@ void MceDeviceLock::handleDisplayStateChanged(const QString &state)
     bool displayOn = (state == MCE_DISPLAY_ON_STRING || state == MCE_DISPLAY_DIM_STRING);
 
     if (m_displayOn != displayOn) {
-        if (m_verbosityLevel >= 2) {
-            qDebug() << state;
-        }
+        qCDebug(daemon, "MCE display state is now %s", qPrintable(state));
+
         m_displayOn = displayOn;
         setStateAndSetupLockTimer();
     }
@@ -191,7 +193,7 @@ void MceDeviceLock::handleDisplayStateReply(QDBusPendingCallWatcher *call)
 {
     QDBusPendingReply<QString> reply = *call;
     if (reply.isError()) {
-        qCritical() << "Call to mce failed:" << reply.error();
+        qCCritical(daemon, "MCE DBus error: %s", qPrintable(call->error().message()));
     } else {
         handleDisplayStateChanged(reply.value());
     }
@@ -215,9 +217,8 @@ void MceDeviceLock::handleInactivityStateChanged(const bool state)
     bool activity = !state;
 
     if (m_userActivity != activity) {
-        if (m_verbosityLevel >= 2) {
-            qDebug() << state;
-        }
+        qCDebug(daemon, "MCE inactivity state is now %s", activity ? "true" : "false");
+
         m_userActivity = activity;
         setStateAndSetupLockTimer();
     }
@@ -227,7 +228,7 @@ void MceDeviceLock::handleInactivityStateReply(QDBusPendingCallWatcher *call)
 {
     QDBusPendingReply<bool> reply = *call;
     if (reply.isError()) {
-        qCritical() << "Call to mce failed:" << reply.error();
+        qCCritical(daemon, "MCE DBus error: %s", qPrintable(call->error().message()));
     } else {
         handleInactivityStateChanged(reply.value());
     }
@@ -317,28 +318,27 @@ void MceDeviceLock::setStateAndSetupLockTimer()
         /* We should be in different deviceLockState. Set the state
          * and assume that setState() recurses back here so that we
          * get another chance to deal with the stable state. */
-        if (m_verbosityLevel >= 2)
-            qDebug("forcing %s instead of %s",
-                   reprLockState(requiredState),
-                   reprLockState(m_deviceLockState));
+            qCDebug(daemon, "forcing %s instead of %s",
+                        reprLockState(requiredState),
+                        reprLockState(m_deviceLockState));
         setState(requiredState);
     } else if (needLockTimer()) {
         /* Start devicelock timer */
         if (!m_hbTimer.isWaiting()) {
             int range_lo = automaticLocking() * 60;
             int range_hi = range_lo + DEVICELOCK_MAX_WAKEUP_DELAY_S;
-            if (m_verbosityLevel >= 1)
-                qDebug("start devicelock timer (%d-%d s)", range_lo, range_hi);
+
+            qCInfo(daemon, "start devicelock timer (%d-%d s)", range_lo, range_hi);
+
             m_hbTimer.wait(range_lo, range_hi);
         } else {
-            if (m_verbosityLevel >= 2)
-                qDebug("devicelock timer already running");
+            qCDebug(daemon, "devicelock timer already running");
         }
     } else {
         /* Stop devicelock timer */
         if (!m_hbTimer.isStopped()) {
-            if (m_verbosityLevel >= 1)
-                qDebug("stop devicelock timer");
+            qCInfo(daemon, "stop devicelock timer");
+
             m_hbTimer.stop();
         }
     }
@@ -348,8 +348,7 @@ void MceDeviceLock::setStateAndSetupLockTimer()
  */
 void MceDeviceLock::lock()
 {
-    if (m_verbosityLevel >= 1)
-        qDebug() << "devicelock triggered";
+    qCInfo(daemon, "devicelock triggered");
 
     setState(DeviceLock::Locked);
 
@@ -357,7 +356,8 @@ void MceDeviceLock::lock()
      * timer. If that does not happen, it is a bug. Nevertheless, we
      * must not leave an active cpu keepalive session behind. */
     if (m_hbTimer.isRunning()) {
-        qWarning("cpu keepalive was not terminated; forcing stop");
+        qCWarning(daemon, "cpu keepalive was not terminated; forcing stop");
+
         m_hbTimer.stop();
     }
 
@@ -376,11 +376,7 @@ void MceDeviceLock::setState(DeviceLock::LockState state)
         return;
     }
 
-    if (m_verbosityLevel >= 1) {
-        qDebug("%s -> %s",
-               reprLockState(m_deviceLockState),
-               reprLockState(state));
-    }
+    qCInfo(daemon, "%s -> %s", reprLockState(m_deviceLockState), reprLockState(state));
 
     m_deviceLockState = state;
     emit m_dbus.stateChanged(m_deviceLockState);

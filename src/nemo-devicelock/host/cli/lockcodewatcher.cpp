@@ -36,7 +36,6 @@
 
 #include <QDBusConnection>
 #include <QDBusMessage>
-#include <QDebug>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -63,12 +62,12 @@ void PluginCommand::processFinished(int exitCode, QProcess::ExitStatus status)
 
     QByteArray output = readAllStandardOutput();
     if (!output.isEmpty()) {
-        qDebug() << output.constData();
+        qCDebug(daemon) << output.constData();
     }
 
     output = readAllStandardError();
     if (!output.isEmpty()) {
-        qWarning() << output.constData();
+        qCWarning(daemon) << output.constData();
     }
 
     if (!m_caller) {
@@ -91,7 +90,7 @@ static QString pluginName()
         const QString pluginName = settings.value(QStringLiteral("DeviceLock/pluginName")).toString();
 
         if (pluginName.isEmpty()) {
-            qWarning("DeviceLock: no plugin configuration set in /usr/share/lipstick/devicelock/devicelock.conf");
+            qCWarning(daemon, "DeviceLock: no plugin configuration set in /usr/share/lipstick/devicelock/devicelock.conf");
         }
 
         return pluginName;
