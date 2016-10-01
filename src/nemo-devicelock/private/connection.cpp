@@ -31,10 +31,9 @@
  */
 
 #include <connection.h>
+#include "private/logging.h"
 
 #include <QCoreApplication>
-
-#include <QDebug>
 
 namespace NemoDeviceLock
 {
@@ -143,6 +142,8 @@ Connection::Connection(QObject *parent)
     sharedInstance = this;
 
     if (m_connection.isConnected()) {
+        qCDebug(devicelock, "Connected to the device lock daemon");
+
         connectToDisconnected();
     }
 
@@ -166,9 +167,13 @@ Connection::Connection(QObject *parent)
                     QStringLiteral("ActiveState"),
                     [this] (const QString &state) {
             if (!m_connection.isConnected() && state == QStringLiteral("active")) {
+                qCDebug(devicelock, "The device lock socket is available to connect to");
+
                 m_connection = connectToHost();
 
                 if (m_connection.isConnected()) {
+                    qCDebug(devicelock, "Connected to the device lock daemon");
+
                     connectToDisconnected();
                     emit connected();
                 }
@@ -222,7 +227,9 @@ bool Connection::getProperty(
 
         return true;
     } else {
-        qWarning() << "Failed to query property" << reply.errorMessage();
+        qCWarning(devicelock, "DBus error (%s org.freedesktop.DBus.Properties.Get): %s",
+                    qPrintable(path),
+                    qPrintable(reply.errorMessage()));
         return false;
     }
 }
@@ -236,6 +243,8 @@ PendingCall *Connection::call(
         const QString &method,
         const QVariantList &arguments)
 {
+    qCDebug(devicelock, "DBus invocation (%s %s.%s)", qPrintable(path), qPrintable(interface), qPrintable(method));
+
     QDBusMessage message = QDBusMessage::createMethodCall(service, path, interface, method);
     message.setArguments(arguments);
 
@@ -269,7 +278,7 @@ PropertyChanges *Connection::subscribeToObject(
 void Connection::registerObject(const QString &path, QObject *object)
 {
     if (!m_connection.registerObject(path, object)) {
-        qWarning() << "Failed to register object on path" << path << object;
+        qCWarning(devicelock) << "Failed to register object on path" << path << object;
     }
 }
 
@@ -281,9 +290,18 @@ void Connection::callFinished(QDBusPendingCallWatcher *watcher)
     const auto call = static_cast<PendingCall *>(watcher);
 
     if (reply.isError()) {
-        qWarning() << "there was an error" << call->path() << call->interface() << call->method() << call->error().message();
+        qCWarning(devicelock, "DBus error (%s %s.%s): %s",
+                    qPrintable(call->path()),
+                    qPrintable(call->interface()),
+                    qPrintable(call->method()),
+                    qPrintable(call->error().message()));
         call->failure(reply.error());
     } else {
+        qCDebug(devicelock, "DBus reply (%s %s.%s)",
+                    qPrintable(call->path()),
+                    qPrintable(call->interface()),
+                    qPrintable(call->method()));
+
         call->success(reply);
     }
 }
@@ -297,12 +315,14 @@ void Connection::connectToDisconnected()
                 QStringLiteral("Disconnected"),
                 this,
                 SIGNAL(handleDisconnect()))) {
-        qWarning() << "Failed to connect to disconnected signal" << m_connection.lastError();
+        qCWarning(devicelock, "Failed to connection to connection disconnected signal");
     }
 }
 
 void Connection::handleDisconnect()
 {
+    qCDebug(devicelock, "Disconnected from device lock daemon");
+
     deletePropertyListeners();
 
     emit disconnected();

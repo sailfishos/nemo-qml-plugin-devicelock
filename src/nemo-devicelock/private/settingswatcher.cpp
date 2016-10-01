@@ -41,6 +41,8 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
+#include "logging.h"
+
 namespace NemoDeviceLock
 {
 
@@ -127,7 +129,6 @@ bool SettingsWatcher::event(QEvent *event)
         return QSocketNotifier::event(event);
     }
 }
-
 
 template <typename T>
 static void read(

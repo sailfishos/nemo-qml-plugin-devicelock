@@ -4,7 +4,8 @@ INCLUDEPATH += $$PWD
 PRIVATE_HEADERS += \
         $$PWD/clientauthorization.h \
         $$PWD/connection.h \
-        $$PWD/dbusutilities.h
+        $$PWD/dbusutilities.h \
+        $$PWD/logging.h
 
 HEADERS += \
         $$PWD/settingswatcher.h
@@ -12,4 +13,6 @@ HEADERS += \
 SOURCES += \
         $$PWD/clientauthorization.cpp \
         $$PWD/connection.cpp \
+        $$PWD/logging.cpp \
         $$PWD/settingswatcher.cpp
+

@@ -45,8 +45,6 @@
 #include <QDBusMetaType>
 #include <QDir>
 
-#include <QDebug>
-
 #include <dbus/dbus.h>
 #include <systemd/sd-daemon.h>
 
@@ -107,7 +105,8 @@ HostService::HostService(
     qDBusRegisterMetaType<QVector<NemoDeviceLock::Fingerprint>>();
 
     if (!QDBusConnection::systemBus().registerService(QStringLiteral("org.nemomobile.devicelock"))) {
-        qDebug() << "Failed to register service org.nemomobile.devicelock" << QDBusConnection::systemBus().lastError();
+        qCWarning(daemon, "Failed to register service org.nemomobile.devicelock. %s",
+                    qPrintable(QDBusConnection::systemBus().lastError().message()));
     }
 
     sd_notify(0, "READY=1");
@@ -120,7 +119,7 @@ HostService::~HostService()
 static void registerObject(QDBusConnection &connection, const QString &path, QObject *object)
 {
     if (!connection.registerObject(path, object)) {
-        qWarning() << "Failed to register object on path" << path;
+        qCWarning(daemon, "Failed to register object on path %s", qPrintable(path));
     }
 }
 
@@ -144,7 +143,7 @@ void HostService::connectionReady(const QDBusConnection &newConnection)
                 SLOT(disconnected()))) {
         delete monitor;
 
-        qWarning() << "Failed to connect to disconnect signal";
+        qCWarning(daemon, "Failed to connect to disconnect signal");
     }
 
     const auto connectionName = newConnection.name();

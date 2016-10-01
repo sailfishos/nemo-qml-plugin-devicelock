@@ -90,8 +90,6 @@ signals:
 private:
     explicit SettingsWatcher(QObject *parent = nullptr);
 
-    void watchForSettingsFile();
-    void watchSettingsFile();
     void reloadSettings();
 
     QString m_settingsPath;
