@@ -43,11 +43,28 @@ namespace NemoDeviceLock
 CliEncryptionSettings::CliEncryptionSettings(QObject *parent)
     : HostEncryptionSettings(Authenticator::LockCode, parent)
     , m_watcher(LockCodeWatcher::instance())
+    , m_supportQuery(m_watcher->runPlugin(this, QStringList() << QStringLiteral("--is-encryption-supported")))
+    , m_supported(false)
 {
+    m_supportQuery->onSuccess([this]() {
+        m_supportQuery = nullptr;
+        m_supported = true;
+    });
+    m_supportQuery->onFailure([this](int) {
+        m_supportQuery = nullptr;
+    });
 }
 
 CliEncryptionSettings::~CliEncryptionSettings()
 {
+}
+
+bool CliEncryptionSettings::isSupported() const
+{
+    if (m_supportQuery) {
+        m_supportQuery->waitForFinished();
+    }
+    return m_supported;
 }
 
 void CliEncryptionSettings::encryptHome(const QString &, const QVariant &authenticationToken)

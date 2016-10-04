@@ -40,6 +40,7 @@
 #include <QDBusContext>
 #include <QDBusPendingCallWatcher>
 #include <keepalive/backgroundactivity.h>
+#include <nemo-dbus/interface.h>
 
 namespace NemoDeviceLock
 {
@@ -95,28 +96,23 @@ protected slots:
     void lock();
 
     void handleTklockStateChanged(const QString &state);
-    void handleTklockStateReply(QDBusPendingCallWatcher *call);
-
     void handleCallStateChanged(const QString &state);
-    void handleCallStateReply(QDBusPendingCallWatcher *call);
-
     void handleDisplayStateChanged(const QString &state);
-    void handleDisplayStateReply(QDBusPendingCallWatcher *call);
-
     void handleInactivityStateChanged(const bool state);
-    void handleInactivityStateReply(QDBusPendingCallWatcher *call);
 
 private:
-    void trackTklockState();
-    void trackCallState();
-    void trackDisplayState();
-    void trackInactivityState(void);
+    void trackMceProperty(
+            const QString &changedSignal,
+            const char *changedSlot,
+            const QString &getMethod,
+            void (MceDeviceLock::*replySlot)(const QString &));
 
     void setStateAndSetupLockTimer();
     DeviceLock::LockState getRequiredLockState();
     bool needLockTimer();
 
-    MceDeviceLockAdaptor m_dbus;
+    MceDeviceLockAdaptor m_adaptor;
+    NemoDBus::Interface m_mceRequest;
 
     BackgroundActivity m_hbTimer;
 

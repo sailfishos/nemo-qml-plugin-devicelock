@@ -56,7 +56,13 @@ namespace NemoDeviceLock
 
 MceDeviceLock::MceDeviceLock(Authenticator::Methods allowedMethods, QObject *parent)
     : HostDeviceLock(allowedMethods, parent)
-    , m_dbus(this)
+    , m_adaptor(this)
+    , m_mceRequest(
+          this,
+          systemBus(),
+          QStringLiteral(MCE_SERVICE),
+          QStringLiteral(MCE_REQUEST_PATH),
+          QStringLiteral(MCE_REQUEST_IF))
     , m_deviceLockState(DeviceLock::Undefined)
     , m_callActive(false)
     , m_displayOn(true)
@@ -65,20 +71,64 @@ MceDeviceLock::MceDeviceLock(Authenticator::Methods allowedMethods, QObject *par
 {
     connect(&m_hbTimer, &BackgroundActivity::running, this, &MceDeviceLock::lock);
 
-    trackCallState();
-    trackDisplayState();
-    trackTklockState();
-    trackInactivityState();
+    trackMceProperty(
+                QStringLiteral(MCE_CALL_STATE_SIG),
+                SLOT(handleCallStateChanged(QString)),
+                QStringLiteral(MCE_CALL_STATE_GET),
+                &MceDeviceLock::handleCallStateChanged);
 
-    if (!QDBusConnection::systemBus().registerObject(QStringLiteral("/devicelock"), this)) {
-        qCWarning(daemon, "Unable to register object at path /devicelock: %s",
-                    qPrintable(QDBusConnection::systemBus().lastError().message()));
-    }
+    trackMceProperty(
+                QStringLiteral(MCE_DISPLAY_SIG),
+                SLOT(handleDisplayStateChanged(QString)),
+                QStringLiteral(MCE_DISPLAY_STATUS_GET),
+                &MceDeviceLock::handleDisplayStateChanged);
+
+    trackMceProperty(
+                QStringLiteral(MCE_TKLOCK_MODE_SIG),
+                SLOT(handleTklockStateChanged(QString)),
+                QStringLiteral(MCE_TKLOCK_MODE_GET),
+                &MceDeviceLock::handleTklockStateChanged);
+
+    systemBus().connectToSignal(
+                QString(),
+                QStringLiteral(MCE_SIGNAL_PATH),
+                QStringLiteral(MCE_SIGNAL_IF),
+                QStringLiteral(MCE_INACTIVITY_SIG),
+                this,
+                SLOT(handleInactivityStateChanged(bool)));
+
+    const auto response = m_mceRequest.call(QStringLiteral(MCE_INACTIVITY_STATUS_GET));
+    response->onFinished<bool>([this](bool state) {
+        handleInactivityStateChanged(state);
+    });
+
+    systemBus().registerObject(QStringLiteral("/devicelock"), this);
 }
 
 MceDeviceLock::~MceDeviceLock()
 {
 }
+
+void MceDeviceLock::trackMceProperty(
+        const QString &changedSignal,
+        const char *changedSlot,
+        const QString &getMethod,
+        void (MceDeviceLock::*replySlot)(const QString &))
+{
+    systemBus().connectToSignal(
+                QString(),
+                QStringLiteral(MCE_SIGNAL_PATH),
+                QStringLiteral(MCE_SIGNAL_IF),
+                changedSignal,
+                this,
+                changedSlot);
+
+    const auto response = m_mceRequest.call(getMethod);
+    response->onFinished<QString>([this, replySlot](const QString &state) {
+        (this->*replySlot)(state);
+    });
+}
+
 
 /** Handle tklock state signal/reply from mce
  */
@@ -92,52 +142,6 @@ void MceDeviceLock::handleTklockStateChanged(const QString &state)
         m_tklockActive = active;
         setStateAndSetupLockTimer();
     }
-}
-
-void MceDeviceLock::handleTklockStateReply(QDBusPendingCallWatcher *call)
-{
-    QDBusPendingReply<QString> reply = *call;
-    if (reply.isError()) {
-        qCCritical(daemon, "MCE DBus error: %s", qPrintable(call->error().message()));
-    } else {
-        handleTklockStateChanged(reply.value());
-    }
-    call->deleteLater();
-}
-
-static void trackMceProperty(
-        MceDeviceLock *receiver,
-        const QString &changedSignal,
-        const char *changedSlot,
-        const QString &getMethod,
-        void (MceDeviceLock::*replySlot)(QDBusPendingCallWatcher *))
-{
-    QDBusConnection::systemBus().connect(
-                QString(),
-                QStringLiteral(MCE_SIGNAL_PATH),
-                QStringLiteral(MCE_SIGNAL_IF),
-                changedSignal,
-                receiver,
-                changedSlot);
-
-    QDBusMessage call = QDBusMessage::createMethodCall(
-                QStringLiteral(MCE_SERVICE),
-                QStringLiteral(MCE_REQUEST_PATH),
-                QStringLiteral(MCE_REQUEST_IF),
-                getMethod);
-    QDBusPendingCall reply = QDBusConnection::systemBus().asyncCall(call);
-    QDBusPendingCallWatcher *watch = new QDBusPendingCallWatcher(reply, receiver);
-    QObject::connect(watch, &QDBusPendingCallWatcher::finished, receiver, replySlot);
-}
-
-void MceDeviceLock::trackTklockState()
-{
-    trackMceProperty(
-                this,
-                QStringLiteral(MCE_TKLOCK_MODE_SIG),
-                SLOT(handleTklockStateChanged(QString)),
-                QStringLiteral(MCE_TKLOCK_MODE_GET),
-                &MceDeviceLock::handleTklockStateReply);
 }
 
 /** Handle call state signal/reply from mce
@@ -154,27 +158,6 @@ void MceDeviceLock::handleCallStateChanged(const QString &state)
     }
 }
 
-void MceDeviceLock::handleCallStateReply(QDBusPendingCallWatcher *call)
-{
-    QDBusPendingReply<QString> reply = *call;
-    if (reply.isError()) {
-        qCCritical(daemon, "MCE DBus error: %s", qPrintable(call->error().message()));
-    } else {
-        handleCallStateChanged(reply.value());
-    }
-    call->deleteLater();
-}
-
-void MceDeviceLock::trackCallState()
-{
-    trackMceProperty(
-                this,
-                QStringLiteral(MCE_CALL_STATE_SIG),
-                SLOT(handleCallStateChanged(QString)),
-                QStringLiteral(MCE_CALL_STATE_GET),
-                &MceDeviceLock::handleCallStateReply);
-}
-
 /** Handle display state signal/reply from mce
  */
 void MceDeviceLock::handleDisplayStateChanged(const QString &state)
@@ -189,27 +172,6 @@ void MceDeviceLock::handleDisplayStateChanged(const QString &state)
     }
 }
 
-void MceDeviceLock::handleDisplayStateReply(QDBusPendingCallWatcher *call)
-{
-    QDBusPendingReply<QString> reply = *call;
-    if (reply.isError()) {
-        qCCritical(daemon, "MCE DBus error: %s", qPrintable(call->error().message()));
-    } else {
-        handleDisplayStateChanged(reply.value());
-    }
-    call->deleteLater();
-}
-
-void MceDeviceLock::trackDisplayState()
-{
-    trackMceProperty(
-                this,
-                QStringLiteral(MCE_DISPLAY_SIG),
-                SLOT(handleDisplayStateChanged(QString)),
-                QStringLiteral(MCE_DISPLAY_STATUS_GET),
-                &MceDeviceLock::handleDisplayStateReply);
-}
-
 /** Handle inactivity state signal/reply from mce
  */
 void MceDeviceLock::handleInactivityStateChanged(const bool state)
@@ -222,27 +184,6 @@ void MceDeviceLock::handleInactivityStateChanged(const bool state)
         m_userActivity = activity;
         setStateAndSetupLockTimer();
     }
-}
-
-void MceDeviceLock::handleInactivityStateReply(QDBusPendingCallWatcher *call)
-{
-    QDBusPendingReply<bool> reply = *call;
-    if (reply.isError()) {
-        qCCritical(daemon, "MCE DBus error: %s", qPrintable(call->error().message()));
-    } else {
-        handleInactivityStateChanged(reply.value());
-    }
-    call->deleteLater();
-}
-
-void MceDeviceLock::trackInactivityState(void)
-{
-    trackMceProperty(
-                this,
-                QStringLiteral(MCE_INACTIVITY_SIG),
-                SLOT(handleInactivityStateChanged(bool)),
-                QStringLiteral(MCE_INACTIVITY_STATUS_GET),
-                &MceDeviceLock::handleInactivityStateReply);
 }
 
 /** Helper for producing human readable devicelock state logging
@@ -319,8 +260,7 @@ void MceDeviceLock::setStateAndSetupLockTimer()
          * and assume that setState() recurses back here so that we
          * get another chance to deal with the stable state. */
             qCDebug(daemon, "forcing %s instead of %s",
-                        reprLockState(requiredState),
-                        reprLockState(m_deviceLockState));
+                        reprLockState(requiredState), reprLockState(m_deviceLockState));
         setState(requiredState);
     } else if (needLockTimer()) {
         /* Start devicelock timer */
@@ -379,7 +319,7 @@ void MceDeviceLock::setState(DeviceLock::LockState state)
     qCInfo(daemon, "%s -> %s", reprLockState(m_deviceLockState), reprLockState(state));
 
     m_deviceLockState = state;
-    emit m_dbus.stateChanged(m_deviceLockState);
+    emit m_adaptor.stateChanged(m_deviceLockState);
     emit stateChanged();
 
     setStateAndSetupLockTimer();
