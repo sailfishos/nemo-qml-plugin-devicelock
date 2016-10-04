@@ -131,7 +131,6 @@ private:
     friend class AuthenticatorAdaptor;
 
     inline void connected();
-    inline void disconnected();
 
     inline void handleAuthentication(const QVariant &authenticationToken);
     inline void handleFeedback(Feedback feedback, int attemptsRemaining, Methods utilizedMethods);

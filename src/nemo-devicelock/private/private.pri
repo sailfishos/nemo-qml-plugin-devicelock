@@ -4,7 +4,6 @@ INCLUDEPATH += $$PWD
 PRIVATE_HEADERS += \
         $$PWD/clientauthorization.h \
         $$PWD/connection.h \
-        $$PWD/dbusutilities.h \
         $$PWD/logging.h
 
 HEADERS += \

@@ -165,7 +165,6 @@ private:
     friend class FingerprintSensorAdaptor;
 
     inline void connected();
-    inline void disconnected();
 
     inline void handleSampleAcquired(int samplesRemaining);
     inline void handleAcquisitionCompleted();

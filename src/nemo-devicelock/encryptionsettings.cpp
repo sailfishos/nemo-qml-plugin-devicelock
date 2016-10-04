@@ -42,11 +42,14 @@ EncryptionSettings::EncryptionSettings(QObject *parent)
           this,
           QStringLiteral("/encryption"),
           QStringLiteral("org.nemomobile.devicelock.EncryptionSettings"))
-    , m_authorization(m_localPath, m_remotePath)
+    , m_authorization(m_localPath, path())
     , m_authorizationAdaptor(&m_authorization, this)
     , m_settings(SettingsWatcher::instance())
+    , m_supported(false)
 {
-    connect(m_connection.data(), &Connection::connected, this, &EncryptionSettings::connected);
+    m_connection->onConnected(this, [this] {
+        connected();
+    });
 
     if (m_connection->isConnected()) {
         connected();
@@ -67,6 +70,11 @@ bool EncryptionSettings::isHomeEncrypted() const
     return m_settings->isHomeEncrypted;
 }
 
+bool EncryptionSettings::isSupported() const
+{
+    return m_supported;
+}
+
 void EncryptionSettings::encryptHome(const QVariant &authenticationToken)
 {
     if (m_authorization.status() == Authorization::ChallengeIssued) {
@@ -84,6 +92,10 @@ void EncryptionSettings::encryptHome(const QVariant &authenticationToken)
 void EncryptionSettings::connected()
 {
     void registerObject();
+
+    subscribeToProperty<bool>(QStringLiteral("Supported"), [this](bool supported) {
+        m_supported = supported;
+    });
 }
 
 }

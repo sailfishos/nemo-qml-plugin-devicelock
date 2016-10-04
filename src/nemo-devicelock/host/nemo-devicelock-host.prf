@@ -9,6 +9,7 @@ PKGCONFIG += \
         dbus-1 \
         libsystemd-daemon \
         keepalive \
+        nemodbus \
         nemodevicelock \
 
 LIBS += \
