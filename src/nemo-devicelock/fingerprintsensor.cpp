@@ -71,10 +71,12 @@ FingerprintModel::FingerprintModel(QObject *parent)
           this,
           QStringLiteral("/fingerprint/settings"),
           QStringLiteral("org.nemomobile.devicelock.Fingerprint.Settings"))
-    , m_authorization(m_localPath, m_remotePath)
+    , m_authorization(m_localPath, path())
     , m_authorizationAdaptor(&m_authorization, this)
 {
-    connect(m_connection.data(), &Connection::connected, this, &FingerprintModel::connected);
+    m_connection->onConnected(this, [this] {
+        connected();
+    });
 
     if (m_connection->isConnected()) {
         connected();
@@ -220,7 +222,7 @@ FingerprintSensor::FingerprintSensor(QObject *parent)
           this,
           QStringLiteral("/fingerprint/sensor"),
           QStringLiteral("org.nemomobile.devicelock.Fingerprint.Sensor"))
-    , m_authorization(m_localPath, m_remotePath)
+    , m_authorization(m_localPath, path())
     , m_authorizationAdaptor(&m_authorization, this)
     , m_settingsAdaptor(this)
     , m_samplesRemaining(0)
@@ -228,8 +230,19 @@ FingerprintSensor::FingerprintSensor(QObject *parent)
     , m_hasSensor(false)
     , m_isAcquiring(false)
 {
-    connect(m_connection.data(), &Connection::connected, this, &FingerprintSensor::connected);
-    connect(m_connection.data(), &Connection::disconnected, this, &FingerprintSensor::disconnected);
+    m_connection->onConnected(this, [this] {
+        connected();
+    });
+
+    m_connection->onDisconnected(this, [this] {
+        m_samplesRemaining = 0;
+        m_samplesRequired = 0;
+        m_isAcquiring = false;
+
+        emit acquiringChanged();
+        emit samplesRequiredChanged();
+        emit samplesRemainingChanged();
+    });
 
     if (m_connection->isConnected()) {
         connected();
@@ -355,17 +368,6 @@ void FingerprintSensor::connected()
             emit hasSensorChanged();
         }
     });
-}
-
-void FingerprintSensor::disconnected()
-{
-    m_samplesRemaining = 0;
-    m_samplesRequired = 0;
-    m_isAcquiring = false;
-
-    emit acquiringChanged();
-    emit samplesRequiredChanged();
-    emit samplesRemainingChanged();
 }
 
 }

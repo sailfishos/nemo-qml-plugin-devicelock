@@ -92,25 +92,25 @@ void HostFingerprintSensor::cancelAcquisition(const QString &)
 void HostFingerprintSensor::sendSampleAcquired(
         const QString &connection, const QString &path, int samplesRemaining)
 {
-    send(connection, path, clientInterface, QStringLiteral("SampleAcquired"), uint(samplesRemaining));
+    NemoDBus::send(connection, path, clientInterface, QStringLiteral("SampleAcquired"), uint(samplesRemaining));
 }
 
 void HostFingerprintSensor::sendAcquisitionCompleted(
         const QString &connection, const QString &path)
 {
-    send(connection, path, clientInterface, QStringLiteral("AcquisitionCompleted"));
+    NemoDBus::send(connection, path, clientInterface, QStringLiteral("AcquisitionCompleted"));
 }
 
 void HostFingerprintSensor::sendAcquisitionFeedback(
         const QString &connection, const QString &path, FingerprintSensor::Feedback feedback)
 {
-    send(connection, path, clientInterface, QStringLiteral("AcquisitionFeedback"), uint(feedback));
+    NemoDBus::send(connection, path, clientInterface, QStringLiteral("AcquisitionFeedback"), uint(feedback));
 }
 
 void HostFingerprintSensor::sendAcquisitionError(
         const QString &connection, const QString &path, FingerprintSensor::Error error)
 {
-    send(connection, path, clientInterface, QStringLiteral("AcquisitionError"), uint(error));
+    NemoDBus::send(connection, path, clientInterface, QStringLiteral("AcquisitionError"), uint(error));
 }
 
 void HostFingerprintSensor::hasSensorChanged()

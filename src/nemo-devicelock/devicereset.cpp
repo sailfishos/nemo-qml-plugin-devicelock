@@ -41,14 +41,16 @@ DeviceReset::DeviceReset(QObject *parent)
           this,
           QStringLiteral("/devicereset"),
           QStringLiteral("org.nemomobile.devicelock.DeviceReset"))
-    , m_authorization(m_localPath, m_remotePath)
+    , m_authorization(m_localPath, path())
     , m_authorizationAdaptor(&m_authorization, this)
 {
-    connect(m_connection.data(), &Connection::connected, this, &DeviceReset::connected);
+    m_connection->onConnected(this, [this] {
+        connected();
+    });
 
-     if (m_connection->isConnected()) {
-         connected();
-     }
+    if (m_connection->isConnected()) {
+        connected();
+    }
 }
 
 DeviceReset::~DeviceReset()

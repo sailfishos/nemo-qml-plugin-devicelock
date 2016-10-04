@@ -32,8 +32,6 @@
 
 #include "hostauthorization.h"
 
-#include "dbusutilities.h"
-
 #include <QDBusObjectPath>
 
 namespace NemoDeviceLock
@@ -74,7 +72,7 @@ void HostAuthorization::requestChallenge(const QString &)
     if (m_allowedMethods) {
         QDBusContext::setDelayedReply(true);
 
-        QDBusContext::connection().send(QDBusContext::message().createReply(marshallArguments(
+        QDBusContext::connection().send(QDBusContext::message().createReply(NemoDBus::marshallArguments(
                     QVariant(0), uint(m_allowedMethods))));
     } else {
         QDBusContext::sendErrorReply(QDBusError::NotSupported);
@@ -91,7 +89,7 @@ void HostAuthorization::relinquishChallenge(const QString &)
 void HostAuthorization::sendChallengeExpired(
         const QString &connection, const QString &path)
 {
-    send(connection, path, clientInterface, QStringLiteral("ChallengeExpired"));
+    NemoDBus::send(connection, path, clientInterface, QStringLiteral("ChallengeExpired"));
 }
 
 }
