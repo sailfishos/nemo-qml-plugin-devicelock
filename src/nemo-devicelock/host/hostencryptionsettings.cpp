@@ -41,6 +41,11 @@ HostEncryptionSettingsAdaptor::HostEncryptionSettingsAdaptor(HostEncryptionSetti
 {
 }
 
+bool HostEncryptionSettingsAdaptor::isSupported() const
+{
+    return m_settings->isSupported();
+}
+
 void HostEncryptionSettingsAdaptor::EncryptHome(
         const QDBusObjectPath &path, const QDBusVariant &authenticationToken)
 {
@@ -60,6 +65,11 @@ HostEncryptionSettings::HostEncryptionSettings(Authenticator::Methods allowedMet
 
 HostEncryptionSettings::~HostEncryptionSettings()
 {
+}
+
+bool HostEncryptionSettings::isSupported() const
+{
+    return false;
 }
 
 void HostEncryptionSettings::encryptHome(const QString &, const QVariant &)

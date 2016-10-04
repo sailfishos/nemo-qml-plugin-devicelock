@@ -79,8 +79,13 @@ Authenticator::Authenticator(QObject *parent)
     connect(m_settings.data(), &SettingsWatcher::inputIsKeyboardChanged,
             this, &Authenticator::codeInputIsKeyboardChanged);
 
-    connect(m_connection.data(), &Connection::connected, this, &Authenticator::connected);
-    connect(m_connection.data(), &Connection::disconnected, this, &Authenticator::disconnected);
+    m_connection->onConnected(this, [this] {
+        connected();
+    });
+
+    m_connection->onDisconnected(this, [this] {
+        handleError(SoftwareError);
+    });
 
     if (m_connection->isConnected()) {
         connected();
@@ -222,11 +227,6 @@ void Authenticator::connected()
             emit availableMethodsChanged();
         }
     });
-}
-
-void Authenticator::disconnected()
-{
-    handleError(SoftwareError);
 }
 
 }

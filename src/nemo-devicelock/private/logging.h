@@ -41,4 +41,5 @@ namespace NemoDeviceLock
 Q_DECLARE_LOGGING_CATEGORY(devicelock)
 
 }
+
 #endif

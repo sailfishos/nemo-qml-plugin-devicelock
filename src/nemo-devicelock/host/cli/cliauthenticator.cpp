@@ -32,7 +32,6 @@
 
 #include "cliauthenticator.h"
 
-#include "dbusutilities.h"
 #include "lockcodewatcher.h"
 
 #include <QDBusMessage>
@@ -92,7 +91,8 @@ Authenticator::Methods CliAuthenticator::authenticate(
 
         // Send the reply first then follow up with the authenticated message.
         QDBusContext::setDelayedReply(true);
-        QDBusContext::connection().send(QDBusContext::message().createReply(marshallArguments(uint(0))));
+        QDBusContext::connection().send(QDBusContext::message().createReply(
+                    NemoDBus::marshallArguments(uint(0))));
 
         sendAuthenticated(connection, authenticator, QStringLiteral("12345"));
         return Authenticator::Methods();
