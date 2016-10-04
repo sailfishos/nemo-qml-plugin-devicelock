@@ -58,8 +58,9 @@ ClientAuthorization::ClientAuthorization(
     , m_allowedMethods()
     , m_status(NoChallenge)
 {
-    connect(m_connection.data(), &Connection::disconnected,
-            this, &ClientAuthorization::handleChallengeExpired);
+    m_connection->onDisconnected(this, [this] {
+        handleChallengeExpired();
+    });
 }
 
 ClientAuthorization::~ClientAuthorization()

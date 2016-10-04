@@ -11,6 +11,7 @@ CONFIG += \
 PKGCONFIG += \
         dbus-1 \
         keepalive \
+        nemodbus \
         libsystemd-daemon
 
 INCLUDEPATH += \

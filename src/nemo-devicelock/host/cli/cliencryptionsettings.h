@@ -41,6 +41,7 @@ namespace NemoDeviceLock
 {
 
 class LockCodeWatcher;
+class PluginCommand;
 
 class CliEncryptionSettings : public HostEncryptionSettings
 {
@@ -48,10 +49,13 @@ public:
     explicit CliEncryptionSettings(QObject *parent = nullptr);
     ~CliEncryptionSettings();
 
+    bool isSupported() const override;
     void encryptHome(const QString &requestor, const QVariant &authenticationToken) override;
 
 private:
     QExplicitlySharedDataPointer<LockCodeWatcher> m_watcher;
+    PluginCommand *m_supportQuery;
+    bool m_supported;
 };
 
 }

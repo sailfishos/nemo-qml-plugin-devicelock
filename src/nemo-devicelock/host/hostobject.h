@@ -36,10 +36,14 @@
 #include <QDBusContext>
 #include <QLoggingCategory>
 
+#include <nemo-dbus/connection.h>
+
 namespace NemoDeviceLock
 {
 
 Q_DECLARE_LOGGING_CATEGORY(daemon)
+
+NemoDBus::Connection systemBus();
 
 class HostObject : public QObject, protected QDBusContext
 {

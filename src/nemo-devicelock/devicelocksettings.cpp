@@ -43,7 +43,7 @@ DeviceLockSettings::DeviceLockSettings(QObject *parent)
           this,
           QStringLiteral("/devicelock/settings"),
           QStringLiteral("org.nemomobile.devicelock.DeviceLock.Settings"))
-    , m_authorization(m_localPath, m_remotePath)
+    , m_authorization(m_localPath, path())
     , m_authorizationAdaptor(&m_authorization, this)
     , m_settings(SettingsWatcher::instance())
 {
@@ -62,7 +62,9 @@ DeviceLockSettings::DeviceLockSettings(QObject *parent)
     connect(m_settings.data(), &SettingsWatcher::currentCodeIsDigitOnlyChanged,
             this, &DeviceLockSettings::currentCodeIsDigitOnlyChanged);
 
-    connect(m_connection.data(), &Connection::connected, this, &DeviceLockSettings::connected);
+    m_connection->onConnected(this, [this] {
+        connected();
+    });
 
     if (m_connection->isConnected()) {
         connected();
