@@ -12,6 +12,8 @@ CONFIG += \
 QT -= gui
 QT += dbus
 
+PKGCONFIG += nemodbus
+
 INCLUDEPATH += ..
 
 DEFINES += \

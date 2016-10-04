@@ -45,7 +45,9 @@ LockCodeSettings::LockCodeSettings(QObject *parent)
     , m_settings(SettingsWatcher::instance())
     , m_set(false)
 {
-    connect(m_connection.data(), &Connection::connected, this, &LockCodeSettings::connected);
+    m_connection->onConnected(this, [this] {
+        connected();
+    });
 
     if (m_connection->isConnected()) {
         connected();

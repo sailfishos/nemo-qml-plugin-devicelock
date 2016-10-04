@@ -44,9 +44,12 @@ class HostEncryptionSettings;
 class HostEncryptionSettingsAdaptor : public QDBusAbstractAdaptor
 {
     Q_OBJECT
+    Q_PROPERTY(bool Supported READ isSupported)
     Q_CLASSINFO("D-Bus Interface", "org.nemomobile.devicelock.EncryptionSettings")
 public:
     explicit HostEncryptionSettingsAdaptor(HostEncryptionSettings *settings);
+
+    bool isSupported() const;
 
 public slots:
     void EncryptHome(const QDBusObjectPath &path, const QDBusVariant &authenticationToken);
@@ -64,6 +67,8 @@ public:
     ~HostEncryptionSettings();
 
 protected:
+    virtual bool isSupported() const;
+
     virtual void encryptHome(const QString &requestor, const QVariant &authenticationToken);
 
 private:

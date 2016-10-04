@@ -38,89 +38,6 @@
 namespace NemoDeviceLock
 {
 
-PendingCall::PendingCall(
-        const QDBusPendingCall &call, const QString &path, const QString &interface, const QString &method, QObject *parent)
-    : QDBusPendingCallWatcher(call, parent)
-    , m_path(path)
-    , m_interface(interface)
-    , m_method(method)
-{
-}
-
-PendingCall::~PendingCall()
-{
-}
-
-PropertyChanges::PropertyChanges(
-        Connection *cache, const QDBusConnection &connection, const QString &service, const QString &path)
-    : QObject(cache)
-    , m_cache(cache)
-    , m_connection(connection)
-    , m_service(service)
-    , m_path(path)
-{
-}
-
-PropertyChanges::~PropertyChanges()
-{
-}
-
-void PropertyChanges::addSubscriber(QObject *subscriber)
-{
-    if (!m_subscribers.contains(subscriber)) {
-        connect(subscriber, &QObject::destroyed, this, &PropertyChanges::subscriberDestroyed);
-
-        m_subscribers.append(subscriber);
-    }
-}
-
-void PropertyChanges::subscriberDestroyed(QObject *subscriber)
-{
-    m_subscribers.removeOne(subscriber);
-
-    if (m_subscribers.isEmpty()) {
-        for (auto &connections : m_cache->m_propertyChanges) {
-            for (auto &services : connections) {
-                for (auto it = services.begin(); it != services.end(); ++it) {
-                    if (*it == this) {
-                        services.erase(it);
-                        break;
-                    }
-                }
-            }
-        }
-        delete this;
-    }
-}
-
-void PropertyChanges::getProperty(const QString &interface, const QString &property)
-{
-    auto response = m_cache->call(
-                this,
-                m_connection,
-                m_service,
-                m_path,
-                QStringLiteral("org.freedesktop.DBus.Properties"),
-                QStringLiteral("Get"),
-                marshallArguments(interface, property));
-
-    response->onFinished<QDBusVariant>([this, interface, property](const QDBusVariant &value) {
-        emit propertyChanged(interface, property, value.variant());
-    });
-}
-
-void PropertyChanges::propertiesChanged(
-        const QString &interface, const QVariantMap &changed, const QStringList &invalidated)
-{
-    for (auto it = changed.begin(); it!= changed.end(); ++it) {
-        emit propertyChanged(interface, it.key(), it.value());
-    }
-
-    for (auto property : invalidated) {
-        getProperty(interface, property);
-    }
-}
-
 Connection *Connection::sharedInstance = nullptr;
 
 static const auto systemdService = QStringLiteral("org.freedesktop.systemd1");
@@ -136,47 +53,34 @@ static QDBusConnection connectToHost()
 
 Connection::Connection(QObject *parent)
     : QObject(parent)
-    , m_connection(connectToHost())
+    , NemoDBus::Connection(connectToHost(), devicelock())
+    , m_systemBus(QDBusConnection::systemBus(), devicelock())
 {
     Q_ASSERT(!sharedInstance);
     sharedInstance = this;
 
-    if (m_connection.isConnected()) {
-        qCDebug(devicelock, "Connected to the device lock daemon");
-
-        connectToDisconnected();
-    }
-
     // In the event that the daemon is restarted systemd can tell us when the socket is active
     // and can be connected to again.
-    const auto response = call(
+
+    const auto response = m_systemBus.call(
                 this,
-                QDBusConnection::systemBus(),
                 systemdService,
                 QStringLiteral("/org/freedesktop/systemd1"),
                 QStringLiteral("org.freedesktop.systemd1.Manager"),
                 QStringLiteral("GetUnit"),
-                marshallArguments(QStringLiteral("nemo-devicelock.socket")));
+                QStringLiteral("nemo-devicelock.socket"));
     response->onFinished<QDBusObjectPath>([this](const QDBusObjectPath &unit) {
-        subscribeToProperty<QString>(
+        m_systemBus.subscribeToProperty<QString>(
                     this,
-                    QDBusConnection::systemBus(),
                     systemdService,
                     unit.path(),
                     QStringLiteral("org.freedesktop.systemd1.Unit"),
                     QStringLiteral("ActiveState"),
                     [this] (const QString &state) {
-            if (!m_connection.isConnected() && state == QStringLiteral("active")) {
+            if (!isConnected() && state == QStringLiteral("active")) {
                 qCDebug(devicelock, "The device lock socket is available to connect to");
 
-                m_connection = connectToHost();
-
-                if (m_connection.isConnected()) {
-                    qCDebug(devicelock, "Connected to the device lock daemon");
-
-                    connectToDisconnected();
-                    emit connected();
-                }
+                reconnect(connectToHost());
             }
         });
     });
@@ -184,16 +88,7 @@ Connection::Connection(QObject *parent)
 
 Connection::~Connection()
 {
-    const auto connections = m_propertyChanges;
-    m_propertyChanges.clear();
-
-    for (auto services : connections) {
-        for (auto propertyChanges : services) {
-            qDeleteAll(propertyChanges);
-        }
-    }
-
-    QDBusConnection::disconnectFromPeer(m_connection.name());
+    QDBusConnection::disconnectFromPeer(connection().name());
 
     sharedInstance = nullptr;
 }
@@ -203,165 +98,25 @@ Connection *Connection::instance()
     return sharedInstance ? sharedInstance : new Connection;
 }
 
-bool Connection::isConnected() const
-{
-    return m_connection.isConnected();
-}
-
-bool Connection::getProperty(
-        QVariant *value,
-        const QDBusConnection &connection,
-        const QString &service,
-        const QString &path,
-        const QString &interface,
-        const QString &property)
-{
-    auto message = QDBusMessage::createMethodCall(
-                service, path, QStringLiteral("org.freedesktop.DBus.Properties"), QStringLiteral("Get"));
-    message.setArguments(marshallArguments(interface, property));
-
-    const auto reply = connection.call(message);
-
-    if (reply.type() == QDBusMessage::ReplyMessage) {
-        *value = reply.arguments().value(0).value<QDBusVariant>().variant();
-
-        return true;
-    } else {
-        qCWarning(devicelock, "DBus error (%s org.freedesktop.DBus.Properties.Get): %s",
-                    qPrintable(path),
-                    qPrintable(reply.errorMessage()));
-        return false;
-    }
-}
-
-PendingCall *Connection::call(
-        QObject *caller,
-        const QDBusConnection &connection,
-        const QString &service,
-        const QString &path,
-        const QString &interface,
-        const QString &method,
-        const QVariantList &arguments)
-{
-    qCDebug(devicelock, "DBus invocation (%s %s.%s)", qPrintable(path), qPrintable(interface), qPrintable(method));
-
-    QDBusMessage message = QDBusMessage::createMethodCall(service, path, interface, method);
-    message.setArguments(arguments);
-
-    const auto call = new PendingCall(connection.asyncCall(message), path, interface, method, caller);
-
-    connect(call, &QDBusPendingCallWatcher::finished, this, &Connection::callFinished);
-
-    return call;
-}
-
-PropertyChanges *Connection::subscribeToObject(
-        QObject *caller, const QDBusConnection &connection, const QString &service, const QString &path)
-{
-    auto &propertyChanges = m_propertyChanges[connection.name()][service][path];
-    if (!propertyChanges) {
-        propertyChanges = new PropertyChanges(this, connection, service, path);
-        QDBusConnection(connection).connect(
-                    QString(),
-                    path,
-                    QStringLiteral("org.freedesktop.DBus.Properties"),
-                    QStringLiteral("PropertiesChanged"),
-                    propertyChanges,
-                    SLOT(propertiesChanged(QString,QVariantMap,QStringList)));
-    }
-
-    propertyChanges->addSubscriber(caller);
-
-    return propertyChanges;
-}
-
-void Connection::registerObject(const QString &path, QObject *object)
-{
-    if (!m_connection.registerObject(path, object)) {
-        qCWarning(devicelock) << "Failed to register object on path" << path << object;
-    }
-}
-
-void Connection::callFinished(QDBusPendingCallWatcher *watcher)
-{
-    watcher->deleteLater();
-
-    const QDBusPendingCall reply = *watcher;
-    const auto call = static_cast<PendingCall *>(watcher);
-
-    if (reply.isError()) {
-        qCWarning(devicelock, "DBus error (%s %s.%s): %s",
-                    qPrintable(call->path()),
-                    qPrintable(call->interface()),
-                    qPrintable(call->method()),
-                    qPrintable(call->error().message()));
-        call->failure(reply.error());
-    } else {
-        qCDebug(devicelock, "DBus reply (%s %s.%s)",
-                    qPrintable(call->path()),
-                    qPrintable(call->interface()),
-                    qPrintable(call->method()));
-
-        call->success(reply);
-    }
-}
-
-void Connection::connectToDisconnected()
-{
-    if (!m_connection.connect(
-                QString(),
-                QStringLiteral("/org/freedesktop/DBus/Local"),
-                QStringLiteral("org.freedesktop.DBus.Local"),
-                QStringLiteral("Disconnected"),
-                this,
-                SIGNAL(handleDisconnect()))) {
-        qCWarning(devicelock, "Failed to connection to connection disconnected signal");
-    }
-}
-
-void Connection::handleDisconnect()
-{
-    qCDebug(devicelock, "Disconnected from device lock daemon");
-
-    deletePropertyListeners();
-
-    emit disconnected();
-}
-
-void Connection::deletePropertyListeners()
-{
-    const auto services = m_propertyChanges.take(m_connection.name());
-
-    for (auto propertyChanges : services) {
-        qDeleteAll(propertyChanges);
-    }
-}
-
-ConnectionClient::ConnectionClient(QObject *caller, const QString &path, const QString &interface)
-    : m_connection(Connection::instance())
-    , m_caller(caller)
-    , m_remotePath(path)
-    , m_remoteInterface(interface)
-    , m_localPath(generateLocalPath())
+ConnectionClient::ConnectionClient(QObject *context, const QString &path, const QString &interface)
+    : ConnectionClient(context, path, interface, generateLocalPath())
 {
 }
 
 ConnectionClient::ConnectionClient(
-        QObject *caller,
+        QObject *context,
         const QString &path,
         const QString &interface,
         const QDBusObjectPath &localPath)
-    : m_connection(Connection::instance())
-    , m_caller(caller)
-    , m_remotePath(path)
-    , m_remoteInterface(interface)
+    : NemoDBus::Interface(context, *Connection::instance(), QString(), path, interface)
+    , m_connection(Connection::instance())
     , m_localPath(localPath)
 {
 }
 
 void ConnectionClient::registerObject()
 {
-    m_connection->registerObject(m_localPath.path(), m_caller);
+    m_connection->registerObject(m_localPath.path(), context());
 }
 
 QDBusObjectPath ConnectionClient::generateLocalPath()
