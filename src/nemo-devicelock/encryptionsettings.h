@@ -45,11 +45,15 @@ class NEMODEVICELOCK_EXPORT EncryptionSettings : public QObject, private Connect
     Q_OBJECT
     Q_PROPERTY(NemoDeviceLock::Authorization *authorization READ authorization CONSTANT)
     Q_PROPERTY(bool homeEncrypted READ isHomeEncrypted CONSTANT)    // One way operation, determined at startup.
+    Q_PROPERTY(bool supported READ isSupported CONSTANT)
+
 public:
     explicit EncryptionSettings(QObject *parent = nullptr);
     ~EncryptionSettings();
 
     Authorization *authorization();
+
+    bool isSupported() const;
 
     bool isHomeEncrypted() const;
 
@@ -65,6 +69,7 @@ private:
     ClientAuthorization m_authorization;
     ClientAuthorizationAdaptor m_authorizationAdaptor;
     QExplicitlySharedDataPointer<SettingsWatcher> m_settings;
+    bool m_supported;
 };
 
 }

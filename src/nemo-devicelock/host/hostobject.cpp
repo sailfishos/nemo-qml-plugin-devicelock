@@ -32,12 +32,29 @@
 
 #include "hostobject.h"
 
-#include "dbusutilities.h"
+#include <QThreadStorage>
 
 namespace NemoDeviceLock
 {
 
 Q_LOGGING_CATEGORY(daemon, "org.nemomobile.devicelock.daemon")
+
+
+class SystemBus : public NemoDBus::Connection
+{
+public:
+    SystemBus()
+        : NemoDBus::Connection(QDBusConnection::systemBus(), daemon())
+    {
+    }
+};
+
+NemoDBus::Connection systemBus()
+{
+    static QThreadStorage<SystemBus> bus;
+
+    return bus.localData();
+}
 
 HostObject::HostObject(const QString &path, QObject *parent)
     : QObject(parent)
@@ -73,7 +90,7 @@ void HostObject::propertyChanged(const QString &interface, const QString &proper
                 QStringLiteral("org.freedesktop.DBus.Properties"),
                 QStringLiteral("PropertiesChanged"));
 
-    message.setArguments(marshallArguments(interface, properties, QStringList()));
+    message.setArguments(NemoDBus::marshallArguments(interface, properties, QStringList()));
 
     for (const auto connectionName : m_connections) {
         QDBusConnection(connectionName).send(message);

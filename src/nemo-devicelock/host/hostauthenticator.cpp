@@ -32,7 +32,6 @@
 
 #include "hostauthenticator.h"
 
-#include "dbusutilities.h"
 #include "settingswatcher.h"
 
 namespace NemoDeviceLock
@@ -92,7 +91,7 @@ int HostAuthenticator::currentAttempts() const
 void HostAuthenticator::sendAuthenticated(
         const QString &connection, const QString &path, const QVariant &authenticationToken)
 {
-    send(connection, path, clientInterface, QStringLiteral("Authenticated"), authenticationToken);
+    NemoDBus::send(connection, path, clientInterface, QStringLiteral("Authenticated"), authenticationToken);
 }
 
 void HostAuthenticator::sendFeedback(
@@ -102,7 +101,7 @@ void HostAuthenticator::sendFeedback(
         int attemptsRemaining,
         Authenticator::Methods utilizedMethods)
 {
-    send(connection,
+    NemoDBus::send(connection,
                 path,
                 clientInterface,
                 QStringLiteral("Feedback"),
@@ -114,7 +113,7 @@ void HostAuthenticator::sendFeedback(
 void HostAuthenticator::sendError(
         const QString &connection, const QString &path, Authenticator::Error error)
 {
-    send(connection, path, clientInterface, QStringLiteral("Error"), uint(error));
+    NemoDBus::send(connection, path, clientInterface, QStringLiteral("Error"), uint(error));
 }
 
 void HostAuthenticator::availableMethodsChanged()
