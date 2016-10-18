@@ -86,8 +86,7 @@ void HostAuthorization::relinquishChallenge(const QString &)
     }
 }
 
-void HostAuthorization::sendChallengeExpired(
-        const QString &connection, const QString &path)
+void HostAuthorization::challengeExpired(const QString &connection, const QString &path)
 {
     NemoDBus::send(connection, path, clientInterface, QStringLiteral("ChallengeExpired"));
 }

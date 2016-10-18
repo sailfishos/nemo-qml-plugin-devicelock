@@ -36,41 +36,68 @@
 #include <nemo-devicelock/global.h>
 #include <nemo-devicelock/private/connection.h>
 
+#include <QDBusAbstractAdaptor>
+
 namespace NemoDeviceLock
 {
 
-class SettingsWatcher;
+class LockCodeSettings;
+class LockCodeSettingsAdaptor : public QDBusAbstractAdaptor
+{
+    Q_OBJECT
+    Q_CLASSINFO("D-Bus Interface", "org.nemomobile.devicelock.client.LockCodeSettings")
+public:
+    explicit LockCodeSettingsAdaptor(LockCodeSettings *settings);
+
+public slots:
+    Q_NOREPLY void Changed(const QDBusVariant &authenticationToken);
+    Q_NOREPLY void ChangeAborted();
+
+    Q_NOREPLY void Cleared();
+    Q_NOREPLY void ClearAborted();
+
+private:
+    LockCodeSettings * const m_settings;
+};
 
 class NEMODEVICELOCK_EXPORT LockCodeSettings : public QObject, private ConnectionClient
 {
     Q_OBJECT
     Q_PROPERTY(bool set READ isSet NOTIFY setChanged)
-    Q_PROPERTY(int minimumLength READ minimumLength CONSTANT)
-    Q_PROPERTY(int maximumLength READ maximumLength CONSTANT)
 public:
     explicit LockCodeSettings(QObject *parent = nullptr);
     ~LockCodeSettings();
 
     bool isSet() const;
-    int minimumLength() const;
-    int maximumLength() const;
 
-    Q_INVOKABLE void change(const QString &oldCode, const QString &newCode);
-    Q_INVOKABLE void clear(const QString &currentCode);
+    Q_INVOKABLE void change(const QVariant &challengeCode);
+    Q_INVOKABLE void clear();
+    Q_INVOKABLE void cancel();
 
 signals:
     void setChanged();
-    void changed();
+    void changingChanged();
+    void clearingChanged();
+
+    void changed(const QVariant &authenticationToken);
+    void changeAborted();
+
     void cleared();
-    void changeError();
-    void clearError();
+    void clearAborted();
 
 private:
-    void connected();
+    friend class LockCodeSettingsAdaptor;
 
-    QExplicitlySharedDataPointer<SettingsWatcher> m_settings;
+    inline void connected();
+    inline void handleChanged(const QVariant &authenticationToken);
+    inline void handleChangeAborted();
+    inline void handleCleared();
+    inline void handleClearAborted();
 
+    LockCodeSettingsAdaptor m_adaptor;
     bool m_set;
+    bool m_changing;
+    bool m_clearing;
 };
 
 }

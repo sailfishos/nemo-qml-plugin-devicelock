@@ -55,7 +55,7 @@ uint HostFingerprintSensorAdaptor::AcquireFinger(const QDBusObjectPath &path, co
 
 void HostFingerprintSensorAdaptor::CancelAcquisition(const QDBusObjectPath &path)
 {
-    m_sensor->cancelAcquisition(path.path());
+    m_sensor->handleCancel(path.path());
 }
 
 HostFingerprintSensor::HostFingerprintSensor(QObject *parent)
@@ -84,33 +84,28 @@ int HostFingerprintSensor::acquireFinger(const QString &, const QVariant &)
     return 0;
 }
 
-void HostFingerprintSensor::cancelAcquisition(const QString &)
+void HostFingerprintSensor::cancel()
 {
-    QDBusContext::sendErrorReply(QDBusError::NotSupported);
 }
 
-void HostFingerprintSensor::sendSampleAcquired(
-        const QString &connection, const QString &path, int samplesRemaining)
+void HostFingerprintSensor::sampleAcquired(int samplesRemaining)
 {
-    NemoDBus::send(connection, path, clientInterface, QStringLiteral("SampleAcquired"), uint(samplesRemaining));
+    sendToActiveClient(clientInterface, QStringLiteral("SampleAcquired"), uint(samplesRemaining));
 }
 
-void HostFingerprintSensor::sendAcquisitionCompleted(
-        const QString &connection, const QString &path)
+void HostFingerprintSensor::acquisitionCompleted()
 {
-    NemoDBus::send(connection, path, clientInterface, QStringLiteral("AcquisitionCompleted"));
+    sendToActiveClient(clientInterface, QStringLiteral("AcquisitionCompleted"));
 }
 
-void HostFingerprintSensor::sendAcquisitionFeedback(
-        const QString &connection, const QString &path, FingerprintSensor::Feedback feedback)
+void HostFingerprintSensor::acquisitionFeedback(FingerprintSensor::Feedback feedback)
 {
-    NemoDBus::send(connection, path, clientInterface, QStringLiteral("AcquisitionFeedback"), uint(feedback));
+    sendToActiveClient(clientInterface, QStringLiteral("AcquisitionFeedback"), uint(feedback));
 }
 
-void HostFingerprintSensor::sendAcquisitionError(
-        const QString &connection, const QString &path, FingerprintSensor::Error error)
+void HostFingerprintSensor::acquisitionError(FingerprintSensor::Error error)
 {
-    NemoDBus::send(connection, path, clientInterface, QStringLiteral("AcquisitionError"), uint(error));
+    sendToActiveClient(clientInterface, QStringLiteral("AcquisitionError"), uint(error));
 }
 
 void HostFingerprintSensor::hasSensorChanged()
@@ -119,6 +114,13 @@ void HostFingerprintSensor::hasSensorChanged()
                 QStringLiteral("org.nemomobile.devicelock.Fingerprint.Sensor"),
                 QStringLiteral("HasSensor"),
                 hasSensor());
+}
+
+void HostFingerprintSensor::handleCancel(const QString &client)
+{
+    if (isActiveClient(client)) {
+        cancel();
+    }
 }
 
 }

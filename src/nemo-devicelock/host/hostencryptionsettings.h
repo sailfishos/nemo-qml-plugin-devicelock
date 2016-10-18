@@ -69,7 +69,7 @@ public:
 protected:
     virtual bool isSupported() const;
 
-    virtual void encryptHome(const QString &requestor, const QVariant &authenticationToken);
+    virtual void encryptHome(const QString &client, const QVariant &authenticationToken);
 
 private:
     friend class HostEncryptionSettingsAdaptor;

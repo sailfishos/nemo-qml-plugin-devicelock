@@ -39,7 +39,6 @@
 #include "hostencryptionsettings.h"
 #include "hostfingerprintsensor.h"
 #include "hostfingerprintsettings.h"
-#include "hostlockcodesettings.h"
 
 #include <QDBusConnection>
 #include <QDBusMetaType>
@@ -87,7 +86,6 @@ HostService::HostService(
         HostEncryptionSettings *encryptionSettings,
         HostFingerprintSensor *fingerprintSensor,
         HostFingerprintSettings *fingerprintSettings,
-        HostLockCodeSettings *lockCodeSettings,
         QObject *parent)
     : QDBusServer(QStringLiteral("unix:path=/run/nemo-devicelock/socket"), parent)
     , m_authenticator(authenticator)
@@ -97,7 +95,6 @@ HostService::HostService(
     , m_encryptionSettings(encryptionSettings)
     , m_fingerprintSensor(fingerprintSensor)
     , m_fingerprintSettings(fingerprintSettings)
-    , m_lockCodeSettings(lockCodeSettings)
 {
     connect(this, &QDBusServer::newConnection, this, &HostService::connectionReady);
 

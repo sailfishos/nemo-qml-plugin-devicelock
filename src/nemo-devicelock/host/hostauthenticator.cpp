@@ -37,7 +37,8 @@
 namespace NemoDeviceLock
 {
 
-static const auto clientInterface = QStringLiteral("org.nemomobile.devicelock.client.Authenticator");
+static const auto authenticatorInterface = QStringLiteral("org.nemomobile.devicelock.client.Authenticator");
+static const auto lockCodeInterface = QStringLiteral("org.nemomobile.devicelock.client.LockCodeSettings");
 
 HostAuthenticatorAdaptor::HostAuthenticatorAdaptor(HostAuthenticator *authenticator)
     : QDBusAbstractAdaptor(authenticator)
@@ -50,27 +51,53 @@ uint HostAuthenticatorAdaptor::availableMethods() const
     return m_authenticator->availableMethods();
 }
 
-uint HostAuthenticatorAdaptor::Authenticate(
+void HostAuthenticatorAdaptor::Authenticate(
         const QDBusObjectPath &path, const QDBusVariant &challengeCode, uint methods)
 {
-    return m_authenticator->authenticate(
+    m_authenticator->authenticate(
                 path.path(), challengeCode.variant(), Authenticator::Methods(methods));
-}
-
-void HostAuthenticatorAdaptor::EnterLockCode(const QDBusObjectPath &path, const QString &lockCode)
-{
-    m_authenticator->enterLockCode(path.path(), lockCode);
 }
 
 void HostAuthenticatorAdaptor::Cancel(const QDBusObjectPath &path)
 {
-     m_authenticator->cancel(path.path());
+     m_authenticator->handleCancel(path.path());
 }
 
-HostAuthenticator::HostAuthenticator(QObject *parent)
-    : HostObject(QStringLiteral("/authenticator"), parent)
+HostLockCodeSettingsAdaptor::HostLockCodeSettingsAdaptor(HostAuthenticator *authenticator)
+    : QDBusAbstractAdaptor(authenticator)
+    , m_authenticator(authenticator)
+{
+}
+
+bool HostLockCodeSettingsAdaptor::isSet() const
+{
+    return m_authenticator->isLockCodeSet();
+}
+
+void HostLockCodeSettingsAdaptor::Change(const QDBusObjectPath &path, const QDBusVariant &challengeCode)
+{
+    m_authenticator->handleChangeLockCode(path.path(), challengeCode.variant());
+}
+
+void HostLockCodeSettingsAdaptor::CancelChange(const QDBusObjectPath &path)
+{
+    m_authenticator->handleCancel(path.path());
+}
+
+void HostLockCodeSettingsAdaptor::Clear(const QDBusObjectPath &path)
+{
+    m_authenticator->handleClearLockCode(path.path());
+}
+
+void HostLockCodeSettingsAdaptor::CancelClear(const QDBusObjectPath &path)
+{
+    m_authenticator->handleCancel(path.path());
+}
+
+HostAuthenticator::HostAuthenticator(Authenticator::Methods supportedMethods, QObject *parent)
+    : HostAuthenticationInput(QStringLiteral("/authenticator"), supportedMethods, parent)
     , m_adaptor(this)
-    , m_settings(SettingsWatcher::instance())
+    , m_lockCode(this)
 {
 }
 
@@ -78,42 +105,45 @@ HostAuthenticator::~HostAuthenticator()
 {
 }
 
-int HostAuthenticator::maximumAttempts() const
+bool HostAuthenticator::authorizeLockCodeSettings(unsigned long)
 {
-    return m_settings->maximumAttempts;
+    return true;
 }
 
-int HostAuthenticator::currentAttempts() const
+void HostAuthenticator::authenticated(const QVariant &authenticationToken)
 {
-    return m_settings->currentAttempts;
+    sendToActiveClient(authenticatorInterface, QStringLiteral("Authenticated"), authenticationToken);
+    authenticationEnded(true);
 }
 
-void HostAuthenticator::sendAuthenticated(
-        const QString &connection, const QString &path, const QVariant &authenticationToken)
+void HostAuthenticator::aborted()
 {
-    NemoDBus::send(connection, path, clientInterface, QStringLiteral("Authenticated"), authenticationToken);
+    sendToActiveClient(authenticatorInterface, QStringLiteral("Aborted"));
+    authenticationEnded(false);
 }
 
-void HostAuthenticator::sendFeedback(
-        const QString &connection,
-        const QString &path,
-        Authenticator::Feedback feedback,
-        int attemptsRemaining,
-        Authenticator::Methods utilizedMethods)
+void HostAuthenticator::lockCodeChanged(const QVariant &authenticationToken)
 {
-    NemoDBus::send(connection,
-                path,
-                clientInterface,
-                QStringLiteral("Feedback"),
-                uint(feedback),
-                uint(attemptsRemaining),
-                uint(utilizedMethods));
+    sendToActiveClient(lockCodeInterface, QStringLiteral("Changed"), authenticationToken);
+    authenticationEnded(true);
 }
 
-void HostAuthenticator::sendError(
-        const QString &connection, const QString &path, Authenticator::Error error)
+void HostAuthenticator::lockCodeChangeAborted()
 {
-    NemoDBus::send(connection, path, clientInterface, QStringLiteral("Error"), uint(error));
+    sendToActiveClient(lockCodeInterface, QStringLiteral("ChangeAborted"));
+    authenticationEnded(false);
+}
+
+void HostAuthenticator::lockCodeCleared()
+{
+    sendToActiveClient(lockCodeInterface, QStringLiteral("Cleared"));
+    authenticationEnded(true);
+}
+
+void HostAuthenticator::lockCodeClearAborted()
+{
+    sendToActiveClient(lockCodeInterface, QStringLiteral("ClearAborted"));
+    authenticationEnded(false);
 }
 
 void HostAuthenticator::availableMethodsChanged()
@@ -122,6 +152,43 @@ void HostAuthenticator::availableMethodsChanged()
                 QStringLiteral("org.nemomobile.devicelock.Authenticator"),
                 QStringLiteral("AvailableMethods"),
                 QVariant::fromValue(uint(availableMethods())));
+}
+
+void HostAuthenticator::lockCodeSetChanged()
+{
+    propertyChanged(
+                QStringLiteral("org.nemomobile.devicelock.LockCodeSettings"),
+                QStringLiteral("LockCodeSet"),
+                QVariant::fromValue(isLockCodeSet()));
+}
+
+void HostAuthenticator::handleChangeLockCode(const QString &path, const QVariant &challengeCode)
+{
+    const auto pid = connectionPid(QDBusContext::connection());
+    if (pid == 0 || !authorizeLockCodeSettings(pid)) {
+        QDBusContext::sendErrorReply(QDBusError::AccessDenied);
+        return;
+    }
+
+    changeLockCode(path, challengeCode);
+}
+
+void HostAuthenticator::handleClearLockCode(const QString &path)
+{
+    const auto pid = connectionPid(QDBusContext::connection());
+    if (pid == 0 || !authorizeLockCodeSettings(pid)) {
+        QDBusContext::sendErrorReply(QDBusError::AccessDenied);
+        return;
+    }
+
+    clearLockCode(path);
+}
+
+void HostAuthenticator::handleCancel(const QString &client)
+{
+    if (isActiveClient(client)) {
+        cancel();
+    }
 }
 
 }

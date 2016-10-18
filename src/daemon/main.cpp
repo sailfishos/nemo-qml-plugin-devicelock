@@ -35,7 +35,6 @@
 #include <clidevicelocksettings.h>
 #include <clidevicereset.h>
 #include <cliencryptionsettings.h>
-#include <clilockcodesettings.h>
 #include <hostfingerprintsensor.h>
 #include <hostfingerprintsettings.h>
 #include <hostservice.h>
@@ -53,7 +52,6 @@ int main(int argc, char *argv[])
     NemoDeviceLock::CliEncryptionSettings encryptionSettings;
     NemoDeviceLock::HostFingerprintSensor fingerprintSensor;
     NemoDeviceLock::HostFingerprintSettings fingerprintSettings;
-    NemoDeviceLock::CliLockCodeSettings lockCodeSettings;
 
     NemoDeviceLock::HostService service(
                 &authenticator,
@@ -62,8 +60,7 @@ int main(int argc, char *argv[])
                 &deviceReset,
                 &encryptionSettings,
                 &fingerprintSensor,
-                &fingerprintSettings,
-                &lockCodeSettings);
+                &fingerprintSettings);
 
     return application.exec();
 }
