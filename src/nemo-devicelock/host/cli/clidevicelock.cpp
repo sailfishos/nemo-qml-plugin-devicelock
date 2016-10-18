@@ -43,6 +43,7 @@ namespace NemoDeviceLock
 CliDeviceLock::CliDeviceLock(QObject *parent)
     : MceDeviceLock(Authenticator::LockCode, parent)
     , m_watcher(LockCodeWatcher::instance())
+    , m_unlocking(false)
 {
     connect(m_watcher.data(), &LockCodeWatcher::lockCodeSetChanged,
             this, &CliDeviceLock::enabledChanged);
@@ -59,25 +60,74 @@ bool CliDeviceLock::isEnabled() const
     return m_watcher->lockCodeSet();
 }
 
-void CliDeviceLock::unlock(const QString &, const QVariant &authenticationToken)
+bool CliDeviceLock::isUnlocking() const
 {
-    if (PluginCommand *command = m_watcher->unlock(this, authenticationToken.toString())) {
-        auto connection = QDBusContext::connection();
-        auto message = QDBusContext::message();
+    return m_unlocking;
+}
 
-        QDBusContext::setDelayedReply(true);
+void CliDeviceLock::unlock()
+{
+    if (m_unlocking || !m_watcher->lockCodeSet() || state() == DeviceLock::Unlocked) {
+        return;
+    }
 
-        command->onSuccess([this, connection, message]() {
-            connection.send(message.createReply());
+    const int maximum = maximumAttempts();
+    const int attempts = currentAttempts();
 
-            setState(DeviceLock::Unlocked);
+    m_unlocking = true;
+
+    if (maximum > 0 && attempts >= maximum) {
+        authenticationUnavailable(AuthenticationInput::LockedOut);
+    } else {
+        authenticationStarted(Authenticator::LockCode, AuthenticationInput::EnterLockCode);
+    }
+
+    unlockingChanged();
+}
+
+void CliDeviceLock::enterLockCode(const QString &code)
+{
+    if (!m_unlocking) {
+        return;
+    } else if (const auto command = m_watcher->unlock(this, code)) {
+        command->onSuccess([this] {
+            if (m_unlocking) {
+                m_unlocking = false;
+
+                authenticationEnded(true);
+
+                setState(DeviceLock::Unlocked);
+
+                unlockingChanged();
+            }
         });
+        command->onFailure([this](int exitCode) {
+            const int maximum = maximumAttempts();
 
-        command->onFailure([this, connection, message](int) {
-            connection.send(message.createErrorReply(QDBusError::AccessDenied, QString()));
+            if (maximum > 0 && exitCode < 0) {
+                const int attempts = -exitCode;
+                sendFeedback(AuthenticationInput::IncorrectLockCode, qMax(0, maximum - attempts));
+
+                if (attempts >= maximum) {
+                    sendError(AuthenticationInput::LockedOut);
+                }
+            } else {
+                sendFeedback(AuthenticationInput::IncorrectLockCode, -1);
+            }
         });
     } else {
-        QDBusContext::sendErrorReply(QDBusError::InternalError);
+        sendError(AuthenticationInput::LockedOut);
+    }
+}
+
+void CliDeviceLock::cancel()
+{
+    if (m_unlocking) {
+        m_unlocking = false;
+
+        authenticationEnded(false);
+
+        unlockingChanged();
     }
 }
 

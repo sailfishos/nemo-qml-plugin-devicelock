@@ -57,6 +57,8 @@ public:
     virtual void clientConnected(const QString &connectionName);
     virtual void clientDisconnected(const QString &connectionName);
 
+    static unsigned long connectionPid(const QDBusConnection &connection);
+
 protected:
     void propertyChanged(const QString &interface, const QString &property, const QVariant &value);
 

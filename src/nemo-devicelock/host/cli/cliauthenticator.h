@@ -51,33 +51,45 @@ public:
     ~CliAuthenticator();
 
     Authenticator::Methods availableMethods() const override;
-    Authenticator::Methods authenticate(
+    bool isLockCodeSet() const override;
+
+    void authenticate(
             const QString &authenticator,
             const QVariant &challengeCode,
             Authenticator::Methods methods) override;
-    void enterLockCode(const QString &authenticator, const QString &code) override;
+    void changeLockCode(const QString &path, const QVariant &challengeCode) override;
+    void clearLockCode(const QString &path) override;
+
+    void enterLockCode(const QString &code) override;
+
+    void cancel() override;
     void cancel(const QString &authenticator) override;
 
     void clientDisconnected(const QString &connectionName) override;
 
-protected:
-    QString authenticatorConnection() const { return m_authenticatorConnection; }
-    QString authenticatorPath() const { return m_authenticatorPath; }
-
-    void confirmAuthentication(const QVariant &authenticationToken);
-    void abortAuthentication(Authenticator::Error error);
-
-    virtual void lockCodeValidated(const QString &lockCode);
-    virtual Authenticator::Methods authenticationStarted(const QVariant &challengeCode, Authenticator::Methods methods);
-    virtual void authenticationEnded(bool confirmed);
-
 private:
+    void complete();
     bool checkConnection(const QString &connection, const QString &path);
     void clearConnection();
+
+    enum State {
+        Idle,
+        AuthenticationInput,
+        AuthenticationError,
+        ChangeCurrentInput,
+        ChangeNewInput,
+        ChangeRepeatInput,
+        ChangeError,
+        ClearInput,
+        ClearError
+    };
 
     QExplicitlySharedDataPointer<LockCodeWatcher> m_watcher;
     QString m_authenticatorConnection;
     QString m_authenticatorPath;
+    QString m_currentCode;
+    QString m_newCode;
+    State m_state;
 };
 
 }

@@ -35,6 +35,6 @@
 namespace NemoDeviceLock
 {
 
-Q_LOGGING_CATEGORY(devicelock, "org.nemomobile.devicelock")
+Q_LOGGING_CATEGORY(devicelock, "org.nemomobile.devicelock", QtCriticalMsg)
 
 }

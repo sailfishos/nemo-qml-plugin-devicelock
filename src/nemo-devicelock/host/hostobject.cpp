@@ -34,10 +34,12 @@
 
 #include <QThreadStorage>
 
+#include <dbus/dbus.h>
+
 namespace NemoDeviceLock
 {
 
-Q_LOGGING_CATEGORY(daemon, "org.nemomobile.devicelock.daemon")
+Q_LOGGING_CATEGORY(daemon, "org.nemomobile.devicelock.daemon", QtCriticalMsg)
 
 
 class SystemBus : public NemoDBus::Connection
@@ -97,6 +99,18 @@ void HostObject::propertyChanged(const QString &interface, const QString &proper
 
     for (const auto connectionName : m_connections) {
         QDBusConnection(connectionName).send(message);
+    }
+}
+
+
+unsigned long HostObject::connectionPid(const QDBusConnection &connection)
+{
+    unsigned long pid = 0;
+    if (dbus_connection_get_unix_process_id(
+                static_cast<DBusConnection *>(connection.internalPointer()), &pid)) {
+        return pid;
+    } else {
+        return 0;
     }
 }
 
