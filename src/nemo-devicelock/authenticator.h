@@ -52,8 +52,7 @@ public:
 
 public slots:
     Q_NOREPLY void Authenticated(const QDBusVariant &authenticationToken);
-    Q_NOREPLY void Feedback(uint feedback, uint attemptsRemaining, uint utilizedMethods);
-    Q_NOREPLY void Error(uint error);
+    Q_NOREPLY void Aborted();
 
 private:
     Authenticator *m_authenticator;
@@ -64,33 +63,9 @@ class NEMODEVICELOCK_EXPORT Authenticator : public QObject, private ConnectionCl
 {
     Q_OBJECT
     Q_PROPERTY(Methods availableMethods READ availableMethods NOTIFY availableMethodsChanged)
-    Q_PROPERTY(Methods utilizedMethods READ utilizedMethods NOTIFY utilizedMethodsChanged)
-    Q_PROPERTY(bool authenticating READ isAuthenticating NOTIFY authenticatingChanged)
-    Q_PROPERTY(int minimumCodeLength READ minimumCodeLength CONSTANT)
-    Q_PROPERTY(int maximumCodeLength READ maximumCodeLength CONSTANT)
-    Q_PROPERTY(int maximumAttempts READ maximumAttempts NOTIFY maximumAttemptsChanged)
-    Q_PROPERTY(bool codeInputIsKeyboard READ codeInputIsKeyboard NOTIFY codeInputIsKeyboardChanged)
-    Q_ENUMS(Feedback)
-    Q_ENUMS(Error)
     Q_ENUMS(Method)
     Q_FLAGS(Methods)
 public:
-    enum Feedback {
-        PartialPrint,
-        PrintIsUnclear,
-        SensorIsDirty,
-        SwipeFaster,
-        SwipeSlower,
-        UnrecognizedFinger,
-        IncorrectLockCode
-    };
-
-    enum Error {
-        LockedOut,
-        SoftwareError,
-        Canceled
-    };
-
     enum Method {
         NoAuthentication    = 0x00,
         LockCode            = 0x01,
@@ -103,29 +78,18 @@ public:
     ~Authenticator();
 
     Methods availableMethods() const;
-    Methods utilizedMethods() const;
     bool isAuthenticating() const;
-
-    int minimumCodeLength() const;
-    int maximumCodeLength() const;
-    int maximumAttempts() const;
-    bool codeInputIsKeyboard() const;
 
     Q_INVOKABLE void authenticate(
             const QVariant &challengeCode, Methods methods = Methods(LockCode | Fingerprint));
-    Q_INVOKABLE void enterLockCode(const QString &code);
     Q_INVOKABLE void cancel();
 
 signals:
     void availableMethodsChanged();
-    void utilizedMethodsChanged();
     void authenticatingChanged();
-    void codeInputIsKeyboardChanged();
-    void maximumAttemptsChanged();
 
     void authenticated(const QVariant &authenticationToken);
-    void feedback(Feedback feedback, int attemptsRemaining);
-    void error(Error error);
+    void aborted();
 
 private:
     friend class AuthenticatorAdaptor;
@@ -133,13 +97,11 @@ private:
     inline void connected();
 
     inline void handleAuthentication(const QVariant &authenticationToken);
-    inline void handleFeedback(Feedback feedback, int attemptsRemaining, Methods utilizedMethods);
-    inline void handleError(Error error);
+    inline void handleAborted();
 
     AuthenticatorAdaptor m_adaptor;
     QExplicitlySharedDataPointer<SettingsWatcher> m_settings;
     Methods m_availableMethods;
-    Methods m_utilizedMethods;
     bool m_authenticating;
 };
 

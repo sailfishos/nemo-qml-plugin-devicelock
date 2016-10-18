@@ -53,13 +53,23 @@ bool HostDeviceLockAdaptor::isEnabled() const
     return m_deviceLock->isEnabled();
 }
 
-void HostDeviceLockAdaptor::Unlock(const QDBusObjectPath &path, const QDBusVariant &authenticationToken)
+bool HostDeviceLockAdaptor::isUnlocking() const
 {
-    m_deviceLock->unlock(path.path(), authenticationToken.variant());
+    return m_deviceLock->isUnlocking();
 }
 
-HostDeviceLock::HostDeviceLock(Authenticator::Methods allowedMethods, QObject *parent)
-    : HostAuthorization(QStringLiteral("/devicelock/lock"), allowedMethods, parent)
+void HostDeviceLockAdaptor::Unlock()
+{
+    m_deviceLock->unlock();
+}
+
+void HostDeviceLockAdaptor::Cancel()
+{
+    m_deviceLock->cancel();
+}
+
+HostDeviceLock::HostDeviceLock(Authenticator::Methods supportedMethods, QObject *parent)
+    : HostAuthenticationInput(QStringLiteral("/devicelock/lock"), supportedMethods, parent)
     , m_adaptor(this)
     , m_settings(SettingsWatcher::instance())
 {
@@ -90,6 +100,14 @@ void HostDeviceLock::enabledChanged()
                 QStringLiteral("org.nemomobile.devicelock.DeviceLock"),
                 QStringLiteral("Enabled"),
                 isEnabled());
+}
+
+void HostDeviceLock::unlockingChanged()
+{
+    propertyChanged(
+                QStringLiteral("org.nemomobile.devicelock.DeviceLock"),
+                QStringLiteral("Unlocking"),
+                isUnlocking());
 }
 
 void HostDeviceLock::automaticLockingChanged()

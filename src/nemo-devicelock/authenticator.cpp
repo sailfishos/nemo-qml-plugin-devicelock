@@ -49,17 +49,9 @@ void AuthenticatorAdaptor::Authenticated(const QDBusVariant &authenticationToken
     m_authenticator->handleAuthentication(authenticationToken.variant());
 }
 
-void AuthenticatorAdaptor::Feedback(uint feedback, uint attemptsRemaining, uint utilizedMethods)
+void AuthenticatorAdaptor::Aborted()
 {
-    m_authenticator->handleFeedback(
-                Authenticator::Feedback(feedback),
-                attemptsRemaining,
-                Authenticator::Methods(utilizedMethods));
-}
-
-void AuthenticatorAdaptor::Error(uint error)
-{
-    m_authenticator->handleError(Authenticator::Error(error));
+    m_authenticator->handleAborted();
 }
 
 Authenticator::Authenticator(QObject *parent)
@@ -71,20 +63,14 @@ Authenticator::Authenticator(QObject *parent)
     , m_adaptor(this)
     , m_settings(SettingsWatcher::instance())
     , m_availableMethods()
-    , m_utilizedMethods()
     , m_authenticating(false)
 {
-    connect(m_settings.data(), &SettingsWatcher::maximumAttemptsChanged,
-            this, &Authenticator::maximumAttemptsChanged);
-    connect(m_settings.data(), &SettingsWatcher::inputIsKeyboardChanged,
-            this, &Authenticator::codeInputIsKeyboardChanged);
-
     m_connection->onConnected(this, [this] {
         connected();
     });
 
     m_connection->onDisconnected(this, [this] {
-        handleError(SoftwareError);
+        handleAborted();
     });
 
     if (m_connection->isConnected()) {
@@ -96,33 +82,9 @@ Authenticator::~Authenticator()
 {
 }
 
-int Authenticator::minimumCodeLength() const
-{
-    return m_settings->minimumLength;
-}
-
-int Authenticator::maximumCodeLength() const
-{
-    return m_settings->maximumLength;
-}
-int Authenticator::maximumAttempts() const
-{
-    return m_settings->maximumAttempts;
-}
-
-bool Authenticator::codeInputIsKeyboard() const
-{
-    return m_settings->inputIsKeyboard;
-}
-
 Authenticator::Methods Authenticator::availableMethods() const
 {
     return m_availableMethods;
-}
-
-Authenticator::Methods Authenticator::utilizedMethods() const
-{
-    return m_utilizedMethods;
 }
 
 bool Authenticator::isAuthenticating() const
@@ -136,31 +98,14 @@ void Authenticator::authenticate(const QVariant &challengeCode, Methods methods)
 
     m_authenticating = true;
 
-    response->onFinished<uint>([this](uint methods) {
-        if (m_utilizedMethods != Methods(methods)) {
-            m_utilizedMethods = Methods(methods);
-
-            emit utilizedMethodsChanged();
-        }
-    });
-
-    response->onError([this](const QDBusError &dbusError) {
+    response->onError([this](const QDBusError &) {
         m_authenticating = false;
 
-        if (dbusError.name() == QStringLiteral("org.nemomobile.devicelock.Authenticator.LockedOut")) {
-            emit error(LockedOut);
-        } else {
-            emit error(SoftwareError);
-        }
+        emit aborted();
         emit authenticatingChanged();
     });
 
     emit authenticatingChanged();
-}
-
-void Authenticator::enterLockCode(const QString &code)
-{
-    call(QStringLiteral("EnterLockCode"), m_localPath, code);
 }
 
 void Authenticator::cancel()
@@ -184,36 +129,14 @@ void Authenticator::handleAuthentication(const QVariant &authenticationToken)
     }
 }
 
-void Authenticator::handleFeedback(Feedback feedback, int attemptsRemaining, Methods utilizedMethods)
-{
-    if (m_authenticating) {
-        if (!utilizedMethods) { // Utilized methods can be empty if there is no change.
-            utilizedMethods = m_utilizedMethods;
-        }
-
-        qCDebug(devicelock, "Authentication feedback %i.  Attempts remaining: %i. Methods: %i",
-                    int(feedback), attemptsRemaining, int(utilizedMethods));
-
-        const bool methodsChanged = m_utilizedMethods != utilizedMethods;
-
-        m_utilizedMethods = utilizedMethods;
-
-        emit Authenticator::feedback(feedback, attemptsRemaining);
-
-        if (methodsChanged) {
-            emit utilizedMethodsChanged();
-        }
-    }
-}
-
-void Authenticator::handleError(Error error)
+void Authenticator::handleAborted()
 {
     if (m_authenticating) {
         m_authenticating = false;
 
-        qCDebug(devicelock, "Authentication error %i.", int(error));
+        qCDebug(devicelock, "Authentication aborted.");
 
-        emit Authenticator::error(error);
+        emit aborted();
         emit authenticatingChanged();
     }
 }

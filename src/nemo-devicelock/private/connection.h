@@ -36,6 +36,7 @@
 #include <nemo-dbus/interface.h>
 
 #include <QDBusObjectPath>
+#include <QDBusServiceWatcher>
 
 namespace NemoDeviceLock
 {
@@ -48,7 +49,7 @@ public:
     static Connection *instance();
 
 private:
-    NemoDBus::Connection m_systemBus;
+    QDBusServiceWatcher m_serviceWatcher;
 
     explicit Connection(QObject *parent = nullptr);
 

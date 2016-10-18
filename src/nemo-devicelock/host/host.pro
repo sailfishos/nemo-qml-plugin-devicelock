@@ -22,6 +22,7 @@ INCLUDEPATH += \
 LIBS += -L$$OUT_PWD/.. -lnemodevicelock
 
 PUBLIC_HEADERS += \
+        $$PWD/hostauthenticationinput.h \
         $$PWD/hostauthenticator.h \
         $$PWD/hostauthorization.h \
         $$PWD/hostdevicelock.h \
@@ -30,12 +31,12 @@ PUBLIC_HEADERS += \
         $$PWD/hostencryptionsettings.h \
         $$PWD/hostfingerprintsensor.h \
         $$PWD/hostfingerprintsettings.h \
-        $$PWD/hostlockcodesettings.h \
         $$PWD/hostobject.h \
         $$PWD/hostservice.h \
         $$PWD/mcedevicelock.h
 
 SOURCES += \
+        $$PWD/hostauthenticationinput.cpp \
         $$PWD/hostauthenticator.cpp \
         $$PWD/hostauthorization.cpp \
         $$PWD/hostdevicelock.cpp \
@@ -44,7 +45,6 @@ SOURCES += \
         $$PWD/hostencryptionsettings.cpp \
         $$PWD/hostfingerprintsensor.cpp \
         $$PWD/hostfingerprintsettings.cpp \
-        $$PWD/hostlockcodesettings.cpp \
         $$PWD/hostobject.cpp \
         $$PWD/hostservice.cpp \
         $$PWD/mcedevicelock.cpp
