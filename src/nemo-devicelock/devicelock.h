@@ -16,19 +16,23 @@
 #ifndef NEMODEVICELOCK_DEVICELOCK_H
 #define NEMODEVICELOCK_DEVICELOCK_H
 
-#include <nemo-devicelock/private/clientauthorization.h>
+#include <QSharedDataPointer>
+
+#include <nemo-devicelock/global.h>
+#include <nemo-devicelock/private/connection.h>
 
 namespace NemoDeviceLock
 {
 
+class SettingsWatcher;
 class NEMODEVICELOCK_EXPORT DeviceLock : public QObject, private ConnectionClient
 {
     Q_OBJECT
     Q_ENUMS(LockState)
     Q_PROPERTY(bool enabled READ isEnabled NOTIFY enabledChanged)
+    Q_PROPERTY(bool unlocking READ isUnlocking NOTIFY unlockingChanged)
     Q_PROPERTY(LockState state READ state NOTIFY stateChanged)
     Q_PROPERTY(int automaticLocking READ automaticLocking NOTIFY automaticLockingChanged)
-    Q_PROPERTY(NemoDeviceLock::Authorization *authorization READ authorization CONSTANT)
 public:
     explicit DeviceLock(QObject *parent = nullptr);
     ~DeviceLock();
@@ -41,16 +45,17 @@ public:
     };
 
     bool isEnabled() const;
+    bool isUnlocking() const;
     LockState state() const;
 
     int automaticLocking() const;
 
-    Authorization *authorization();
-
-    Q_INVOKABLE void unlock(const QVariant &authenticationToken);
+    Q_INVOKABLE void unlock();
+    Q_INVOKABLE void cancel();
 
 signals:
     void enabledChanged();
+    void unlockingChanged();
     void stateChanged();
     void automaticLockingChanged();
 
@@ -61,11 +66,10 @@ signals:
 private:
     inline void connected();
 
-    ClientAuthorization m_authorization;
-    ClientAuthorizationAdaptor m_authorizationAdaptor;
     QExplicitlySharedDataPointer<SettingsWatcher> m_settings;
     LockState m_state;
     bool m_enabled;
+    bool m_unlocking;
 };
 
 }

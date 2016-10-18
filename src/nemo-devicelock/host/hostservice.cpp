@@ -39,7 +39,6 @@
 #include "hostencryptionsettings.h"
 #include "hostfingerprintsensor.h"
 #include "hostfingerprintsettings.h"
-#include "hostlockcodesettings.h"
 
 #include <QDBusConnection>
 #include <QDBusMetaType>
@@ -87,7 +86,6 @@ HostService::HostService(
         HostEncryptionSettings *encryptionSettings,
         HostFingerprintSensor *fingerprintSensor,
         HostFingerprintSettings *fingerprintSettings,
-        HostLockCodeSettings *lockCodeSettings,
         QObject *parent)
     : QDBusServer(QStringLiteral("unix:path=/run/nemo-devicelock/socket"), parent)
     , m_authenticator(authenticator)
@@ -97,8 +95,9 @@ HostService::HostService(
     , m_encryptionSettings(encryptionSettings)
     , m_fingerprintSensor(fingerprintSensor)
     , m_fingerprintSettings(fingerprintSettings)
-    , m_lockCodeSettings(lockCodeSettings)
 {
+    setAnonymousAuthenticationAllowed(true);
+
     connect(this, &QDBusServer::newConnection, this, &HostService::connectionReady);
 
     qDBusRegisterMetaType<NemoDeviceLock::Fingerprint>();
@@ -109,7 +108,12 @@ HostService::HostService(
                     qPrintable(QDBusConnection::systemBus().lastError().message()));
     }
 
-    sd_notify(0, "READY=1");
+    if (isConnected()) {
+        sd_notify(0, "READY=1");
+    } else {
+        qCCritical(daemon, "Failed to start device lock DBus server: %s",
+                    qPrintable(lastError().message()));
+    }
 }
 
 HostService::~HostService()
@@ -123,13 +127,10 @@ static void registerObject(QDBusConnection &connection, const QString &path, QOb
     }
 }
 
-static dbus_bool_t authenticateUser(DBusConnection *, unsigned long, void *)
-{
-    return TRUE;
-}
-
 void HostService::connectionReady(const QDBusConnection &newConnection)
 {
+    qCDebug(daemon, "New connection %s", qPrintable(newConnection.name()));
+
     QDBusConnection connection(newConnection);
 
     const auto monitor = new ConnectionMonitor(this, connection.name());
@@ -154,10 +155,6 @@ void HostService::connectionReady(const QDBusConnection &newConnection)
         registerObject(connection, object->path(), object);
         object->clientConnected(connectionName);
     }
-
-    auto *internalConnection = static_cast<DBusConnection*>(connection.internalPointer());
-
-    dbus_connection_set_unix_user_function(internalConnection, authenticateUser, nullptr,  nullptr);
 }
 
 }

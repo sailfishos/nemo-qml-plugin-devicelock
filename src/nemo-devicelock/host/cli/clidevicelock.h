@@ -50,11 +50,15 @@ public:
     ~CliDeviceLock();
 
     bool isEnabled() const override;
+    bool isUnlocking() const override;
 
-    void unlock(const QString &requestor, const QVariant &authenticationToken) override;
+    void unlock() override;
+    void enterLockCode(const QString &code) override;
+    void cancel() override;
 
 private:
     QExplicitlySharedDataPointer<LockCodeWatcher> m_watcher;
+    bool m_unlocking;
 };
 
 }

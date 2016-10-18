@@ -66,7 +66,7 @@ public:
 
 protected:
     virtual void clearDevice(
-            const QString &requestor, const QVariant &authenticationToken, DeviceReset::ResetMode mode);
+            const QString &client, const QVariant &authenticationToken, DeviceReset::ResetMode mode);
 
 private:
     friend class HostDeviceResetAdaptor;

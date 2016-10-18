@@ -66,21 +66,22 @@ public:
     explicit HostFingerprintSensor(Authenticator::Methods allowedMethods, QObject *parent = nullptr);
     ~HostFingerprintSensor();
 
-protected:
     virtual bool hasSensor() const;
 
-    virtual int acquireFinger(const QString &requestor, const QVariant &authenticationToken);
-    virtual void cancelAcquisition(const QString &requestor);
+    virtual int acquireFinger(const QString &client, const QVariant &authenticationToken);
+    void cancel() override;
 
-    void sendSampleAcquired(const QString &connection, const QString &path, int samplesRemaining);
-    void sendAcquisitionCompleted(const QString &connection, const QString &path);
-    void sendAcquisitionFeedback(const QString &connection, const QString &path, FingerprintSensor::Feedback feedback);
-    void sendAcquisitionError(const QString &connection, const QString &path, FingerprintSensor::Error error);
+    void sampleAcquired(int samplesRemaining);
+    void acquisitionCompleted();
+    void acquisitionFeedback(FingerprintSensor::Feedback feedback);
+    void acquisitionError(FingerprintSensor::Error error);
 
     void hasSensorChanged();
 
 private:
     friend class HostFingerprintSensorAdaptor;
+
+    inline void handleCancel(const QString &client);
 
     HostFingerprintSensorAdaptor m_adaptor;
 };
