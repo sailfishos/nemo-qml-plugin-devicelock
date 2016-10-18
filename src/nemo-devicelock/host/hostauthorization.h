@@ -68,10 +68,10 @@ public:
     ~HostAuthorization();
 
 protected:
-    virtual void requestChallenge(const QString &path);
-    virtual void relinquishChallenge(const QString &path);
+    virtual void requestChallenge(const QString &client);
+    virtual void relinquishChallenge(const QString &client);
 
-    void sendChallengeExpired(const QString &connection, const QString &path);
+    void challengeExpired(const QString &connection, const QString &client);
 
 private:
     friend class HostAuthorizationAdaptor;

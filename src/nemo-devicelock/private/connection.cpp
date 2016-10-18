@@ -53,36 +53,28 @@ static QDBusConnection connectToHost()
 
 Connection::Connection(QObject *parent)
     : QObject(parent)
-    , NemoDBus::Connection(connectToHost(), devicelock())
-    , m_systemBus(QDBusConnection::systemBus(), devicelock())
+    , NemoDBus::Connection(connectToHost(), devicelock_dbus())
+    , m_serviceWatcher(
+        QStringLiteral("org.nemomobile.devicelock"),
+        QDBusConnection::systemBus(),
+        QDBusServiceWatcher::WatchForRegistration)
 {
     Q_ASSERT(!sharedInstance);
     sharedInstance = this;
 
-    // In the event that the daemon is restarted systemd can tell us when the socket is active
-    // and can be connected to again.
+    if (!isConnected()) {
+        qCWarning(devicelock, "Failed to connect to host.");
+    }
 
-    const auto response = m_systemBus.call(
-                this,
-                systemdService,
-                QStringLiteral("/org/freedesktop/systemd1"),
-                QStringLiteral("org.freedesktop.systemd1.Manager"),
-                QStringLiteral("GetUnit"),
-                QStringLiteral("nemo-devicelock.socket"));
-    response->onFinished<QDBusObjectPath>([this](const QDBusObjectPath &unit) {
-        m_systemBus.subscribeToProperty<QString>(
-                    this,
-                    systemdService,
-                    unit.path(),
-                    QStringLiteral("org.freedesktop.systemd1.Unit"),
-                    QStringLiteral("ActiveState"),
-                    [this] (const QString &state) {
-            if (!isConnected() && state == QStringLiteral("active")) {
-                qCDebug(devicelock, "The device lock socket is available to connect to");
+    connect(&m_serviceWatcher, &QDBusServiceWatcher::serviceRegistered, this, [this](const QString &) {
+        if (!isConnected()) {
+            qCDebug(devicelock, "The device lock socket is available to connect to");
 
-                reconnect(connectToHost());
+            if (!reconnect(connectToHost())) {
+                qCWarning(devicelock, "Failed to reconnect to host. %s",
+                            qPrintable(connection().lastError().message()));
             }
-        });
+        }
     });
 }
 

@@ -39,6 +39,7 @@ namespace NemoDeviceLock
 {
 
 Q_DECLARE_LOGGING_CATEGORY(devicelock)
+Q_DECLARE_LOGGING_CATEGORY(devicelock_dbus)
 
 }
 

@@ -36,17 +36,50 @@
 namespace NemoDeviceLock
 {
 
+LockCodeSettingsAdaptor::LockCodeSettingsAdaptor(LockCodeSettings *settings)
+    : QDBusAbstractAdaptor(settings)
+    , m_settings(settings)
+{
+}
+
+void LockCodeSettingsAdaptor::Changed(const QDBusVariant &authenticationToken)
+{
+    m_settings->handleChanged(authenticationToken.variant());
+}
+
+void LockCodeSettingsAdaptor::ChangeAborted()
+{
+    m_settings->handleChangeAborted();
+}
+
+void LockCodeSettingsAdaptor::Cleared()
+{
+    m_settings->handleCleared();
+}
+
+void LockCodeSettingsAdaptor::ClearAborted()
+{
+    m_settings->handleClearAborted();
+}
+
 LockCodeSettings::LockCodeSettings(QObject *parent)
     : QObject(parent)
     , ConnectionClient(
           this,
-          QStringLiteral("/lockcode"),
+          QStringLiteral("/authenticator"),
           QStringLiteral("org.nemomobile.devicelock.LockCodeSettings"))
-    , m_settings(SettingsWatcher::instance())
+    , m_adaptor(this)
     , m_set(false)
+    , m_changing(false)
+    , m_clearing(false)
 {
     m_connection->onConnected(this, [this] {
         connected();
+    });
+
+    m_connection->onDisconnected(this, [this] {
+        handleChangeAborted();
+        handleClearAborted();
     });
 
     if (m_connection->isConnected()) {
@@ -63,44 +96,102 @@ bool LockCodeSettings::isSet() const
     return m_set;
 }
 
-int LockCodeSettings::minimumLength() const
+void LockCodeSettings::change(const QVariant &authenticationCode)
 {
-    return m_settings->minimumLength;
-}
+    if (m_changing) {
+        return;
+    } else if (m_clearing) {
+        cancel();
+    }
 
-int LockCodeSettings::maximumLength() const
-{
-    return m_settings->maximumLength;
-}
+    m_changing = true;
 
-void LockCodeSettings::change(const QString &oldCode, const QString &newCode)
-{
-    auto response = call(QStringLiteral("Change"), oldCode, newCode);
-
-    response->onFinished([this]() {
-        emit changed();
-    });
+    auto response = call(QStringLiteral("Change"), m_localPath, authenticationCode);
 
     response->onError([this](const QDBusError &) {
-        emit changeError();
+        handleChangeAborted();
+    });
+
+    emit changingChanged();
+}
+
+void LockCodeSettings::handleChanged(const QVariant &authenticationToken)
+{
+    if (m_changing) {
+        m_changing = false;
+
+        emit changed(authenticationToken);
+        emit changingChanged();
+    }
+}
+
+void LockCodeSettings::handleChangeAborted()
+{
+    if (m_changing) {
+        m_changing = false;
+
+        emit changeAborted();
+        emit changingChanged();
+    }
+}
+
+void LockCodeSettings::clear()
+{
+    if (m_changing) {
+        cancel();
+    } else if (m_clearing) {
+        return;
+    }
+
+    m_clearing = true;
+
+    auto response = call(QStringLiteral("Clear"), m_localPath);
+
+    response->onError([this](const QDBusError &) {
+        handleClearAborted();
     });
 }
 
-void LockCodeSettings::clear(const QString &currentCode)
+void LockCodeSettings::cancel()
 {
-    auto response = call(QStringLiteral("Clear"), currentCode);
+    if (m_changing) {
+        m_changing = false;
 
-    response->onFinished([this]() {
+        call(QStringLiteral("CancelChange"), m_localPath);
+
+        emit changingChanged();
+    } else if (m_clearing) {
+        m_clearing = false;
+
+        call(QStringLiteral("CancelClear"), m_localPath);
+
+        emit clearingChanged();
+    }
+}
+
+void LockCodeSettings::handleCleared()
+{
+    if (m_clearing) {
+        m_clearing = false;
+
         emit cleared();
-    });
+        emit clearingChanged();
+    }
+}
 
-    response->onError([this](const QDBusError &) {
-        emit clearError();
-    });
+void LockCodeSettings::handleClearAborted()
+{
+    if (m_clearing) {
+        m_clearing = false;
+
+        emit clearAborted();
+        emit clearingChanged();
+    }
 }
 
 void LockCodeSettings::connected()
 {
+    registerObject();
     subscribeToProperty<bool>(QStringLiteral("LockCodeSet"), [this](bool set) {
         if (m_set != set) {
             m_set = set;

@@ -20,6 +20,7 @@ DEFINES += \
         NEMODEVICELOCK_BUILD_LIBRARY
 
 PUBLIC_HEADERS += \
+        authenticationinput.h \
         authenticator.h \
         authorization.h \
         devicelock.h \
@@ -31,6 +32,7 @@ PUBLIC_HEADERS += \
         lockcodesettings.h
 
 SOURCES += \
+        authenticationinput.cpp \
         authenticator.cpp \
         authorization.cpp \
         devicelock.cpp \
