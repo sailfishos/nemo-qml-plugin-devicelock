@@ -34,10 +34,12 @@
 
 #include <QThreadStorage>
 
+#include <dbus/dbus.h>
+
 namespace NemoDeviceLock
 {
 
-Q_LOGGING_CATEGORY(daemon, "org.nemomobile.devicelock.daemon")
+Q_LOGGING_CATEGORY(daemon, "org.nemomobile.devicelock.daemon", QtCriticalMsg)
 
 
 class SystemBus : public NemoDBus::Connection
@@ -71,6 +73,10 @@ QString HostObject::path() const
     return m_path;
 }
 
+void HostObject::cancel()
+{
+}
+
 void HostObject::clientConnected(const QString &connectionName)
 {
     m_connections.append(connectionName);
@@ -79,6 +85,12 @@ void HostObject::clientConnected(const QString &connectionName)
 void HostObject::clientDisconnected(const QString &connectionName)
 {
     m_connections.removeOne(connectionName);
+
+    if (m_activeConnection == connectionName) {
+        m_activeConnection.clear();
+        m_activeClient.clear();
+        cancel();
+    }
 }
 
 void HostObject::propertyChanged(const QString &interface, const QString &property, const QVariant &value)
@@ -98,6 +110,35 @@ void HostObject::propertyChanged(const QString &interface, const QString &proper
     for (const auto connectionName : m_connections) {
         QDBusConnection(connectionName).send(message);
     }
+}
+
+
+unsigned long HostObject::connectionPid(const QDBusConnection &connection)
+{
+    unsigned long pid = 0;
+    if (dbus_connection_get_unix_process_id(
+                static_cast<DBusConnection *>(connection.internalPointer()), &pid)) {
+        return pid;
+    } else {
+        return 0;
+    }
+}
+
+bool HostObject::isActiveClient(const QString &client) const
+{
+    return m_activeConnection == QDBusContext::connection().name() && m_activeClient == client;
+}
+
+void HostObject::setActiveClient(const QString &client)
+{
+    m_activeConnection = QDBusContext::connection().name();
+    m_activeClient = client;
+}
+
+void HostObject::clearActiveClient()
+{
+    m_activeConnection.clear();
+    m_activeClient.clear();
 }
 
 }

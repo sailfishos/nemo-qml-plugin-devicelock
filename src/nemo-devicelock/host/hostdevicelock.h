@@ -34,7 +34,8 @@
 #define NEMODEVICELOCK_HOSTDEVICELOCK_H
 
 #include <nemo-devicelock/devicelock.h>
-#include <nemo-devicelock/host/hostauthorization.h>
+#include <nemo-devicelock/host/hostauthenticationinput.h>
+#include <nemo-devicelock/host/hostobject.h>
 
 #include <QDBusVariant>
 
@@ -47,15 +48,18 @@ class HostDeviceLockAdaptor : public QDBusAbstractAdaptor
     Q_OBJECT
     Q_PROPERTY(uint State READ state)
     Q_PROPERTY(bool Enabled READ isEnabled)
+    Q_PROPERTY(bool Unlocking READ isUnlocking)
     Q_CLASSINFO("D-Bus Interface", "org.nemomobile.devicelock.DeviceLock")
 public:
     explicit HostDeviceLockAdaptor(HostDeviceLock *deviceLock);
 
     uint state() const;
     bool isEnabled() const;
+    bool isUnlocking() const;
 
 public slots:
-    void Unlock(const QDBusObjectPath &path, const QDBusVariant &authenticationToken);
+    void Unlock();
+    void Cancel();
 
 private:
     HostDeviceLock * const m_deviceLock;
@@ -63,28 +67,29 @@ private:
 
 class SettingsWatcher;
 
-class HostDeviceLock : public HostAuthorization
+class HostDeviceLock : public HostAuthenticationInput
 {
     Q_OBJECT
 public:
-    explicit HostDeviceLock(Authenticator::Methods allowedMethods, QObject *parent = nullptr);
+    explicit HostDeviceLock(Authenticator::Methods supportedMethods, QObject *parent = nullptr);
     ~HostDeviceLock();
 
 protected:
     virtual DeviceLock::LockState state() const = 0;
     virtual bool isEnabled() const = 0;
+    virtual bool isUnlocking() const = 0;
 
     int automaticLocking() const;
 
-    virtual void unlock(const QString &requestor, const QVariant &authenticationToken) = 0;
+    virtual void unlock() = 0;
 
     void stateChanged();
     void enabledChanged();
+    void unlockingChanged();
 
     virtual void automaticLockingChanged();
 
 private:
-
     friend class HostDeviceLockAdaptor;
 
     HostDeviceLockAdaptor m_adaptor;

@@ -33,6 +33,7 @@
 #include <QQmlExtensionPlugin>
 
 #include <authenticator.h>
+#include <authenticationinput.h>
 #include <devicelock.h>
 #include <devicelocksettings.h>
 #include <devicereset.h>
@@ -49,6 +50,16 @@ static QObject *createDeviceLock(QQmlEngine *, QJSEngine *)
 {
     return new NemoDeviceLock::DeviceLock;
 }
+
+class DeviceLockAuthenticationInput : public NemoDeviceLock::AuthenticationInput
+{
+    Q_OBJECT
+public:
+    explicit DeviceLockAuthenticationInput(QObject *parent = nullptr)
+        : AuthenticationInput(DeviceLock, parent)
+    {
+    }
+};
 
 class Q_DECL_EXPORT NemoDeviceLockPlugin : public QQmlExtensionPlugin
 {
@@ -69,6 +80,8 @@ public:
         qmlRegisterSingletonType<NemoDeviceLock::DeviceLock>(uri, 1, 0, "DeviceLock", createDeviceLock);
 
         qmlRegisterType<NemoDeviceLock::Authenticator>(uri, 1, 0, "Authenticator");
+        qmlRegisterType<NemoDeviceLock::AuthenticationInput>(uri, 1, 0, "AuthenticationInput");
+        qmlRegisterType<DeviceLockAuthenticationInput>(uri, 1, 0, "DeviceLockAuthenticationInput");
         qmlRegisterType<NemoDeviceLock::DeviceLockSettings>(uri, 1, 0, "DeviceLockSettings");
         qmlRegisterType<NemoDeviceLock::DeviceReset>(uri, 1, 0, "DeviceReset");
         qmlRegisterType<NemoDeviceLock::EncryptionSettings>(uri, 1, 0, "EncryptionSettings");

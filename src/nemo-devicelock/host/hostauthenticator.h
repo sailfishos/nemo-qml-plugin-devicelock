@@ -38,8 +38,7 @@
 #include <QDBusObjectPath>
 #include <QDBusVariant>
 
-#include <nemo-devicelock/authenticator.h>
-
+#include <nemo-devicelock/host/hostauthenticationinput.h>
 #include <nemo-devicelock/host/hostobject.h>
 
 QT_BEGIN_NAMESPACE
@@ -61,50 +60,85 @@ public:
     uint availableMethods() const;
 
 public slots:
-    uint Authenticate(const QDBusObjectPath &path, const QDBusVariant &challengeCode, uint methods);
-    void EnterLockCode(const QDBusObjectPath &path, const QString &lockCode);
+    void Authenticate(const QDBusObjectPath &path, const QDBusVariant &challengeCode, uint methods);
     void Cancel(const QDBusObjectPath &path);
 
 private:
     HostAuthenticator *m_authenticator;
 };
 
-class HostAuthenticator : public HostObject
+class HostLockCodeSettings;
+class HostLockCodeSettingsAdaptor : public QDBusAbstractAdaptor
+{
+    Q_OBJECT
+    Q_PROPERTY(bool LockCodeSet READ isSet NOTIFY setChanged)
+    Q_CLASSINFO("D-Bus Interface", "org.nemomobile.devicelock.LockCodeSettings")
+public:
+    explicit HostLockCodeSettingsAdaptor(HostAuthenticator *authenticator);
+
+    bool isSet() const;
+
+public slots:
+    void Change(const QDBusObjectPath &path, const QDBusVariant &challengeCode);
+    void CancelChange(const QDBusObjectPath &path);
+
+    void Clear(const QDBusObjectPath &path);
+    void CancelClear(const QDBusObjectPath &path);
+
+signals:
+    void setChanged();
+
+private:
+    HostAuthenticator * const m_authenticator;
+};
+
+class HostAuthenticator : public HostAuthenticationInput
 {
     Q_OBJECT
 public:
-    explicit HostAuthenticator(QObject *parent = nullptr);
+    explicit HostAuthenticator(
+            Authenticator::Methods supportedMethods = Authenticator::LockCode, QObject *parent = nullptr);
     ~HostAuthenticator();
 
-protected:
+    // Authenticator
     virtual Authenticator::Methods availableMethods() const = 0;
-    virtual Authenticator::Methods authenticate(
+
+    virtual void authenticate(
             const QString &authenticator,
             const QVariant &challengeCode,
             Authenticator::Methods methods) = 0;
-    virtual void enterLockCode(const QString &authenticator, const QString &code) = 0;
-    virtual void cancel(const QString &authenticator) = 0;
 
-    int maximumAttempts() const;
-    int currentAttempts() const;
+    // LockCodeSettings
+    virtual bool isLockCodeSet() const = 0;
 
-    void sendAuthenticated(
-            const QString &connectionName, const QString &path, const QVariant &authenticationToken);
-    void sendFeedback(
-            const QString &connectionName,
-            const QString &path,
-            Authenticator::Feedback feedback,
-            int attemptsRemaining,
-            Authenticator::Methods utilizedMethods = Authenticator::Methods());
-    void sendError(const QString &connection, const QString &path, Authenticator::Error error);
+    virtual bool authorizeLockCodeSettings(unsigned long pid);
+
+    virtual void changeLockCode(const QString &path, const QVariant &challengeCode) = 0;
+    virtual void clearLockCode(const QString &path) = 0;
+
+    // Signals
+    void authenticated(const QVariant &authenticationToken);
+    void aborted();
+
+    void lockCodeChanged(const QVariant &authenticationToken);
+    void lockCodeChangeAborted();
+
+    void lockCodeCleared();
+    void lockCodeClearAborted();
 
     void availableMethodsChanged();
+    void lockCodeSetChanged();
 
 private:
+    inline void handleChangeLockCode(const QString &client, const QVariant &challengeCode);
+    inline void handleClearLockCode(const QString &client);
+    inline void handleCancel(const QString &client);
+
     friend class HostAuthenticatorAdaptor;
+    friend class HostLockCodeSettingsAdaptor;
 
     HostAuthenticatorAdaptor m_adaptor;
-    QExplicitlySharedDataPointer<SettingsWatcher> m_settings;
+    HostLockCodeSettingsAdaptor m_lockCode;
 };
 
 }

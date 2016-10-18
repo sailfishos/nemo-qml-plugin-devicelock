@@ -47,7 +47,6 @@ class HostDeviceReset;
 class HostEncryptionSettings;
 class HostFingerprintSensor;
 class HostFingerprintSettings;
-class HostLockCodeSettings;
 class HostObject;
 
 class HostService : public QDBusServer
@@ -62,7 +61,6 @@ public:
             HostEncryptionSettings *encryptionSettings,
             HostFingerprintSensor *fingerprintSensor,
             HostFingerprintSettings *fingerprintSettings,
-            HostLockCodeSettings *lockCodeSettings,
             QObject *parent = nullptr);
     ~HostService();
 
@@ -80,9 +78,8 @@ private:
             HostObject * const m_encryptionSettings;
             HostObject * const m_fingerprintSensor;
             HostObject * const m_fingerprintSettings;
-            HostObject * const m_lockCodeSettings;
         };
-        HostObject * const m_objects[8];
+        HostObject * const m_objects[7];
     };
 };
 

@@ -57,12 +57,31 @@ public:
     virtual void clientConnected(const QString &connectionName);
     virtual void clientDisconnected(const QString &connectionName);
 
+    virtual void cancel();
+
+    static unsigned long connectionPid(const QDBusConnection &connection);
+
+    bool isActiveClient(const QString &client) const;
+    void setActiveClient(const QString &client);
+    void clearActiveClient();
+
 protected:
     void propertyChanged(const QString &interface, const QString &property, const QVariant &value);
+
+    template <typename... Arguments> inline bool sendToActiveClient(
+                const QString &interface,
+                const QString &method,
+                Arguments... arguments)
+    {
+        return !m_activeConnection.isEmpty()
+                && NemoDBus::send(m_activeConnection, m_activeClient, interface, method, arguments...);
+    }
 
 private:
     const QString m_path;
     QStringList m_connections;
+    QString m_activeConnection;
+    QString m_activeClient;
 };
 
 }

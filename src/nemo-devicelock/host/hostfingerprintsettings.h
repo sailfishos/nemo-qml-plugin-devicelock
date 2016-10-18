@@ -71,7 +71,7 @@ protected:
     virtual QVector<Fingerprint> fingerprints() const;
 
     virtual void remove(
-            const QString &requestor, const QVariant &authenticationToken, const QVariant &id);
+            const QString &client, const QVariant &authenticationToken, const QVariant &id);
     virtual void rename(const QVariant &id, const QString &name);
 
     void fingerprintsChanged();

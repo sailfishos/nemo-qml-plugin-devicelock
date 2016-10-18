@@ -6,8 +6,7 @@ PUBLIC_HEADERS += \
         $$PWD/clidevicelock.h \
         $$PWD/clidevicelocksettings.h \
         $$PWD/clidevicereset.h \
-        $$PWD/cliencryptionsettings.h \
-        $$PWD/clilockcodesettings.h
+        $$PWD/cliencryptionsettings.h
 
 HEADERS +=  \
         $$PWD/lockcodewatcher.h
@@ -18,5 +17,4 @@ SOURCES += \
         $$PWD/clidevicelocksettings.cpp \
         $$PWD/clidevicereset.cpp \
         $$PWD/cliencryptionsettings.cpp \
-        $$PWD/clilockcodesettings.cpp \
         $$PWD/lockcodewatcher.cpp
