@@ -42,6 +42,7 @@ Requires:   pkgconfig(nemodbus)
 Summary:    Development libraries for device lock daemons
 Group:      Development/Libraries
 Requires:   %{name}-devel = %{version}-%{release}
+Requires:   nemo-devicelock-daemon-cli = %{version}-%{release}
 Requires:   pkgconfig(keepalive)
 Requires:   pkgconfig(libsystemd-daemon)
 Requires:   pkgconfig(mce)
