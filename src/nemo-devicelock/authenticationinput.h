@@ -75,17 +75,19 @@ class NEMODEVICELOCK_EXPORT AuthenticationInput : public QObject, private Connec
     Q_ENUMS(Status)
 public:
     enum Feedback {
-        EnterLockCode,
-        EnterNewLockCode,
-        RepeatNewLockCode,
-        LockCodesDoNotMatch,
+        EnterSecurityCode,
+        EnterNewSecurityCode,
+        RepeatNewSecurityCode,
+        SecurityCodesDoNotMatch,
+        SecurityCodeInHistory,
+        SecurityCodeExpired,
         PartialPrint,
         PrintIsUnclear,
         SensorIsDirty,
         SwipeFaster,
         SwipeSlower,
         UnrecognizedFinger,
-        IncorrectLockCode
+        IncorrectSecurityCode
     };
 
     enum Error {
@@ -125,7 +127,7 @@ public:
     int maximumCodeLength() const;
     bool codeInputIsKeyboard() const;
 
-    Q_INVOKABLE void enterLockCode(const QString &code);
+    Q_INVOKABLE void enterSecurityCode(const QString &code);
     Q_INVOKABLE void cancel();
 
 signals:

@@ -43,36 +43,6 @@
 namespace NemoDeviceLock
 {
 
-class PluginCommand : public QProcess
-{
-    Q_OBJECT
-public:
-    PluginCommand(QObject *caller);
-
-    template <typename Success>  void onSuccess(const Success &success)
-    {
-        connect(this, &PluginCommand::succeeded, success);
-    }
-
-    template <typename Failure>  void onFailure(const Failure &failure)
-    {
-        connect(this, &PluginCommand::failed, failure);
-    }
-
-signals:
-    void succeeded();
-    void failed(int exitCode);
-
-private:
-    friend class LockCodeWatcher;
-
-    ~PluginCommand();
-
-    void processFinished(int exitCode, QProcess::ExitStatus status);
-
-    QPointer<QObject> m_caller;
-};
-
 class LockCodeWatcher : public QObject, public QSharedData
 {
     Q_OBJECT
@@ -81,25 +51,22 @@ public:
 
     static LockCodeWatcher *instance();
 
-    bool lockCodeSet() const;
-    void invalidateLockCodeSet();
+    bool securityCodeSet() const;
+    void invalidateSecurityCodeSet();
 
-    PluginCommand *checkCode(QObject *caller, const QString &code);
-    PluginCommand *unlock(QObject *caller, const QString &code);
-
-    PluginCommand *runPlugin(QObject *caller, const QStringList &arguments) const;
+    int runPlugin(const QStringList &arguments) const;
 
 signals:
-    void lockCodeSetChanged();
+    void securityCodeSetChanged();
 
 private slots:
-    void lockCodeSetInvalidated();
+    void securityCodeSetInvalidated();
 
 private:
     explicit LockCodeWatcher(QObject *parent = nullptr);
 
     const bool m_pluginExists;
-    mutable bool m_lockCodeSet;
+    mutable bool m_securityCodeSet;
     mutable bool m_codeSetInvalidated;
 
     static LockCodeWatcher *sharedInstance;
