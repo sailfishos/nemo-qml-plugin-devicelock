@@ -54,7 +54,7 @@ public:
 public slots:
     void SetRegistered(const QDBusObjectPath &path, bool registered);
     void SetActive(const QDBusObjectPath &path, bool active);
-    void EnterLockCode(const QDBusObjectPath &path, const QString &lockCode);
+    void EnterSecurityCode(const QDBusObjectPath &path, const QString &code);
     void Cancel(const QDBusObjectPath &path);
 
 private:
@@ -65,25 +65,43 @@ class HostAuthenticationInput : public HostObject
 {
     Q_OBJECT
 public:
+    enum Result {
+        Success                 =  0,
+        Failure                 = -1,
+        SecurityCodeExpired     = -2,
+        SecurityCodeInHistory   = -3
+    };
+
+    enum Availability {
+        AuthenticationNotRequired,
+        CanAuthenticate,
+        CanAuthenticateSecurityCode,
+        AuthenticationLocked
+    };
+
     explicit HostAuthenticationInput(
             const QString &path,
-            Authenticator::Methods supportedMethods = Authenticator::LockCode,
+            Authenticator::Methods supportedMethods = Authenticator::SecurityCode,
             QObject *parent = nullptr);
     virtual ~HostAuthenticationInput();
 
-    int maximumAttempts() const;
-    int currentAttempts() const;
+    virtual Availability availability() const = 0;
+    virtual int checkCode(const QString &code) = 0;
+    virtual int setCode(const QString &oldCode, const QString &newCode) = 0;
 
     // AuthenticationInput
     virtual bool authorizeInput(unsigned long pid);
 
-    virtual void enterLockCode(const QString &code) = 0;
+    int maximumAttempts() const;
+    int currentAttempts() const;
+
+    virtual void enterSecurityCode(const QString &code) = 0;
     void cancel() override = 0;
 
     // Client
     virtual void authenticationStarted(
             Authenticator::Methods methods,
-            AuthenticationInput::Feedback feedback = AuthenticationInput::EnterLockCode);
+            AuthenticationInput::Feedback feedback = AuthenticationInput::EnterSecurityCode);
     void authenticationUnavailable(AuthenticationInput::Error error);
     void authenticationEvaluating();
     virtual void authenticationEnded(bool confirmed);
@@ -91,7 +109,7 @@ public:
     virtual void authenticationActive(Authenticator::Methods methods);
     virtual void authenticationInactive();
 
-    virtual void confirmAuthentication();
+    virtual void confirmAuthentication() = 0;
     virtual void abortAuthentication(AuthenticationInput::Error error);
 
     // Signals
@@ -115,7 +133,7 @@ private:
         QString path;
     };
 
-    inline void handleLockCode(const QString &client, const QString &lockCode);
+    inline void handleEnterSecurityCode(const QString &client, const QString &code);
     inline void handleCancel(const QString &client);
 
     inline void setRegistered(const QString &path, bool registered);

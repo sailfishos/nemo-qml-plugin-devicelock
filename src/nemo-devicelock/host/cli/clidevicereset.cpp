@@ -31,6 +31,7 @@
  */
 
 #include "clidevicereset.h"
+#include <hostauthenticationinput.h>
 
 #include "lockcodewatcher.h"
 
@@ -41,7 +42,7 @@ namespace NemoDeviceLock
 {
 
 CliDeviceReset::CliDeviceReset(QObject *parent)
-    : HostDeviceReset(Authenticator::LockCode, parent)
+    : HostDeviceReset(Authenticator::SecurityCode, parent)
     , m_watcher(LockCodeWatcher::instance())
 {
 }
@@ -60,19 +61,7 @@ void CliDeviceReset::clearDevice(
         arguments << QStringLiteral("--reboot");
     }
 
-    if (PluginCommand *command = m_watcher->runPlugin(this, arguments)) {
-        auto connection = QDBusContext::connection();
-        auto message = QDBusContext::message();
-
-        QDBusContext::setDelayedReply(true);
-
-        command->onSuccess([this, connection, message]() {
-            connection.send(message.createReply());
-        });
-        command->onFailure([this, connection, message](int) {
-            connection.send(message.createErrorReply(QDBusError::AccessDenied, QString()));
-        });
-    } else {
+    if (m_watcher->runPlugin(arguments) != HostAuthenticationInput::Success) {
         QDBusContext::sendErrorReply(QDBusError::InternalError);
     }
 }

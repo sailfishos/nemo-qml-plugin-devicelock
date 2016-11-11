@@ -56,9 +56,9 @@ void HostAuthenticationInputAdaptor::SetActive(const QDBusObjectPath &path, bool
     m_authenticationInput->setActive(path.path(), active);
 }
 
-void HostAuthenticationInputAdaptor::EnterLockCode(const QDBusObjectPath &path, const QString &lockCode)
+void HostAuthenticationInputAdaptor::EnterSecurityCode(const QDBusObjectPath &path, const QString &code)
 {
-    m_authenticationInput->handleLockCode(path.path(), lockCode);
+    m_authenticationInput->handleEnterSecurityCode(path.path(), code);
 }
 
 void HostAuthenticationInputAdaptor::Cancel(const QDBusObjectPath &path)
@@ -256,10 +256,6 @@ void HostAuthenticationInput::feedback(
     }
 }
 
-void HostAuthenticationInput::confirmAuthentication()
-{
-}
-
 void HostAuthenticationInput::abortAuthentication(AuthenticationInput::Error error)
 {
     if (m_authenticating) {
@@ -294,13 +290,13 @@ void HostAuthenticationInput::clientDisconnected(const QString &connection)
     HostObject::clientDisconnected(connection);
 }
 
-void HostAuthenticationInput::handleLockCode(const QString &path, const QString &lockCode)
+void HostAuthenticationInput::handleEnterSecurityCode(const QString &path, const QString &code)
 {
     const auto connection = QDBusContext::connection().name();
     if (!m_inputStack.isEmpty()
             && m_inputStack.last().connection == connection
             && m_inputStack.last().path == path) {
-        enterLockCode(lockCode);
+        enterSecurityCode(code);
     }
 }
 

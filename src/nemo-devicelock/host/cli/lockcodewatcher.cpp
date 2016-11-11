@@ -49,40 +49,6 @@
 namespace NemoDeviceLock
 {
 
-PluginCommand::PluginCommand(QObject *caller)
-    : m_caller(caller)
-{
-    connect(static_cast<QProcess *>(this), static_cast<void (QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished),
-            this, &PluginCommand::processFinished);
-}
-
-void PluginCommand::processFinished(int exitCode, QProcess::ExitStatus status)
-{
-    deleteLater();
-
-    QByteArray output = readAllStandardOutput();
-    if (!output.isEmpty()) {
-        qCDebug(daemon) << output.constData();
-    }
-
-    output = readAllStandardError();
-    if (!output.isEmpty()) {
-        qCWarning(daemon) << output.constData();
-    }
-
-    if (!m_caller) {
-        return;
-    } else if (exitCode == 0 && status == QProcess::NormalExit) {
-        emit succeeded();
-    } else {
-        emit failed(exitCode);
-    }
-}
-
-PluginCommand::~PluginCommand()
-{
-}
-
 static QString pluginName()
 {
     static const QString pluginName = []() {
@@ -104,7 +70,7 @@ LockCodeWatcher *LockCodeWatcher::sharedInstance = nullptr;
 LockCodeWatcher::LockCodeWatcher(QObject *parent)
     : QObject(parent)
     , m_pluginExists(QFile::exists(pluginName()))
-    , m_lockCodeSet(false)
+    , m_securityCodeSet(false)
     , m_codeSetInvalidated(true)
 {
     Q_ASSERT(!sharedInstance);
@@ -121,57 +87,46 @@ LockCodeWatcher *LockCodeWatcher::instance()
     return sharedInstance ? sharedInstance : new LockCodeWatcher;
 }
 
-bool LockCodeWatcher::lockCodeSet() const
+bool LockCodeWatcher::securityCodeSet() const
 {
     if (m_codeSetInvalidated) {
         m_codeSetInvalidated = false;
-        m_lockCodeSet = false;
-        if (PluginCommand *command = runPlugin(nullptr, QStringList()
-                    << QStringLiteral("--is-set") << QStringLiteral("lockcode"))) {
-            command->waitForFinished();
-            m_lockCodeSet = command->exitCode() == 0;
-        }
+        m_securityCodeSet = runPlugin(QStringList()
+                    << QStringLiteral("--is-set")
+                    << QStringLiteral("lockcode")) == HostAuthenticationInput::Success;
     }
-    return m_lockCodeSet;
+    return m_securityCodeSet;
 }
 
-void LockCodeWatcher::invalidateLockCodeSet()
+void LockCodeWatcher::invalidateSecurityCodeSet()
 {
     if (!m_codeSetInvalidated) {
         m_codeSetInvalidated = true;
 
-        emit lockCodeSetChanged();
+        emit securityCodeSetChanged();
     }
 }
 
-PluginCommand *LockCodeWatcher::checkCode(QObject *caller, const QString &code)
-{
-    return runPlugin(caller, QStringList() << QStringLiteral("--check-code") << code);
-}
-
-PluginCommand *LockCodeWatcher::unlock(QObject *caller, const QString &code)
-{
-    return runPlugin(caller, QStringList() << QStringLiteral("--unlock") << code);
-}
-
-PluginCommand *LockCodeWatcher::runPlugin(QObject *caller, const QStringList &arguments) const
+int LockCodeWatcher::runPlugin(const QStringList &arguments) const
 {
     if (!m_pluginExists) {
-        return nullptr;
+        return HostAuthenticationInput::Failure;
     }
 
-    PluginCommand *const process = new PluginCommand(caller);
+    QProcess process;
+    process.start(pluginName(), arguments);
+    process.waitForFinished(-1);
 
-    process->start(pluginName(), arguments);
-
-    return process;
+    return process.exitStatus() == QProcess::NormalExit
+            ? -process.exitCode()
+            : HostAuthenticationInput::Failure;
 }
 
-void LockCodeWatcher::lockCodeSetInvalidated()
+void LockCodeWatcher::securityCodeSetInvalidated()
 {
     if (!m_codeSetInvalidated) {
         m_codeSetInvalidated = true;
-        emit lockCodeSetChanged();
+        emit securityCodeSetChanged();
     }
 }
 

@@ -41,13 +41,13 @@
 namespace NemoDeviceLock
 {
 
-class LockCodeSettings;
-class LockCodeSettingsAdaptor : public QDBusAbstractAdaptor
+class SecurityCodeSettings;
+class SecurityCodeSettingsAdaptor : public QDBusAbstractAdaptor
 {
     Q_OBJECT
-    Q_CLASSINFO("D-Bus Interface", "org.nemomobile.devicelock.client.LockCodeSettings")
+    Q_CLASSINFO("D-Bus Interface", "org.nemomobile.devicelock.client.SecurityCodeSettings")
 public:
-    explicit LockCodeSettingsAdaptor(LockCodeSettings *settings);
+    explicit SecurityCodeSettingsAdaptor(SecurityCodeSettings *settings);
 
 public slots:
     Q_NOREPLY void Changed(const QDBusVariant &authenticationToken);
@@ -57,16 +57,16 @@ public slots:
     Q_NOREPLY void ClearAborted();
 
 private:
-    LockCodeSettings * const m_settings;
+    SecurityCodeSettings * const m_settings;
 };
 
-class NEMODEVICELOCK_EXPORT LockCodeSettings : public QObject, private ConnectionClient
+class NEMODEVICELOCK_EXPORT SecurityCodeSettings : public QObject, private ConnectionClient
 {
     Q_OBJECT
     Q_PROPERTY(bool set READ isSet NOTIFY setChanged)
 public:
-    explicit LockCodeSettings(QObject *parent = nullptr);
-    ~LockCodeSettings();
+    explicit SecurityCodeSettings(QObject *parent = nullptr);
+    ~SecurityCodeSettings();
 
     bool isSet() const;
 
@@ -86,7 +86,7 @@ signals:
     void clearAborted();
 
 private:
-    friend class LockCodeSettingsAdaptor;
+    friend class SecurityCodeSettingsAdaptor;
 
     inline void connected();
     inline void handleChanged(const QVariant &authenticationToken);
@@ -94,7 +94,7 @@ private:
     inline void handleCleared();
     inline void handleClearAborted();
 
-    LockCodeSettingsAdaptor m_adaptor;
+    SecurityCodeSettingsAdaptor m_adaptor;
     bool m_set;
     bool m_changing;
     bool m_clearing;

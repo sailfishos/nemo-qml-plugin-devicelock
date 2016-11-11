@@ -186,7 +186,6 @@ static void read(
 
 void SettingsWatcher::reloadSettings()
 {
-    qDebug() << "Settings changed";
     QSettings settings(m_settingsPath, QSettings::IniFormat);
 
     read(settings, this, automaticLockingKey, 10, &SettingsWatcher::automaticLocking, &SettingsWatcher::automaticLockingChanged);
