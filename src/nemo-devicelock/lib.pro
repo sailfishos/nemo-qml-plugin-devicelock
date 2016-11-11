@@ -29,7 +29,7 @@ PUBLIC_HEADERS += \
         encryptionsettings.h \
         fingerprintsensor.h \
         global.h \
-        lockcodesettings.h
+        securitycodesettings.h
 
 SOURCES += \
         authenticationinput.cpp \
@@ -40,7 +40,7 @@ SOURCES += \
         devicereset.cpp \
         encryptionsettings.cpp \
         fingerprintsensor.cpp \
-        lockcodesettings.cpp
+        securitycodesettings.cpp
 
 include(private/private.pri)
 

@@ -200,9 +200,9 @@ void AuthenticationInput::setRegistered(bool registered)
         emit registeredChanged();
     }
 }
-void AuthenticationInput::enterLockCode(const QString &code)
+void AuthenticationInput::enterSecurityCode(const QString &code)
 {
-    call(QStringLiteral("EnterLockCode"), m_localPath, code);
+    call(QStringLiteral("EnterSecurityCode"), m_localPath, code);
 }
 
 void AuthenticationInput::cancel()

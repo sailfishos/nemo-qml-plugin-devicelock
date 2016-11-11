@@ -31,6 +31,7 @@
  */
 
 #include <clidevicelocksettings.h>
+#include <hostauthenticationinput.h>
 
 #include "lockcodewatcher.h"
 
@@ -41,7 +42,7 @@ namespace NemoDeviceLock
 {
 
 CliDeviceLockSettings::CliDeviceLockSettings(QObject *parent)
-    : HostDeviceLockSettings(Authenticator::LockCode, parent)
+    : HostDeviceLockSettings(Authenticator::SecurityCode, parent)
     , m_watcher(LockCodeWatcher::instance())
 {
 }
@@ -53,23 +54,11 @@ CliDeviceLockSettings::~CliDeviceLockSettings()
 void CliDeviceLockSettings::changeSetting(
         const QString &, const QVariant &authenticationToken, const QString &key, const QVariant &value)
 {
-    if (PluginCommand *command = m_watcher->runPlugin(this, QStringList()
+    if (m_watcher->runPlugin(QStringList()
                 << QStringLiteral("--set-config-key")
                 << authenticationToken.toString()
                 << key
-                << value.toString())) {
-        auto connection = QDBusContext::connection();
-        auto message = QDBusContext::message();
-
-        QDBusContext::setDelayedReply(true);
-
-        command->onSuccess([this, connection, message]() {
-            connection.send(message.createReply());
-        });
-        command->onFailure([this, connection, message](int) {
-            connection.send(message.createErrorReply(QDBusError::AccessDenied, QString()));
-        });
-    } else {
+                << value.toString()) != HostAuthenticationInput::Success) {
         QDBusContext::sendErrorReply(QDBusError::InternalError);
     }
 }

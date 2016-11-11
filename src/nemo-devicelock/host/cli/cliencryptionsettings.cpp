@@ -31,6 +31,7 @@
  */
 
 #include "cliencryptionsettings.h"
+#include <hostauthenticationinput.h>
 
 #include "lockcodewatcher.h"
 
@@ -41,18 +42,11 @@ namespace NemoDeviceLock
 {
 
 CliEncryptionSettings::CliEncryptionSettings(QObject *parent)
-    : HostEncryptionSettings(Authenticator::LockCode, parent)
+    : HostEncryptionSettings(Authenticator::SecurityCode, parent)
     , m_watcher(LockCodeWatcher::instance())
-    , m_supportQuery(m_watcher->runPlugin(this, QStringList() << QStringLiteral("--is-encryption-supported")))
     , m_supported(false)
+    , m_supportChecked(false)
 {
-    m_supportQuery->onSuccess([this]() {
-        m_supportQuery = nullptr;
-        m_supported = true;
-    });
-    m_supportQuery->onFailure([this](int) {
-        m_supportQuery = nullptr;
-    });
 }
 
 CliEncryptionSettings::~CliEncryptionSettings()
@@ -61,29 +55,19 @@ CliEncryptionSettings::~CliEncryptionSettings()
 
 bool CliEncryptionSettings::isSupported() const
 {
-    if (m_supportQuery) {
-        m_supportQuery->waitForFinished();
+    if (!m_supportChecked) {
+        m_supportChecked = true;
+        m_supported = m_watcher->runPlugin(QStringList()
+                    << QStringLiteral("--is-encryption-supported")) == HostAuthenticationInput::Success;
     }
     return m_supported;
 }
 
 void CliEncryptionSettings::encryptHome(const QString &, const QVariant &authenticationToken)
 {
-    if (PluginCommand *command = m_watcher->runPlugin(this, QStringList()
+    if (m_watcher->runPlugin(QStringList()
                 << QStringLiteral("--encrypt-home")
-                << authenticationToken.toString())) {
-        auto connection = QDBusContext::connection();
-        auto message = QDBusContext::message();
-
-        QDBusContext::setDelayedReply(true);
-
-        command->onSuccess([this, connection, message]() {
-            connection.send(message.createReply());
-        });
-        command->onFailure([this, connection, message](int) {
-            connection.send(message.createErrorReply(QDBusError::AccessDenied, QString()));
-        });
-    } else {
+                << authenticationToken.toString()) != HostAuthenticationInput::Success) {
         QDBusContext::sendErrorReply(QDBusError::InternalError);
     }
 }

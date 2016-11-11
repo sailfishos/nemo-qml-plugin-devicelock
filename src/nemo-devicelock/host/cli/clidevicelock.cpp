@@ -41,12 +41,11 @@ namespace NemoDeviceLock
 {
 
 CliDeviceLock::CliDeviceLock(QObject *parent)
-    : MceDeviceLock(Authenticator::LockCode, parent)
+    : MceDeviceLock(Authenticator::SecurityCode, parent)
     , m_watcher(LockCodeWatcher::instance())
-    , m_unlocking(false)
 {
-    connect(m_watcher.data(), &LockCodeWatcher::lockCodeSetChanged,
-            this, &CliDeviceLock::enabledChanged);
+    connect(m_watcher.data(), &LockCodeWatcher::securityCodeSetChanged,
+            this, &CliDeviceLock::availabilityChanged);
 
     init();
 }
@@ -55,80 +54,36 @@ CliDeviceLock::~CliDeviceLock()
 {
 }
 
-bool CliDeviceLock::isEnabled() const
+HostAuthenticationInput::Availability CliDeviceLock::availability() const
 {
-    return m_watcher->lockCodeSet();
-}
+    if (m_watcher->securityCodeSet()) {
+        const int maximum = maximumAttempts();
+        const int attempts = currentAttempts();
 
-bool CliDeviceLock::isUnlocking() const
-{
-    return m_unlocking;
-}
-
-void CliDeviceLock::unlock()
-{
-    if (m_unlocking || !m_watcher->lockCodeSet() || state() == DeviceLock::Unlocked) {
-        return;
-    }
-
-    const int maximum = maximumAttempts();
-    const int attempts = currentAttempts();
-
-    m_unlocking = true;
-
-    if (maximum > 0 && attempts >= maximum) {
-        authenticationUnavailable(AuthenticationInput::LockedOut);
+        if (maximum > 0 && attempts >= maximum) {
+            return AuthenticationLocked;
+        } else {
+            return CanAuthenticate;
+        }
     } else {
-        authenticationStarted(Authenticator::LockCode, AuthenticationInput::EnterLockCode);
-    }
-
-    unlockingChanged();
-}
-
-void CliDeviceLock::enterLockCode(const QString &code)
-{
-    if (!m_unlocking) {
-        return;
-    } else if (const auto command = m_watcher->unlock(this, code)) {
-        command->onSuccess([this] {
-            if (m_unlocking) {
-                m_unlocking = false;
-
-                authenticationEnded(true);
-
-                setState(DeviceLock::Unlocked);
-
-                unlockingChanged();
-            }
-        });
-        command->onFailure([this](int exitCode) {
-            const int maximum = maximumAttempts();
-
-            if (maximum > 0 && exitCode < 0) {
-                const int attempts = -exitCode;
-                feedback(AuthenticationInput::IncorrectLockCode, qMax(0, maximum - attempts));
-
-                if (attempts >= maximum) {
-                    abortAuthentication(AuthenticationInput::LockedOut);
-                }
-            } else {
-                feedback(AuthenticationInput::IncorrectLockCode, -1);
-            }
-        });
-    } else {
-        abortAuthentication(AuthenticationInput::LockedOut);
+        return AuthenticationNotRequired;
     }
 }
 
-void CliDeviceLock::cancel()
+int CliDeviceLock::checkCode(const QString &code)
 {
-    if (m_unlocking) {
-        m_unlocking = false;
+    return m_watcher->runPlugin(QStringList() << QStringLiteral("--check-code") << code);
+}
 
-        authenticationEnded(false);
+int CliDeviceLock::setCode(const QString &oldCode, const QString &newCode)
+{
+    return m_watcher->runPlugin(QStringList() << QStringLiteral("--set-code") << oldCode << newCode);
+}
 
-        unlockingChanged();
-    }
+bool CliDeviceLock::unlockWithCode(const QString &code)
+{
+    return m_watcher->runPlugin(QStringList()
+                << QStringLiteral("--unlock") << code) == HostAuthenticationInput::Success;
 }
 
 }

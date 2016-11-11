@@ -72,6 +72,7 @@ HostDeviceLock::HostDeviceLock(Authenticator::Methods supportedMethods, QObject 
     : HostAuthenticationInput(QStringLiteral("/devicelock/lock"), supportedMethods, parent)
     , m_adaptor(this)
     , m_settings(SettingsWatcher::instance())
+    , m_state(Idle)
 {
     connect(m_settings.data(), &SettingsWatcher::automaticLockingChanged,
             this, &HostDeviceLock::automaticLockingChanged);
@@ -86,6 +87,157 @@ int HostDeviceLock::automaticLocking() const
     return isEnabled() ? m_settings->automaticLocking : -1;
 }
 
+bool HostDeviceLock::isEnabled() const
+{
+    return availability() != AuthenticationNotRequired;
+}
+
+bool HostDeviceLock::isUnlocking() const
+{
+    return m_state != Idle;
+}
+
+void HostDeviceLock::unlock()
+{
+    if (m_state != Idle || state() == DeviceLock::Unlocked) {
+        return;
+    }
+
+    m_state = Authenticating;
+
+    switch (availability()) {
+    case AuthenticationNotRequired:
+        m_state = Idle;
+        setState(DeviceLock::Unlocked);
+        return;
+    case CanAuthenticate:
+        authenticationStarted(
+                    Authenticator::SecurityCode | Authenticator::Fingerprint,
+                    AuthenticationInput::EnterSecurityCode);
+        break;
+    case CanAuthenticateSecurityCode:
+        authenticationStarted(Authenticator::SecurityCode, AuthenticationInput::EnterSecurityCode);
+        break;
+    case AuthenticationLocked:
+        authenticationUnavailable(AuthenticationInput::LockedOut);
+        break;
+    }
+
+    unlockingChanged();
+}
+
+void HostDeviceLock::enterSecurityCode(const QString &code)
+{
+    switch (m_state) {
+    case Idle:
+        break;
+    case Authenticating: {
+        switch (const int result = checkCode(code)) {
+        case Success:
+            authenticationEvaluating();
+
+            if (unlockWithCode(code)) {
+                confirmAuthentication();
+            } else {
+                abortAuthentication(AuthenticationInput::SoftwareError);
+            }
+            break;
+        case SecurityCodeExpired:
+            m_state = EnteringNewSecurityCode;
+            m_currentCode = code;
+            feedback(AuthenticationInput::SecurityCodeExpired, -1);
+            break;
+        case SecurityCodeInHistory:
+            break;
+        default: {
+            const int maximum = maximumAttempts();
+
+            if (maximum > 0) {
+                feedback(AuthenticationInput::IncorrectSecurityCode, qMax(0, maximum - result));
+
+                if (result >= maximum) {
+                    abortAuthentication(AuthenticationInput::LockedOut);
+                }
+            } else {
+                feedback(AuthenticationInput::IncorrectSecurityCode, -1);
+            }
+            break;
+        }
+        }
+        break;
+    }
+    case EnteringNewSecurityCode:
+        m_newCode = code;
+        m_state = RepeatingNewSecurityCode;
+        feedback(AuthenticationInput::RepeatNewSecurityCode, -1);
+        break;
+    case RepeatingNewSecurityCode:
+        if (m_newCode != code) {
+            m_currentCode.clear();
+            m_newCode.clear();
+
+            m_state = Authenticating;
+            feedback(AuthenticationInput::SecurityCodesDoNotMatch, -1);
+            feedback(AuthenticationInput::EnterNewSecurityCode, -1);
+        } else {
+            // With disk encryption enabled changing the code can take a few seconds, don't leave
+            // the user hanging.
+            authenticationEvaluating();
+
+            const auto currentCode = m_currentCode;
+            m_currentCode.clear();
+            m_newCode.clear();
+
+            switch (setCode(currentCode, code)) {
+            case Success:
+                qCDebug(daemon, "Lock code changed.");
+                if (unlockWithCode(code)) {
+                    confirmAuthentication();
+                } else {
+                    abortAuthentication(AuthenticationInput::SoftwareError);
+                }
+                break;
+            case SecurityCodeInHistory:
+                qCDebug(daemon, "Security code disallowed.");
+                m_state = EnteringNewSecurityCode;
+                feedback(AuthenticationInput::SecurityCodeInHistory, -1);
+                feedback(AuthenticationInput::EnterNewSecurityCode, -1);
+                break;
+            default:
+                qCDebug(daemon, "Lock code change failed.");
+                m_state = AuthenticationError;
+                authenticationUnavailable(AuthenticationInput::SoftwareError);
+                break;
+            }
+        }
+        break;
+    case AuthenticationError:
+        break;
+    }
+}
+
+void HostDeviceLock::cancel()
+{
+    if (m_state != Idle) {
+        m_state = Idle;
+
+        authenticationEnded(false);
+
+        unlockingChanged();
+    }
+}
+
+void HostDeviceLock::confirmAuthentication()
+{
+    m_state = Idle;
+
+    setState(DeviceLock::Unlocked);
+
+    authenticationEnded(true);
+
+    unlockingChanged();
+}
+
 void HostDeviceLock::stateChanged()
 {
     propertyChanged(
@@ -94,7 +246,7 @@ void HostDeviceLock::stateChanged()
                 QVariant::fromValue(uint(state())));
 }
 
-void HostDeviceLock::enabledChanged()
+void HostDeviceLock::availabilityChanged()
 {
     propertyChanged(
                 QStringLiteral("org.nemomobile.devicelock.DeviceLock"),
