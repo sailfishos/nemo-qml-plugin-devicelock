@@ -49,12 +49,11 @@ public:
     CliDeviceLock(QObject *parent = nullptr);
     ~CliDeviceLock();
 
-    bool isEnabled() const override;
-    bool isUnlocking() const override;
+    Availability availability() const override;
 
-    void unlock() override;
-    void enterLockCode(const QString &code) override;
-    void cancel() override;
+    int checkCode(const QString &code) override;
+    int setCode(const QString &oldCode, const QString &newCode) override;
+    bool unlockWithCode(const QString &code) override;
 
 private:
     QExplicitlySharedDataPointer<LockCodeWatcher> m_watcher;

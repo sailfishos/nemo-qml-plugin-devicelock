@@ -89,7 +89,7 @@ public:
 
 protected:
     void init();
-    void setState(DeviceLock::LockState state);
+    void setState(DeviceLock::LockState state) override;
     void automaticLockingChanged() override;
 
 protected slots:

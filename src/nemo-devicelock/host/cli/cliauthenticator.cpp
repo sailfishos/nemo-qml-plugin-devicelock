@@ -40,14 +40,13 @@ namespace NemoDeviceLock
 {
 
 CliAuthenticator::CliAuthenticator(QObject *parent)
-    : HostAuthenticator(Authenticator::LockCode, parent)
+    : HostAuthenticator(Authenticator::SecurityCode, parent)
     , m_watcher(LockCodeWatcher::instance())
-    , m_state(Idle)
 {
-    connect(m_watcher.data(), &LockCodeWatcher::lockCodeSetChanged,
+    connect(m_watcher.data(), &LockCodeWatcher::securityCodeSetChanged,
             this, &CliAuthenticator::availableMethodsChanged);
-    connect(m_watcher.data(), &LockCodeWatcher::lockCodeSetChanged,
-            this, &CliAuthenticator::lockCodeSetChanged);
+    connect(m_watcher.data(), &LockCodeWatcher::securityCodeSetChanged,
+            this, &CliAuthenticator::availabilityChanged);
 }
 
 CliAuthenticator::~CliAuthenticator()
@@ -58,248 +57,55 @@ Authenticator::Methods CliAuthenticator::availableMethods() const
 {
     Authenticator::Methods methods;
 
-    if (m_watcher->lockCodeSet()) {
-        methods |= Authenticator::LockCode;
+    if (m_watcher->securityCodeSet()) {
+        methods |= Authenticator::SecurityCode;
     }
 
     return methods;
 }
 
-bool CliAuthenticator::isLockCodeSet() const
-{
-    return m_watcher->lockCodeSet();
-}
 
-void CliAuthenticator::authenticate(
-        const QString &client, const QVariant &, Authenticator::Methods methods)
+HostAuthenticationInput::Availability CliAuthenticator::availability() const
 {
-    cancel();
-
-    setActiveClient(client);
-    if (m_watcher->lockCodeSet()) {
+    if (m_watcher->securityCodeSet()) {
         const int maximum = maximumAttempts();
         const int attempts = currentAttempts();
 
-        m_state = AuthenticationInput;
-
         if (maximum > 0 && attempts >= maximum) {
-            authenticationUnavailable(AuthenticationInput::LockedOut);
+            return AuthenticationLocked;
         } else {
-            authenticationStarted(methods, AuthenticationInput::EnterLockCode);
+            return CanAuthenticate;
         }
     } else {
-        // No code is set. Authenticate immediately with a dummy lock code.
-        authenticated(QStringLiteral("12345"));
-        clearActiveClient();
+        return AuthenticationNotRequired;
     }
 }
 
-void CliAuthenticator::changeLockCode(const QString &client, const QVariant &)
+int CliAuthenticator::checkCode(const QString &code)
 {
-    cancel();
-
-    setActiveClient(client);
-
-    if (m_watcher->lockCodeSet()) {
-        const int maximum = maximumAttempts();
-        const int attempts = currentAttempts();
-
-        m_state = ChangeCurrentInput;
-
-        if (maximum > 0 && attempts >= maximum) {
-            authenticationUnavailable(AuthenticationInput::LockedOut);
-        } else {
-            authenticationStarted(Authenticator::LockCode, AuthenticationInput::EnterLockCode);
-        }
-    } else {
-        m_state = ChangeNewInput;
-
-        authenticationStarted(Authenticator::LockCode, AuthenticationInput::EnterNewLockCode);
-    }
+    return m_watcher->runPlugin(QStringList() << QStringLiteral("--check-code") << code);
 }
 
-void CliAuthenticator::clearLockCode(const QString &client)
+int CliAuthenticator::setCode(const QString &oldCode, const QString &newCode)
 {
-    cancel();
-
-    if (m_watcher->lockCodeSet()) {
-        const int maximum = maximumAttempts();
-        const int attempts = currentAttempts();
-
-        setActiveClient(client);
-
-        m_state = AuthenticationInput;
-
-        if (maximum > 0 && attempts >= maximum) {
-            authenticationUnavailable(AuthenticationInput::LockedOut);
-        } else {
-            authenticationStarted(Authenticator::LockCode, AuthenticationInput::EnterLockCode);
-        }
-    } else {
-        QDBusContext::sendErrorReply(QDBusError::InvalidArgs);
-    }
+    return m_watcher->runPlugin(QStringList() << QStringLiteral("--set-code") << oldCode << newCode);
 }
 
-
-void CliAuthenticator::enterLockCode(const QString &code)
+bool CliAuthenticator::clearCode(const QString &code)
 {
-    PluginCommand *command = nullptr;
-
-    switch (m_state) {
-    case Idle:
-        return;
-    case AuthenticationInput:
-        if ((command = m_watcher->checkCode(this, code))) {
-            command->onSuccess([this, code]() {
-                authenticated(code);
-            });
-        } else {
-            abortAuthentication(AuthenticationInput::SoftwareError);
-            return;
-        }
-        break;
-    case ChangeCurrentInput:
-        if ((command = m_watcher->checkCode(this, code))) {
-            command->onSuccess([this, code]() {
-                m_state = ChangeNewInput;
-                feedback(AuthenticationInput::EnterNewLockCode, -1);
-            });
-        } else {
-            abortAuthentication(AuthenticationInput::SoftwareError);
-            return;
-        }
-        break;
-    case ChangeNewInput:
-        m_newCode = code;
-        m_state = ChangeRepeatInput;
-        feedback(AuthenticationInput::RepeatNewLockCode, -1);
-        return;
-    case ChangeRepeatInput: {
-        if (m_newCode != code) {
-            m_currentCode.clear();
-            m_newCode.clear();
-
-            feedback(AuthenticationInput::LockCodesDoNotMatch, -1);
-
-            if (m_watcher->lockCodeSet()) {
-                m_state = ChangeCurrentInput;
-                feedback(AuthenticationInput::EnterLockCode, -1);
-            } else {
-                m_state = ChangeNewInput;
-                feedback(AuthenticationInput::EnterNewLockCode, -1);
-            }
-
-            return;
-        }
-
-        const auto currentCode = m_currentCode;
-        m_currentCode.clear();
-        m_newCode.clear();
-
-        if (const auto command = m_watcher->runPlugin(
-                    this, QStringList() << QStringLiteral("--set-code") << currentCode << code)) {
-            command->onSuccess([this, code]() {
-                lockCodeChanged(code);
-            });
-            command->onFailure([this](int) {
-                abortAuthentication(AuthenticationInput::SoftwareError);
-            });
-            command->waitForFinished();
-        } else {
-            abortAuthentication(AuthenticationInput::SoftwareError);
-        }
-        return;
-    }
-    case ClearInput: {
-        if ((command = m_watcher->runPlugin(
-                 this, QStringList() << QStringLiteral("--clear-code") << code))) {
-            command->onSuccess([this, code]() {
-                lockCodeCleared();
-            });
-        } else {
-            abortAuthentication(AuthenticationInput::SoftwareError);
-            return;
-        }
-        break;
-    }
-    default:
-        return;
-    }
-
-    Q_ASSERT(command);
-
-    command->onFailure([this](int exitCode) {
-        const int maximum = maximumAttempts();
-
-        if (maximum > 0 && exitCode < 0) {
-            const int attempts = -exitCode;
-            feedback(AuthenticationInput::IncorrectLockCode, qMax(0, maximum - attempts));
-
-            if (attempts >= maximum) {
-                abortAuthentication(AuthenticationInput::LockedOut);
-                return;
-            }
-        } else {
-            feedback(AuthenticationInput::IncorrectLockCode, -1);
-        }
-    });
-    command->waitForFinished();
+    return m_watcher->runPlugin(QStringList() << QStringLiteral("--clear-code") << code) == Success;
 }
 
-void CliAuthenticator::cancel()
+void CliAuthenticator::enterSecurityCode(const QString &code)
 {
-    if (m_state != Idle) {
-        switch (m_state) {
-        case AuthenticationInput:
-        case AuthenticationError:
-            aborted();
-            break;
-        case ChangeCurrentInput:
-        case ChangeNewInput:
-        case ChangeRepeatInput:
-        case ChangeError:
-            lockCodeChangeAborted();
-            break;
-        case ClearInput:
-        case ClearError:
-            lockCodeClearAborted();
-            break;
-        default:
-            break;
-        }
-    }
+    m_securityCode = code;
+    HostAuthenticator::enterSecurityCode(code);
+    m_securityCode.clear();
 }
 
-void CliAuthenticator::authenticationEnded(bool confirmed)
+QVariant CliAuthenticator::authenticateChallengeCode(const QVariant &)
 {
-    clearActiveClient();
-
-    m_state = Idle;
-    m_currentCode.clear();
-    m_newCode.clear();
-
-    HostAuthenticator::authenticationEnded(confirmed);
-}
-
-void CliAuthenticator::abortAuthentication(AuthenticationInput::Error error)
-{
-    switch (m_state) {
-    case AuthenticationInput:
-        m_state = AuthenticationError;
-        break;
-    case ChangeCurrentInput:
-    case ChangeNewInput:
-    case ChangeRepeatInput:
-        m_state = ChangeError;
-        break;
-    case ClearInput:
-        m_state = ClearError;
-        break;
-    default:
-        break;
-    }
-
-    HostAuthenticator::abortAuthentication(error);
+    return m_securityCode;
 }
 
 }

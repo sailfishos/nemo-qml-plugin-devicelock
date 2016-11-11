@@ -51,39 +51,18 @@ public:
     ~CliAuthenticator();
 
     Authenticator::Methods availableMethods() const override;
-    bool isLockCodeSet() const override;
+    Availability availability() const override;
 
-    void authenticate(
-            const QString &authenticator,
-            const QVariant &challengeCode,
-            Authenticator::Methods methods) override;
-    void changeLockCode(const QString &path, const QVariant &challengeCode) override;
-    void clearLockCode(const QString &path) override;
+    int checkCode(const QString &code) override;
+    int setCode(const QString &oldCode, const QString &newCode) override;
+    bool clearCode(const QString &code) override;
 
-    void enterLockCode(const QString &code) override;
-
-    void cancel() override;
-
-    void authenticationEnded(bool confirmed) override;
-    void abortAuthentication(AuthenticationInput::Error error) override;
+    void enterSecurityCode(const QString &code);
+    QVariant authenticateChallengeCode(const QVariant &challengeCode);
 
 private:
-    enum State {
-        Idle,
-        AuthenticationInput,
-        AuthenticationError,
-        ChangeCurrentInput,
-        ChangeNewInput,
-        ChangeRepeatInput,
-        ChangeError,
-        ClearInput,
-        ClearError
-    };
-
     QExplicitlySharedDataPointer<LockCodeWatcher> m_watcher;
-    QString m_currentCode;
-    QString m_newCode;
-    State m_state;
+    QString m_securityCode;
 };
 
 }

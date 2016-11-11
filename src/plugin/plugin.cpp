@@ -39,7 +39,7 @@
 #include <devicereset.h>
 #include <encryptionsettings.h>
 #include <fingerprintsensor.h>
-#include <lockcodesettings.h>
+#include <securitycodesettings.h>
 
 #include <qqml.h>
 #include <QQmlEngine>
@@ -86,7 +86,7 @@ public:
         qmlRegisterType<NemoDeviceLock::DeviceReset>(uri, 1, 0, "DeviceReset");
         qmlRegisterType<NemoDeviceLock::EncryptionSettings>(uri, 1, 0, "EncryptionSettings");
         qmlRegisterType<NemoDeviceLock::FingerprintSensor>(uri, 1, 0, "FingerprintSensor");
-        qmlRegisterType<NemoDeviceLock::LockCodeSettings>(uri, 1, 0, "LockCodeSettings");
+        qmlRegisterType<NemoDeviceLock::SecurityCodeSettings>(uri, 1, 0, "SecurityCodeSettings");
 
         qmlRegisterUncreatableType<NemoDeviceLock::Authorization>(uri, 1, 0, "Authorization", QString());
     }

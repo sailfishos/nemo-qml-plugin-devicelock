@@ -30,44 +30,44 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#include "lockcodesettings.h"
+#include "securitycodesettings.h"
 #include "settingswatcher.h"
 
 namespace NemoDeviceLock
 {
 
-LockCodeSettingsAdaptor::LockCodeSettingsAdaptor(LockCodeSettings *settings)
+SecurityCodeSettingsAdaptor::SecurityCodeSettingsAdaptor(SecurityCodeSettings *settings)
     : QDBusAbstractAdaptor(settings)
     , m_settings(settings)
 {
 }
 
-void LockCodeSettingsAdaptor::Changed(const QDBusVariant &authenticationToken)
+void SecurityCodeSettingsAdaptor::Changed(const QDBusVariant &authenticationToken)
 {
     m_settings->handleChanged(authenticationToken.variant());
 }
 
-void LockCodeSettingsAdaptor::ChangeAborted()
+void SecurityCodeSettingsAdaptor::ChangeAborted()
 {
     m_settings->handleChangeAborted();
 }
 
-void LockCodeSettingsAdaptor::Cleared()
+void SecurityCodeSettingsAdaptor::Cleared()
 {
     m_settings->handleCleared();
 }
 
-void LockCodeSettingsAdaptor::ClearAborted()
+void SecurityCodeSettingsAdaptor::ClearAborted()
 {
     m_settings->handleClearAborted();
 }
 
-LockCodeSettings::LockCodeSettings(QObject *parent)
+SecurityCodeSettings::SecurityCodeSettings(QObject *parent)
     : QObject(parent)
     , ConnectionClient(
           this,
           QStringLiteral("/authenticator"),
-          QStringLiteral("org.nemomobile.devicelock.LockCodeSettings"))
+          QStringLiteral("org.nemomobile.devicelock.SecurityCodeSettings"))
     , m_adaptor(this)
     , m_set(false)
     , m_changing(false)
@@ -87,16 +87,16 @@ LockCodeSettings::LockCodeSettings(QObject *parent)
     }
 }
 
-LockCodeSettings::~LockCodeSettings()
+SecurityCodeSettings::~SecurityCodeSettings()
 {
 }
 
-bool LockCodeSettings::isSet() const
+bool SecurityCodeSettings::isSet() const
 {
     return m_set;
 }
 
-void LockCodeSettings::change(const QVariant &authenticationCode)
+void SecurityCodeSettings::change(const QVariant &authenticationCode)
 {
     if (m_changing) {
         return;
@@ -115,7 +115,7 @@ void LockCodeSettings::change(const QVariant &authenticationCode)
     emit changingChanged();
 }
 
-void LockCodeSettings::handleChanged(const QVariant &authenticationToken)
+void SecurityCodeSettings::handleChanged(const QVariant &authenticationToken)
 {
     if (m_changing) {
         m_changing = false;
@@ -125,7 +125,7 @@ void LockCodeSettings::handleChanged(const QVariant &authenticationToken)
     }
 }
 
-void LockCodeSettings::handleChangeAborted()
+void SecurityCodeSettings::handleChangeAborted()
 {
     if (m_changing) {
         m_changing = false;
@@ -135,7 +135,7 @@ void LockCodeSettings::handleChangeAborted()
     }
 }
 
-void LockCodeSettings::clear()
+void SecurityCodeSettings::clear()
 {
     if (m_changing) {
         cancel();
@@ -152,7 +152,7 @@ void LockCodeSettings::clear()
     });
 }
 
-void LockCodeSettings::cancel()
+void SecurityCodeSettings::cancel()
 {
     if (m_changing) {
         m_changing = false;
@@ -169,7 +169,7 @@ void LockCodeSettings::cancel()
     }
 }
 
-void LockCodeSettings::handleCleared()
+void SecurityCodeSettings::handleCleared()
 {
     if (m_clearing) {
         m_clearing = false;
@@ -179,7 +179,7 @@ void LockCodeSettings::handleCleared()
     }
 }
 
-void LockCodeSettings::handleClearAborted()
+void SecurityCodeSettings::handleClearAborted()
 {
     if (m_clearing) {
         m_clearing = false;
@@ -189,10 +189,10 @@ void LockCodeSettings::handleClearAborted()
     }
 }
 
-void LockCodeSettings::connected()
+void SecurityCodeSettings::connected()
 {
     registerObject();
-    subscribeToProperty<bool>(QStringLiteral("LockCodeSet"), [this](bool set) {
+    subscribeToProperty<bool>(QStringLiteral("SecurityCodeSet"), [this](bool set) {
         if (m_set != set) {
             m_set = set;
             emit setChanged();

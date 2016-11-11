@@ -68,7 +68,7 @@ class NEMODEVICELOCK_EXPORT Authenticator : public QObject, private ConnectionCl
 public:
     enum Method {
         NoAuthentication    = 0x00,
-        LockCode            = 0x01,
+        SecurityCode        = 0x01,
         Fingerprint         = 0x02
     };
 
@@ -81,7 +81,7 @@ public:
     bool isAuthenticating() const;
 
     Q_INVOKABLE void authenticate(
-            const QVariant &challengeCode, Methods methods = Methods(LockCode | Fingerprint));
+            const QVariant &challengeCode, Methods methods = Methods(SecurityCode | Fingerprint));
     Q_INVOKABLE void cancel();
 
 signals:

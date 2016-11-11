@@ -76,24 +76,49 @@ public:
 
 protected:
     virtual DeviceLock::LockState state() const = 0;
-    virtual bool isEnabled() const = 0;
-    virtual bool isUnlocking() const = 0;
+
+    bool isUnlocking() const;
 
     int automaticLocking() const;
 
-    virtual void unlock() = 0;
+    void unlock();
+    void enterSecurityCode(const QString &code) override;
+    void cancel() override;
+
+    Availability availability() const override = 0;
+    int checkCode(const QString &code) override = 0;
+    int setCode(const QString &oldCode, const QString &newCode) override = 0;
+
+    virtual bool unlockWithCode(const QString &code) = 0;
+
+    virtual void setState(DeviceLock::LockState state) = 0;
+
+    void confirmAuthentication() override;
 
     void stateChanged();
-    void enabledChanged();
-    void unlockingChanged();
+    void availabilityChanged();
 
     virtual void automaticLockingChanged();
 
 private:
     friend class HostDeviceLockAdaptor;
 
+    enum State {
+        Idle,
+        Authenticating,
+        EnteringNewSecurityCode,
+        RepeatingNewSecurityCode,
+        AuthenticationError
+    };
+
+    inline bool isEnabled() const;
+    inline void unlockingChanged();
+
     HostDeviceLockAdaptor m_adaptor;
     QExplicitlySharedDataPointer<SettingsWatcher> m_settings;
+    QString m_currentCode;
+    QString m_newCode;
+    State m_state;
 };
 
 }
