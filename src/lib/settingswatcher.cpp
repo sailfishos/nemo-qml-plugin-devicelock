@@ -33,8 +33,13 @@
 #include "settingswatcher.h"
 
 #include <QDebug>
+#include <QEvent>
 #include <QFile>
 #include <QSettings>
+
+#include <sys/inotify.h>
+#include <sys/ioctl.h>
+#include <unistd.h>
 
 const char * const SettingsWatcher::automaticLockingKey = "/desktop/nemo/devicelock/automatic_locking";
 const char * const SettingsWatcher::minimumLengthKey = "/desktop/nemo/devicelock/code_min_length";
@@ -49,7 +54,7 @@ const char * const SettingsWatcher::currentIsDigitOnlyKey = "/desktop/nemo/devic
 SettingsWatcher *SettingsWatcher::sharedInstance = nullptr;
 
 SettingsWatcher::SettingsWatcher(QObject *parent)
-    : QObject(parent)
+    : QSocketNotifier(inotify_init(), Read, parent)
     , automaticLocking(10)
     , minimumLength(5)
     , maximumLength(42)
@@ -60,21 +65,18 @@ SettingsWatcher::SettingsWatcher(QObject *parent)
     , inputIsKeyboard(false)
     , currentCodeIsDigitOnly(true)
     , m_settingsPath(QStringLiteral("/usr/share/lipstick/devicelock/devicelock_settings.conf"))
+    , m_watch(-1)
 {
     Q_ASSERT(!sharedInstance);
     sharedInstance = this;
 
-    connect(&m_watcher, &QFileSystemWatcher::fileChanged, this, &SettingsWatcher::reloadSettings);
-
-    if (QFile::exists(m_settingsPath) && m_watcher.addPath(m_settingsPath)) {
-        reloadSettings();
-    } else {
-        qWarning() << "Unable to follow devicelock configuration file changes";
-    }
+    watchForSettingsFile();
 }
 
 SettingsWatcher::~SettingsWatcher()
 {
+    close(socket());
+
     sharedInstance = nullptr;
 }
 
@@ -84,6 +86,74 @@ SettingsWatcher *SettingsWatcher::instance()
         return sharedInstance;
 
     return sharedInstance ? sharedInstance : new SettingsWatcher;
+}
+
+bool SettingsWatcher::event(QEvent *event)
+{
+    if (event->type() == QEvent::SockAct) {
+        int bufferSize = 0;
+        ioctl(socket(), FIONREAD, (char *) &bufferSize);
+        QVarLengthArray<char, 4096> buffer(bufferSize);
+
+        bufferSize = read(socket(), buffer.data(), bufferSize);
+        char *at = buffer.data();
+        char * const end = at + bufferSize;
+
+        struct inotify_event *pevent = 0;
+        for (;at < end; at += sizeof(inotify_event) + pevent->len) {
+            pevent = reinterpret_cast<inotify_event *>(at);
+
+            if (pevent->wd != m_watch) {
+                continue;
+            } else if (pevent->mask & IN_CREATE) {
+                if (QFile::exists(m_settingsPath)) {
+                    const auto watch = m_watch;
+
+                    watchSettingsFile();
+
+                    inotify_rm_watch(socket(), watch);
+                }
+            } else if (pevent->mask & IN_DELETE_SELF) {
+                const auto watch = m_watch;
+
+                watchForSettingsFile();
+
+                inotify_rm_watch(socket(), watch);
+            } else if (pevent->mask & IN_CLOSE_WRITE) {
+                reloadSettings();
+            }
+        }
+
+        return true;
+    } else {
+        return QSocketNotifier::event(event);
+    }
+}
+
+void SettingsWatcher::watchForSettingsFile()
+{
+    if (QFile::exists(m_settingsPath)) {
+        watchSettingsFile();
+    } else {
+        m_watch = inotify_add_watch(
+                    socket(),
+                    m_settingsPath.mid(0, m_settingsPath.lastIndexOf(QLatin1Char('/'))).toUtf8().constData(),
+                    IN_CREATE);
+    }
+
+    if (m_watch < 0) {
+        qWarning() << "Unable to follow devicelock configuration file changes";
+    }
+}
+
+void SettingsWatcher::watchSettingsFile()
+{
+    m_watch = inotify_add_watch(
+                socket(),
+                m_settingsPath.toUtf8().constData(),
+                IN_CLOSE_WRITE | IN_DELETE_SELF);
+    reloadSettings();
+
 }
 
 template <typename T>

@@ -33,10 +33,10 @@
 #ifndef SETTINGSWATCHER_H
 #define SETTINGSWATCHER_H
 
-#include <QFileSystemWatcher>
 #include <QSharedData>
+#include <QSocketNotifier>
 
-class SettingsWatcher : public QObject, public QSharedData
+class SettingsWatcher : public QSocketNotifier, public QSharedData
 {
     Q_OBJECT
 public:
@@ -64,6 +64,8 @@ public:
     static const char * const inputIsKeyboardKey;
     static const char * const currentIsDigitOnlyKey;
 
+    bool event(QEvent *event);
+
 signals:
     void automaticLockingChanged();
     void maximumAttemptsChanged();
@@ -78,10 +80,12 @@ signals:
 private:
     explicit SettingsWatcher(QObject *parent = nullptr);
 
+    void watchForSettingsFile();
+    void watchSettingsFile();
     void reloadSettings();
 
-    QFileSystemWatcher m_watcher;
     QString m_settingsPath;
+    int m_watch;
 
     static SettingsWatcher *sharedInstance;
 
