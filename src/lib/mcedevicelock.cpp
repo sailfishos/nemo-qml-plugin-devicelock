@@ -244,7 +244,7 @@ void MceDeviceLock::trackInactivityState(void)
     trackMceProperty(
                 this,
                 QStringLiteral(MCE_INACTIVITY_SIG),
-                SLOT(handleInactivityStateChanged(QString)),
+                SLOT(handleInactivityStateChanged(bool)),
                 QStringLiteral(MCE_INACTIVITY_STATUS_GET),
                 &MceDeviceLock::handleInactivityStateReply);
 }
