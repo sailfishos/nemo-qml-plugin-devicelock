@@ -159,6 +159,7 @@ void HostAuthenticator::handleChangeSecurityCode(const QString &client, const QV
 
     switch (availability()) {
     case AuthenticationNotRequired:
+        m_state = EnteringNewSecurityCode;
         authenticationStarted(Authenticator::SecurityCode, AuthenticationInput::EnterNewSecurityCode);
         break;
     case CanAuthenticateSecurityCode:
