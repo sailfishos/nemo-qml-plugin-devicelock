@@ -49,6 +49,7 @@ public slots:
     Q_NOREPLY void AuthenticationStarted(uint pid, uint utilizedMethods, uint instruction);
     Q_NOREPLY void AuthenticationUnavailable(uint pid, uint error);
     Q_NOREPLY void AuthenticationEvaluating();
+    Q_NOREPLY void AuthenticationProgress(int current, int maximum);
     Q_NOREPLY void AuthenticationEnded(bool confirmed);
     Q_NOREPLY void Feedback(uint feedback, uint attemptsRemaining, uint utilizedMethods);
     Q_NOREPLY void Error(uint error);
@@ -142,6 +143,7 @@ signals:
     void authenticationStarted(Feedback feedback);
     void authenticationUnavailable(Error error);
     void authenticationEvaluating();
+    void authenticationProgress(int current, int maximum);
     void authenticationEnded(bool confirmed);
 
     void feedback(Feedback feedback, int attemptsRemaining);
