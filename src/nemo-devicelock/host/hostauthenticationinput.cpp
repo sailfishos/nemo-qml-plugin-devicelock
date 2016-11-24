@@ -131,6 +131,19 @@ void HostAuthenticationInput::authenticationEvaluating()
     }
 }
 
+void HostAuthenticationInput::authenticationProgress(int current, int maximum)
+{
+    if (m_authenticating && !m_inputStack.isEmpty()) {
+        NemoDBus::send(
+                    m_inputStack.last().connection,
+                    m_inputStack.last().path,
+                    clientInterface,
+                    QStringLiteral("AuthenticationProgress"),
+                    current,
+                    maximum);
+    }
+}
+
 void HostAuthenticationInput::authenticationEnded(bool confirmed)
 {
     if (m_authenticating) {
