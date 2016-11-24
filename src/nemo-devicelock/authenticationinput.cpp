@@ -64,6 +64,11 @@ void AuthenticationInputAdaptor::AuthenticationEvaluating()
     m_authenticationInput->handleAuthenticationEvaluating();
 }
 
+void AuthenticationInputAdaptor::AuthenticationProgress(int current, int maximum)
+{
+    m_authenticationInput->authenticationProgress(current, maximum);
+}
+
 void AuthenticationInputAdaptor::AuthenticationEnded(bool confirmed)
 {
     m_authenticationInput->handleAuthenticationEnded(confirmed);
@@ -288,7 +293,6 @@ void AuthenticationInput::handleAuthenticationEvaluating()
 
 void AuthenticationInput::handleAuthenticationEnded(bool confirmed)
 {
-    qDebug() << "what's the haps";
     if (m_status != Idle) {
         qCDebug(devicelock, "Authentication ended.  Confirmed %s", confirmed ? "true" : "false");
 

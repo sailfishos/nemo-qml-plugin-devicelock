@@ -104,6 +104,7 @@ public:
             AuthenticationInput::Feedback feedback = AuthenticationInput::EnterSecurityCode);
     void authenticationUnavailable(AuthenticationInput::Error error);
     void authenticationEvaluating();
+    void authenticationProgress(int current, int maximum);
     virtual void authenticationEnded(bool confirmed);
 
     virtual void authenticationActive(Authenticator::Methods methods);
