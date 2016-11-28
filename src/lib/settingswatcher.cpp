@@ -70,7 +70,12 @@ SettingsWatcher::SettingsWatcher(QObject *parent)
     Q_ASSERT(!sharedInstance);
     sharedInstance = this;
 
-    watchForSettingsFile();
+    m_watch = inotify_add_watch(
+                socket(),
+                "/usr/share/lipstick/devicelock",
+                IN_CREATE | IN_MOVED_TO | IN_MOVED_FROM | IN_CLOSE_WRITE | IN_DELETE);
+
+    reloadSettings();
 }
 
 SettingsWatcher::~SettingsWatcher()
@@ -103,23 +108,9 @@ bool SettingsWatcher::event(QEvent *event)
         for (;at < end; at += sizeof(inotify_event) + pevent->len) {
             pevent = reinterpret_cast<inotify_event *>(at);
 
-            if (pevent->wd != m_watch) {
-                continue;
-            } else if (pevent->mask & IN_CREATE) {
-                if (QFile::exists(m_settingsPath)) {
-                    const auto watch = m_watch;
-
-                    watchSettingsFile();
-
-                    inotify_rm_watch(socket(), watch);
-                }
-            } else if (pevent->mask & IN_DELETE_SELF) {
-                const auto watch = m_watch;
-
-                watchForSettingsFile();
-
-                inotify_rm_watch(socket(), watch);
-            } else if (pevent->mask & IN_CLOSE_WRITE) {
+            if (pevent->wd == m_watch
+                    && pevent->len > 0
+                    && QLatin1String(pevent->name) == QLatin1String("devicelock_settings.conf")) {
                 reloadSettings();
             }
         }
@@ -130,31 +121,6 @@ bool SettingsWatcher::event(QEvent *event)
     }
 }
 
-void SettingsWatcher::watchForSettingsFile()
-{
-    if (QFile::exists(m_settingsPath)) {
-        watchSettingsFile();
-    } else {
-        m_watch = inotify_add_watch(
-                    socket(),
-                    m_settingsPath.mid(0, m_settingsPath.lastIndexOf(QLatin1Char('/'))).toUtf8().constData(),
-                    IN_CREATE);
-    }
-
-    if (m_watch < 0) {
-        qWarning() << "Unable to follow devicelock configuration file changes";
-    }
-}
-
-void SettingsWatcher::watchSettingsFile()
-{
-    m_watch = inotify_add_watch(
-                socket(),
-                m_settingsPath.toUtf8().constData(),
-                IN_CLOSE_WRITE | IN_DELETE_SELF);
-    reloadSettings();
-
-}
 
 template <typename T>
 static void read(
@@ -175,7 +141,7 @@ static void read(
 
 void SettingsWatcher::reloadSettings()
 {
-    QSettings settings(QStringLiteral("/usr/share/lipstick/devicelock/devicelock_settings.conf"), QSettings::IniFormat);
+    QSettings settings(m_settingsPath, QSettings::IniFormat);
 
     read(settings, this, automaticLockingKey, 10, &SettingsWatcher::automaticLocking, &SettingsWatcher::automaticLockingChanged);
     read(settings, this, minimumLengthKey, 5, &SettingsWatcher::minimumLength, &SettingsWatcher::minimumLengthChanged);
