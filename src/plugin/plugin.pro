@@ -20,6 +20,12 @@ PKGCONFIG += \
 INCLUDEPATH += $$PWD/../lib
 LIBS += -L$$OUT_PWD/../lib -lnemodevicelock
 
+DEPENDPATH += \
+        $$PWD/../lib
+
+PRE_TARGETDEPS += \ \
+        $$PWD/../lib/libnemodevicelock.a
+
 DEFINES += \
         NEMO_DEVICE_LOCK_EMULATE_FINGER_SENSOR
 
