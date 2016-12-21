@@ -121,6 +121,8 @@ public:
     void abortAuthentication(AuthenticationInput::Error error) override;
     void authenticationEnded(bool confirmed) override;
 
+    void setCodeFinished(int result);
+
     // Signals
     void authenticated(const QVariant &authenticationToken);
     void aborted();
@@ -142,9 +144,11 @@ private:
         AuthenticatingForChange,
         EnteringNewSecurityCode,
         RepeatingNewSecurityCode,
+        Changing,
         ChangeError,
+        ChangeCanceled,
         AuthenticatingForClear,
-        ClearError
+        ClearError,
     };
 
     inline bool isSecurityCodeSet() const;

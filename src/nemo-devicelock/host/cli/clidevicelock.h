@@ -53,7 +53,7 @@ public:
 
     int checkCode(const QString &code) override;
     int setCode(const QString &oldCode, const QString &newCode) override;
-    bool unlockWithCode(const QString &code) override;
+    int unlockWithCode(const QString &code) override;
 
 private:
     QExplicitlySharedDataPointer<LockCodeWatcher> m_watcher;
