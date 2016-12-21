@@ -80,10 +80,9 @@ int CliDeviceLock::setCode(const QString &oldCode, const QString &newCode)
     return m_watcher->runPlugin(QStringList() << QStringLiteral("--set-code") << oldCode << newCode);
 }
 
-bool CliDeviceLock::unlockWithCode(const QString &code)
+int CliDeviceLock::unlockWithCode(const QString &code)
 {
-    return m_watcher->runPlugin(QStringList()
-                << QStringLiteral("--unlock") << code) == HostAuthenticationInput::Success;
+    return m_watcher->runPlugin(QStringList() << QStringLiteral("--unlock") << code);
 }
 
 }

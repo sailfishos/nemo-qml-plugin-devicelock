@@ -134,13 +134,7 @@ void HostDeviceLock::enterSecurityCode(const QString &code)
     case Authenticating: {
         switch (const int result = checkCode(code)) {
         case Success:
-            authenticationEvaluating();
-
-            if (unlockWithCode(code)) {
-                confirmAuthentication();
-            } else {
-                abortAuthentication(AuthenticationInput::SoftwareError);
-            }
+            unlockFinished(unlockWithCode(code));
             break;
         case SecurityCodeExpired:
             m_state = EnteringNewSecurityCode;
@@ -174,7 +168,6 @@ void HostDeviceLock::enterSecurityCode(const QString &code)
     case RepeatingNewSecurityCode:
         if (m_newCode != code) {
             m_currentCode.clear();
-            m_newCode.clear();
 
             m_state = Authenticating;
             feedback(AuthenticationInput::SecurityCodesDoNotMatch, -1);
@@ -182,43 +175,103 @@ void HostDeviceLock::enterSecurityCode(const QString &code)
         } else {
             // With disk encryption enabled changing the code can take a few seconds, don't leave
             // the user hanging.
-            authenticationEvaluating();
 
             const auto currentCode = m_currentCode;
             m_currentCode.clear();
             m_newCode.clear();
 
-            switch (setCode(currentCode, code)) {
-            case Success:
-                qCDebug(daemon, "Lock code changed.");
-                if (unlockWithCode(code)) {
-                    confirmAuthentication();
-                } else {
-                    abortAuthentication(AuthenticationInput::SoftwareError);
-                }
-                break;
-            case SecurityCodeInHistory:
-                qCDebug(daemon, "Security code disallowed.");
-                m_state = EnteringNewSecurityCode;
-                feedback(AuthenticationInput::SecurityCodeInHistory, -1);
-                feedback(AuthenticationInput::EnterNewSecurityCode, -1);
-                break;
-            default:
-                qCDebug(daemon, "Lock code change failed.");
-                m_state = AuthenticationError;
-                authenticationUnavailable(AuthenticationInput::SoftwareError);
-                break;
-            }
+            setCodeFinished(setCode(currentCode, code));
         }
         break;
+    case Unlocking:
+    case ChangingSecurityCode:
+    case Canceled:
     case AuthenticationError:
         break;
     }
 }
 
+void HostDeviceLock::unlockFinished(int result)
+{
+    switch (result) {
+    case Success:
+        confirmAuthentication();
+        break;
+    case Evaluating:
+        if (m_state == Authenticating) {
+            m_state = Unlocking;
+            authenticationEvaluating();
+        } else if (m_state == ChangingSecurityCode) {
+            m_state = Unlocking;
+        } else {
+            abortAuthentication(AuthenticationInput::SoftwareError);
+        }
+        break;
+    default:
+        if (m_state == Canceled) {
+            m_state = Idle;
+
+            authenticationEnded(false);
+
+            unlockingChanged();
+        } else {
+            abortAuthentication(AuthenticationInput::SoftwareError);
+        }
+        break;
+    }
+}
+
+void HostDeviceLock::setCodeFinished(int result)
+{
+    switch (result) {
+    case Success:
+        qCDebug(daemon, "Lock code changed.");
+        if (m_state == ChangingSecurityCode) {
+            unlockFinished(unlockWithCode(m_newCode));
+        } else if (m_state == Canceled) {
+            m_state = Idle;
+
+            authenticationEnded(false);
+
+            unlockingChanged();
+        }
+        break;
+    case SecurityCodeInHistory:
+        qCDebug(daemon, "Security code disallowed.");
+        m_state = EnteringNewSecurityCode;
+        feedback(AuthenticationInput::SecurityCodeInHistory, -1);
+        feedback(AuthenticationInput::EnterNewSecurityCode, -1);
+        break;
+    case Evaluating:
+        if (m_state == RepeatingNewSecurityCode) {
+            m_state = ChangingSecurityCode;
+            authenticationEvaluating();
+        } else {
+            abortAuthentication(AuthenticationInput::SoftwareError);
+        }
+        return;
+    default:
+        qCDebug(daemon, "Lock code change failed.");
+        if (m_state == Canceled) {
+            m_state = Idle;
+
+            authenticationEnded(false);
+
+            unlockingChanged();
+        } else {
+            m_state = AuthenticationError;
+            authenticationUnavailable(AuthenticationInput::SoftwareError);
+        }
+        break;
+    }
+    m_newCode.clear();
+}
+
 void HostDeviceLock::cancel()
 {
-    if (m_state != Idle) {
+    if (m_state == Unlocking || m_state == ChangingSecurityCode) {
+        m_state = Canceled;
+    } else if (m_state != Idle && m_state != Canceled) {
         m_state = Idle;
 
         authenticationEnded(false);

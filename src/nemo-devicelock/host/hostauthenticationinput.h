@@ -69,7 +69,8 @@ public:
         Success                 =  0,
         Failure                 = -1,
         SecurityCodeExpired     = -2,
-        SecurityCodeInHistory   = -3
+        SecurityCodeInHistory   = -3,
+        Evaluating              = -4
     };
 
     enum Availability {

@@ -251,32 +251,13 @@ void HostAuthenticator::enterSecurityCode(const QString &code)
             return;
         }
 
-        // With disk encryption enabled changing the code can take a few seconds, don't leave
-        // the user hanging.
-        authenticationEvaluating();
-
         const auto currentCode = m_currentCode;
         m_currentCode.clear();
         m_newCode.clear();
 
-        switch (setCode(currentCode, code)) {
-        case Success:
-            qCDebug(daemon, "Lock code changed.");
-            securityCodeChanged(authenticateChallengeCode(m_challengeCode));
-            return;
-        case SecurityCodeInHistory:
-            qCDebug(daemon, "Security code disallowed.");
-            m_state = EnteringNewSecurityCode;
-            feedback(AuthenticationInput::SecurityCodeInHistory, -1);
-            feedback(AuthenticationInput::EnterNewSecurityCode, -1);
-            return;
-        default:
-            qCDebug(daemon, "Lock code change failed.");
+        setCodeFinished(setCode(currentCode, code));
 
-            m_state = ChangeError;
-            authenticationUnavailable(AuthenticationInput::SoftwareError);
-            return;
-        }
+        return;
     }
     case AuthenticatingForClear: {
         qCDebug(daemon, "Lock code entered for clear authentication.");
@@ -305,6 +286,40 @@ void HostAuthenticator::enterSecurityCode(const QString &code)
         }
     } else {
         feedback(AuthenticationInput::IncorrectSecurityCode, -1);
+    }
+}
+
+void HostAuthenticator::setCodeFinished(int result)
+{
+    switch (result) {
+    case Success:
+        qCDebug(daemon, "Lock code changed.");
+        securityCodeChanged(authenticateChallengeCode(m_challengeCode));
+        break;
+    case SecurityCodeInHistory:
+        if (m_state == ChangeCanceled) {
+            securityCodeChangeAborted();
+        } else {
+            qCDebug(daemon, "Security code disallowed.");
+            m_state = EnteringNewSecurityCode;
+            feedback(AuthenticationInput::SecurityCodeInHistory, -1);
+            feedback(AuthenticationInput::EnterNewSecurityCode, -1);
+        }
+        break;
+    case Evaluating:
+        if (m_state == RepeatingNewSecurityCode) {
+            m_state = Changing;
+            authenticationEvaluating();
+        } else {
+            abortAuthentication(AuthenticationInput::SoftwareError);
+        }
+        break;
+    default:
+        qCDebug(daemon, "Lock code change failed.");
+
+        m_state = ChangeError;
+        authenticationUnavailable(AuthenticationInput::SoftwareError);
+        break;
     }
 }
 
@@ -358,6 +373,11 @@ void HostAuthenticator::cancel()
     case RepeatingNewSecurityCode:
     case ChangeError:
         securityCodeChangeAborted();
+        break;
+    case Changing:
+        m_state = ChangeCanceled;
+        break;
+    case ChangeCanceled:
         break;
     case AuthenticatingForClear:
     case ClearError:
