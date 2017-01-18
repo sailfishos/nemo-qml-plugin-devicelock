@@ -81,8 +81,6 @@ public:
     bool isHomeEncrypted() const;
 
 signals:
-    void challengeCodeChanged();
-
     void automaticLockingChanged();
     void maximumAttemptsChanged();
     void peekingAllowedChanged();
@@ -91,10 +89,9 @@ signals:
     void inputIsKeyboardChanged();
     void currentCodeIsDigitOnlyChanged();
 
-protected:
-    void changeSetting(const QVariant &authenticationToken, const QString &key, const QVariant &value);
-
 private:
+    inline void changeSetting(
+            const QVariant &authenticationToken, const QString &key, const QVariant &value);
     inline void connected();
 
     ClientAuthorization m_authorization;

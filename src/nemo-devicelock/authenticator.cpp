@@ -54,6 +54,20 @@ void AuthenticatorAdaptor::Aborted()
     m_authenticator->handleAborted();
 }
 
+/*!
+    \class NemoDeviceLock::Authenticator
+    \brief The Authenticator class provides an interface to request the user authenticate themselves.
+
+    APIs which require user authorization to perform a task will issue a challenge code to be passed
+    to the authenticator, if the user successfully identifies themselves to the security daemon the
+    authenticated() signal will be emitted with an authentication token which may be used by the
+    issuing a API in combination with the challenge code to verify the authentication.
+*/
+
+/*!
+    Constructs a new authenticator which is a child of \a parent.
+*/
+
 Authenticator::Authenticator(QObject *parent)
     : QObject(parent)
     , ConnectionClient(
@@ -78,19 +92,39 @@ Authenticator::Authenticator(QObject *parent)
     }
 }
 
+/*!
+    Destroys an authenticator.
+*/
+
 Authenticator::~Authenticator()
 {
 }
+
+/*!
+    \qmlproperty NemoDeviceLock::Authenticator::availableMethods
+
+    This property holds the authentication methods that may currently be utilized.
+*/
 
 Authenticator::Methods Authenticator::availableMethods() const
 {
     return m_availableMethods;
 }
 
+/*!
+    \qmlproperty NemoDeviceLock::Authenticator::authenticating
+
+    This property holds whether the the authenticator is currently authenticating a challenge code.
+*/
+
 bool Authenticator::isAuthenticating() const
 {
     return m_authenticating;
 }
+
+/*!
+    Requests the authentication of a \a challengeCode using any of the supplied \a methods.
+*/
 
 void Authenticator::authenticate(const QVariant &challengeCode, Methods methods)
 {
@@ -108,6 +142,10 @@ void Authenticator::authenticate(const QVariant &challengeCode, Methods methods)
     emit authenticatingChanged();
 }
 
+/*!
+    Cancels an active authentication request.
+*/
+
 void Authenticator::cancel()
 {
     if (m_authenticating) {
@@ -119,6 +157,13 @@ void Authenticator::cancel()
     }
 }
 
+/*!
+    \signal NemoDeviceLock::Authenticator::authenticated(const QVariant &authenticationToken)
+
+    Signals that the user has successfully authenticated themselves.  The \a authenticationToken
+    may be passed to the API which required authentication as proof.
+*/
+
 void Authenticator::handleAuthentication(const QVariant &authenticationToken)
 {
     if (m_authenticating) {
@@ -128,6 +173,12 @@ void Authenticator::handleAuthentication(const QVariant &authenticationToken)
         emit authenticatingChanged();
     }
 }
+
+/*!
+    \signal NemoDeviceLock::Authenticator::aborted()
+
+    Signals that the user abandoned a request for authentication.
+*/
 
 void Authenticator::handleAborted()
 {

@@ -1,0 +1,28 @@
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<node>
+ <interface name="org.nemomobile.devicelock.client.AuthenticationInput">
+  <method name="AuthenticationStarted">
+   <arg name="pid" type="u" direction="in"/>
+   <arg name="utilized_methods" type="u" direction="in"/>
+   <arg name="instruction" type="u" direction="in"/>
+  </method>
+  <method name="AuthenticationUnavailable">
+   <arg name="pid" type="u" direction="in"/>
+   <arg name="error" type="u" direction="in"/>
+  </method>
+  <method name="AuthenticationEvaluating"/>
+  <method name="AuthenticationProgress">
+   <arg name="current" type="u" direction="in"/>
+   <arg name="maximum" type="u" direction="in"/>
+  </method>
+  <method name="Feedback">
+   <arg name="feedback" type="u" direction="in"/>
+   <arg name="attempts_remaining" type="u" direction="in"/>
+   <arg name="utilized_methods" type="u" direction="in"/>
+  </method>
+  <method name="Error">
+   <arg name="error" type="u" direction="in"/>
+  </method>
+ </interface>
+</node>

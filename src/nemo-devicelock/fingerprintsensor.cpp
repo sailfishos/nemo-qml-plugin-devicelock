@@ -65,6 +65,23 @@ const QDBusArgument &operator>>(const QDBusArgument &argument, NemoDeviceLock::F
 namespace NemoDeviceLock
 {
 
+/*!
+    \class NemoDeviceLock::FingerprintModel
+    \brief The FingerprintModel class provides a model of currently registered fingerprints.
+
+    The roles provided by the model are:
+
+    \list
+    \li \c fingerprintId A unique identifier for the fingerprint.
+    \li \c fingerprintName A user readable name for the fingerprint.
+    \li \c acquisitionDate The date and time the fingerprint was registered.
+    \endlist
+*/
+
+/*!
+    Constructs a new fingerprint model which is a child of \a parent.
+*/
+
 FingerprintModel::FingerprintModel(QObject *parent)
     : QAbstractListModel(parent)
     , ConnectionClient(
@@ -83,14 +100,31 @@ FingerprintModel::FingerprintModel(QObject *parent)
     }
 }
 
+/*!
+    Destroys a fingerprint model.
+*/
+
 FingerprintModel::~FingerprintModel()
 {
 }
+
+/*!
+    \property NemoDeviceLock::FingerprintModel::authorization
+
+    This property provides a means of acquiring authorization to change fingerprint properties.
+*/
 
 Authorization *FingerprintModel::authorization()
 {
     return &m_authorization;
 }
+
+/*!
+    Removes the fingerprint identified by \a id from the set of authorized fingerprints.
+
+    The fingerprint authorization challenge code must be authenticated before this is called and the
+    \a authenticationToken produced passed as an argument.
+*/
 
 void FingerprintModel::remove(const QVariant &authenticationToken, const QVariant &id)
 {
@@ -98,6 +132,10 @@ void FingerprintModel::remove(const QVariant &authenticationToken, const QVarian
         call(QStringLiteral("Remove"), m_localPath, authenticationToken, id);
     }
 }
+
+/*!
+    Changes the user friendly name of the fingerprint \a id to \a name.
+*/
 
 void FingerprintModel::rename(const QVariant &id, const QString &name)
 {
@@ -217,6 +255,15 @@ void FingerprintSensorAdaptor::AcquisitionError(uint error)
     m_settings->handleError(FingerprintSensor::Error(error));
 }
 
+/*!
+    \class NemoDeviceLock::FingerprintSensor
+    \brief The FingerprintSensor class provides an interface for recording fingerprints that may be used for user authentication.
+*/
+
+/*!
+    Constructs a new instance of the fingerprint sensor interface which is a child of \a parent.
+*/
+
 FingerprintSensor::FingerprintSensor(QObject *parent)
     : QObject(parent)
     , ConnectionClient(
@@ -250,34 +297,81 @@ FingerprintSensor::FingerprintSensor(QObject *parent)
     }
 }
 
+/*!
+    Destroys an instance of the fingerprint sensor interface.
+*/
+
 FingerprintSensor::~FingerprintSensor()
 {
 }
+
+/*!
+    \property NemoDeviceLock::FingerprintSensor::hasSensor
+
+    This property holds whether the device has a fingerprint sensor.
+*/
 
 bool FingerprintSensor::hasSensor() const
 {
     return m_hasSensor;
 }
 
+/*!
+    \property NemoDeviceLock::FingerprintSensor::acquiring
+
+    This property holds whether the a fingerprint is currently being acquired.
+*/
+
 bool FingerprintSensor::isAcquiring() const
 {
     return m_isAcquiring;
 }
+
+
+/*!
+    \property NemoDeviceLock::FingerprintSensor::authorization
+
+    This property provides a means of acquiring authorization to register a fingerprint.
+*/
 
 Authorization *FingerprintSensor::authorization()
 {
     return &m_authorization;
 }
 
+/*!
+    \property NemoDeviceLock::FingerprintSensor::samplesRemaining
+
+    This property holds the number of fingerprint samples that still need to be acquired before
+    the print can be registered.
+*/
+
 int FingerprintSensor::samplesRemaining() const
 {
     return m_samplesRemaining;
 }
 
+/*!
+    \property NemoDeviceLock::FingerprintSensor::samplesRequired
+
+    This property holds the total number of fingerprint samples that need to be acquired to
+    register a fingerprint.
+
+    This number may be an estimate as the final number required can depend on the quality of
+    the individual samples captured.
+*/
+
 int FingerprintSensor::samplesRequired() const
 {
     return m_samplesRequired;
 }
+
+/*!
+    Starts acquisition of a new fingerprint.
+
+    The sensor authorization challenge code must be authenticated before this is called and the
+    \a authenticationToken produced passed as an argument.
+*/
 
 void FingerprintSensor::acquireFinger(const QVariant &authenticationToken)
 {
@@ -305,6 +399,10 @@ void FingerprintSensor::acquireFinger(const QVariant &authenticationToken)
     }
 }
 
+/*!
+    Cancels an ongoing fingerprint acquisition.
+*/
+
 void FingerprintSensor::cancelAcquisition()
 {
     if (m_isAcquiring) {
@@ -315,6 +413,12 @@ void FingerprintSensor::cancelAcquisition()
         emit acquiringChanged();
     }
 }
+
+/*!
+    \property NemoDeviceLock::FingerprintSensor::fingers
+
+    This property holds a list of authorized fingerprints.
+*/
 
 FingerprintModel *FingerprintSensor::fingers()
 {
@@ -329,6 +433,12 @@ void FingerprintSensor::handleSampleAcquired(int samplesRemaining)
 
     emit samplesRemainingChanged();
 }
+
+/*!
+    \signal NemoDeviceLock::FingerprintSensor::acquisitionCompleted()
+
+    Signals that a fingerprint was successfully acquired.
+*/
 
 void FingerprintSensor::handleAcquisitionCompleted()
 {
@@ -345,6 +455,18 @@ void FingerprintSensor::handleAcquisitionCompleted()
     emit samplesRemainingChanged();
 }
 
+/*!
+    \signal NemoDeviceLock::FingerprintSensor::acquisitionFeedback(Feedback feedback)
+
+    Signals that a \a feedback message should be displayed to the user.
+*/
+
+/*!
+    \signal NemoDeviceLock::FingerprintSensor::acquisitionError(Error error)
+
+    Signals that an \a error occurred and the fingerprint acquisition could not be completed.
+*/
+
 void FingerprintSensor::handleError(Error error)
 {
     qCDebug(devicelock, "Fingerprint acquisition error %i.", int(error));
@@ -359,6 +481,7 @@ void FingerprintSensor::handleError(Error error)
     emit samplesRequiredChanged();
     emit samplesRemainingChanged();
 }
+
 
 void FingerprintSensor::connected()
 {

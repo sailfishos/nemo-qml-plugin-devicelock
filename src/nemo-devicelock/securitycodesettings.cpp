@@ -62,6 +62,15 @@ void SecurityCodeSettingsAdaptor::ClearAborted()
     m_settings->handleClearAborted();
 }
 
+/*!
+    \class NemoDeviceLock::SecurityCodeSettings
+    \brief The SecurityCodeSettings class provides an interface for changing or clearing a security code.
+*/
+
+/*!
+    Constructs a new security code settings interface which is a child of \a parent.
+*/
+
 SecurityCodeSettings::SecurityCodeSettings(QObject *parent)
     : QObject(parent)
     , ConnectionClient(
@@ -87,16 +96,36 @@ SecurityCodeSettings::SecurityCodeSettings(QObject *parent)
     }
 }
 
+/*!
+    Destroys a security code settings interface.
+*/
+
 SecurityCodeSettings::~SecurityCodeSettings()
 {
 }
+
+/*!
+    \property NemoDeviceLock::SecurityCodeSettings::set
+
+    This property holds whether a security code is currently set.
+*/
 
 bool SecurityCodeSettings::isSet() const
 {
     return m_set;
 }
 
-void SecurityCodeSettings::change(const QVariant &authenticationCode)
+/*!
+    Requests a change of the user's security code.
+
+    The security daemon will bring up a dialog prompting the user to change their code.
+
+    This will also authorize a \a challengeCode similar to an Authentication allowing the user
+    to enter a new security code and then edit their security settings or also add a fingerprint
+    without being prompted for the new code immediately.
+*/
+
+void SecurityCodeSettings::change(const QVariant &challengeCode)
 {
     if (m_changing) {
         return;
@@ -106,7 +135,7 @@ void SecurityCodeSettings::change(const QVariant &authenticationCode)
 
     m_changing = true;
 
-    auto response = call(QStringLiteral("Change"), m_localPath, authenticationCode);
+    auto response = call(QStringLiteral("Change"), m_localPath, challengeCode);
 
     response->onError([this](const QDBusError &) {
         handleChangeAborted();
@@ -114,6 +143,13 @@ void SecurityCodeSettings::change(const QVariant &authenticationCode)
 
     emit changingChanged();
 }
+
+/*!
+    \signal NemoDeviceLock::SecurityCodeSettings::changed(const QVariant &authenticationToken)
+
+    Signals that the user's security code has been changed and the provided challenge code
+    has been authenticated as proven by the \a authenticationToken.
+*/
 
 void SecurityCodeSettings::handleChanged(const QVariant &authenticationToken)
 {
@@ -125,6 +161,12 @@ void SecurityCodeSettings::handleChanged(const QVariant &authenticationToken)
     }
 }
 
+/*!
+    \signal NemoDeviceLock::SecurityCodeSettings::changeAborted()
+
+    Signals that the user canceled the change of their security code.
+*/
+
 void SecurityCodeSettings::handleChangeAborted()
 {
     if (m_changing) {
@@ -134,6 +176,13 @@ void SecurityCodeSettings::handleChangeAborted()
         emit changingChanged();
     }
 }
+
+/*!
+    Requests that the users security code be cleared.
+
+    The security daemon will display a prompt asking the user to authenticate themselves before
+    proceeding with clearing the security code.
+*/
 
 void SecurityCodeSettings::clear()
 {
@@ -152,6 +201,10 @@ void SecurityCodeSettings::clear()
     });
 }
 
+/*!
+    Cancels an ongoing attempt to change or clear the user's security code.
+*/
+
 void SecurityCodeSettings::cancel()
 {
     if (m_changing) {
@@ -169,6 +222,12 @@ void SecurityCodeSettings::cancel()
     }
 }
 
+/*!
+    \signal NemoDeviceLock::SecurityCodeSettings::cleared()
+
+    Signals that the security code was succesfully cleared.
+*/
+
 void SecurityCodeSettings::handleCleared()
 {
     if (m_clearing) {
@@ -178,6 +237,12 @@ void SecurityCodeSettings::handleCleared()
         emit clearingChanged();
     }
 }
+
+/*!
+    \signal NemoDeviceLock::SecurityCodeSettings::clearAborted()
+
+    Signals that the user canceled clearing their security code.
+*/
 
 void SecurityCodeSettings::handleClearAborted()
 {

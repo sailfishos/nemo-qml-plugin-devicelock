@@ -2,8 +2,9 @@
 "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
 <node name="/encryption">
  <interface name="org.nemomobile.devicelock.EncryptionSettings">
+  <property name="Supported" type="b" access="read"/>
   <method name="EncryptHome">
-   <arg name="requestor" type="o" direction="in"/>
+   <arg name="client" type="o" direction="in"/>
    <arg name="authentication_token" type="v" direction="in"/>
   </method>
  </interface>
