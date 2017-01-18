@@ -3,12 +3,12 @@
 <node>
  <interface name="org.nemomobile.devicelock.Authorization">
   <method name="RequestChallenge">
-   <arg name="requester" type="o" direction="in"/>
+   <arg name="client" type="o" direction="in"/>
    <arg name="challenge_code" type="v" direction="out"/>
    <arg name="allowed_methods" type="u" direction="out"/>
   </method>
   <method name="RelinquishChallenge">
-   <arg name="requester" type="o" direction="in"/>
+   <arg name="client" type="o" direction="in"/>
   </method>
  </interface>
 </node>

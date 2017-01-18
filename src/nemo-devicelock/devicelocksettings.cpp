@@ -37,6 +37,15 @@
 namespace NemoDeviceLock
 {
 
+/*!
+    \class NemoDeviceLock::DeviceLockSettings
+    \brief The DeviceLockSettings class provides access to settings for device lock.
+*/
+
+/*!
+    Constructs a new device lock settings instance which is a child of \a parent.
+*/
+
 DeviceLockSettings::DeviceLockSettings(QObject *parent)
     : QObject(parent)
     , ConnectionClient(
@@ -71,79 +80,179 @@ DeviceLockSettings::DeviceLockSettings(QObject *parent)
     }
 }
 
+/*!
+    Destroys a device lock settings instance.
+*/
+
 DeviceLockSettings::~DeviceLockSettings()
 {
 }
+
+/*!
+    \property NemoDeviceLock::DeviceLockSettings::authorization
+
+    This property provides a means of acquiring authorization to change device lock settings.
+*/
 
 Authorization *DeviceLockSettings::authorization()
 {
     return &m_authorization;
 }
 
+/*!
+    \property NemoDeviceLock::DeviceLockSettings::automaticLocking
+
+    This property holds how long in minutes a device must be idle before it will automatically lock.
+*/
+
 int DeviceLockSettings::automaticLocking() const
 {
     return m_settings->automaticLocking;
 }
+
+/*!
+    Sets a new \a value for the automatic locking timeout.
+
+    The settings authorization challenge code must be authenticated before this is called and the
+    \a authenticationToken produced passed as an argument.
+*/
 
 void DeviceLockSettings::setAutomaticLocking(const QVariant &authenticationToken, int value)
 {
     changeSetting(authenticationToken, QString::fromUtf8(SettingsWatcher::automaticLockingKey), value);
 }
 
+/*!
+    \property NemoDeviceLock::DeviceLockSettings::maximumAttempts
+
+    This property holds the maximum number of consecutive times a user may enter an incorrect
+    security code before they are locked out.
+*/
+
 int DeviceLockSettings::maximumAttempts() const
 {
     return m_settings->maximumAttempts;
 }
+
+/*!
+    Sets a new \a value for the maximum number of a security code entry attempts.
+
+    The settings authorization challenge code must be authenticated before this is called and the
+    \a authenticationToken produced passed as an argument.
+*/
 
 void DeviceLockSettings::setMaximumAttempts(const QVariant &authenticationToken, int value)
 {
     changeSetting(authenticationToken, QString::fromUtf8(SettingsWatcher::maximumAttemptsKey), value);
 }
 
+/*!
+    \property NemoDeviceLock::DeviceLockSettings::peekingAllowed
+
+    This property holds whether peeking from the lock screen is allowed when the device is locked.
+*/
+
 int DeviceLockSettings::peekingAllowed() const
 {
     return m_settings->peekingAllowed;
 }
+
+/*!
+    Sets a new \a value for the peeking allowed.
+
+    The settings authorization challenge code must be authenticated before this is called and the
+    \a authenticationToken produced passed as an argument.
+*/
 
 void DeviceLockSettings::setPeekingAllowed(const QVariant &authenticationToken, int value)
 {
     changeSetting(authenticationToken, QString::fromUtf8(SettingsWatcher::peekingAllowedKey), value);
 }
 
+/*!
+    \property NemoDeviceLock::DeviceLockSettings::sideloadingAllowed
+
+    This property holds whether sideloading of APK packages is allowed.
+*/
+
 int DeviceLockSettings::sideloadingAllowed() const
 {
     return m_settings->sideloadingAllowed;
 }
+
+/*!
+    Sets a new \a value for sideloading allowed.
+
+    The settings authorization challenge code must be authenticated before this is called and the
+    \a authenticationToken produced passed as an argument.
+*/
 
 void DeviceLockSettings::setSideloadingAllowed(const QVariant &authenticationToken, int value)
 {
     changeSetting(authenticationToken, QString::fromUtf8(SettingsWatcher::sideloadingAllowedKey), value);
 }
 
+/*!
+    \property NemoDeviceLock::DeviceLockSettings::showNotifications
+
+    This property holds whether notifications are shown on the lock screen when the device is locked.
+*/
+
 int DeviceLockSettings::showNotifications() const
 {
     return m_settings->showNotifications;
 }
+
+/*!
+    Sets a new \a value for show notifications.
+
+    The settings authorization challenge code must be authenticated before this is called and the
+    \a authenticationToken produced passed as an argument.
+*/
 
 void DeviceLockSettings::setShowNotifications(const QVariant &authenticationToken, int value)
 {
     changeSetting(authenticationToken, QString::fromUtf8(SettingsWatcher::showNotificationsKey), value);
 }
 
+/*!
+    \property NemoDeviceLock::DeviceLockSettings::inputIsKeyboard
+
+    This property holds whether a full keyboard should be used for entering a security code.
+*/
+
 bool DeviceLockSettings::inputIsKeyboard() const
 {
     return m_settings->inputIsKeyboard;
 }
+
+/*!
+    Sets a new \a value for input is keyboard.
+
+    The settings authorization challenge code must be authenticated before this is called and the
+    \a authenticationToken produced passed as an argument.
+*/
 
 void DeviceLockSettings::setInputIsKeyboard(const QVariant &authenticationToken, bool value)
 {
     changeSetting(authenticationToken, QString::fromUtf8(SettingsWatcher::inputIsKeyboardKey), value);
 }
 
+/*!
+    \property NemoDeviceLock::DeviceLockSettings::currentCodeIsDigitOnly
+
+    This property holds whether the current code was entered using a numeric input field.
+*/
 bool DeviceLockSettings::currentCodeIsDigitOnly() const
 {
     return m_settings->currentCodeIsDigitOnly;
 }
+
+/*!
+    \property NemoDeviceLock::DeviceLockSettings::homeEncrypted
+
+    This property holds whether the home folder has been encrypted.
+*/
 
 bool DeviceLockSettings::isHomeEncrypted() const
 {

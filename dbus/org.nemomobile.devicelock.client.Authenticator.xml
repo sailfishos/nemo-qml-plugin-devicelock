@@ -5,13 +5,6 @@
   <method name="Authenticated">
    <arg name="authentication_token" type="v" direction="in"/>
   </method>
-  <method name="Feedback">
-   <arg name="feedback" type="u" direction="in"/>
-   <arg name="attempts_remaining" type="u" direction="in"/>
-   <arg name="utilized_methods" type="u" direction="in"/>
-  </method>
-  <method name="Error">
-   <arg name="error" type="u" direction="in"/>
-  </method>
+  <method name="Aborted"/>
  </interface>
 </node>

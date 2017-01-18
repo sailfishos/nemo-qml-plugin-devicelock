@@ -35,6 +35,15 @@
 namespace NemoDeviceLock
 {
 
+/*!
+    \class NemoDeviceLock::DeviceReset
+    \brief The DeviceReset class provides an interface for requesting the device be reset to factory settings.
+*/
+
+/*!
+    Constructs a new device reset instance which is a child of \a parent.
+*/
+
 DeviceReset::DeviceReset(QObject *parent)
     : QObject(parent)
     , ConnectionClient(
@@ -53,15 +62,34 @@ DeviceReset::DeviceReset(QObject *parent)
     }
 }
 
+/*!
+    Destroys a device reset instance.
+*/
+
 DeviceReset::~DeviceReset()
 {
 }
+
+/*!
+    \property NemoDeviceLock::DeviceReset::authorization
+
+    This property provides a means of acquiring authorization to reset the device.
+
+*/
 
 Authorization *DeviceReset::authorization()
 {
     return &m_authorization;
 }
 
+/*!
+    Requests a reset of the device to factory settings.
+
+    Depending on the \a mode the device may be restarted or shutdown once the reset is completed.
+
+    The reset authorization challenge code must be authenticated before this is called and the
+    \a authenticationToken produced passed as an argument.
+*/
 void DeviceReset::clearDevice(const QVariant &authenticationToken, ResetMode mode)
 {
     if (m_authorization.status() == Authorization::ChallengeIssued) {
@@ -75,6 +103,20 @@ void DeviceReset::clearDevice(const QVariant &authenticationToken, ResetMode mod
         });
     }
 }
+
+/*!
+    \signal NemoDeviceLock::DeviceReset::clearingDevice()
+
+    Signals that the request to clear the device was successful and the action will be performed
+    after the device is restarted.
+*/
+
+/*!
+    \signal NemoDeviceLock::DeviceReset::clearDeviceError()
+
+    Signals that there was an error preventing the device from being reset and no further action
+    will be taken.
+*/
 
 void DeviceReset::connected()
 {

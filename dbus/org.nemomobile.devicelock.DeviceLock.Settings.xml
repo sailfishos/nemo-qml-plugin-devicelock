@@ -3,7 +3,7 @@
 <node name="/devicelock/settings">
  <interface name="org.nemomobile.devicelock.DeviceLock.Settings">
   <method name="ChangeSetting">
-   <arg name="requestor" type="o" direction="in"/>
+   <arg name="client" type="o" direction="in"/>
    <arg name="authentication_token" type="v" direction="in"/>
    <arg name="key" type="s" direction="in"/>
    <arg name="value" type="v" direction="in"/>

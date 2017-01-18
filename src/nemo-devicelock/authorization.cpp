@@ -35,13 +35,80 @@
 namespace NemoDeviceLock
 {
 
+/*!
+    \class NemoDeviceLock::Authorization
+    \brief The Authorization class is an interface implemented by types which require user authorization to perform a task.
+
+    An API which requires user authorization will produce a challenge code in response to the
+    requestChallenge() function.  This code can be passed to an Authenticator to produce an
+    authentication token that can be passed as proof of authentication to other members of the
+    API.
+*/
+
+/*!
+    Constructs an authorization instance which is a child of \a parent.
+*/
+
 Authorization::Authorization(QObject *parent)
     : QObject(parent)
 {
 }
 
+/*!
+    Destroys an authorization instance.
+*/
+
 Authorization::~Authorization()
 {
 }
+
+/*!
+    \property NemoDeviceLock::Authorization::allowedMethods
+
+    This property holds the authentication methods that may be used to authenticate the challenge
+    code.  An authentication token issued using a different method will be rejected.
+*/
+
+/*!
+    \property NemoDeviceLock::Authorization::status
+
+    This property holds the status of the authorization challenge.
+*/
+
+/*!
+    \property NemoDeviceLock::Authorization::challengeCode
+
+    This property holds the issued challenge code.
+*/
+
+/*!
+    \fn NemoDeviceLock::Authorization::requestChallege()
+
+    Requests that a challenge code be issued.
+*/
+
+/*!
+    \fn NemoDeviceLock::Authorization::relinquishChallenge()
+
+    Abandons a previously requested challenge.
+*/
+
+/*!
+    \signal NemoDeviceLock::Authorization::challengeIssued()
+
+    Signals that a requested challenge was successfully issued.
+*/
+
+/*!
+    \signal NemoDeviceLock::Authorization::challengeDenied()
+
+    Signals that a requested challenge was denied.
+*/
+
+/*!
+    \signal NemoDeviceLock::Authorization::challengeExpired()
+
+    Signals that a challenge that had beed successfully issued has now expired.
+*/
 
 }

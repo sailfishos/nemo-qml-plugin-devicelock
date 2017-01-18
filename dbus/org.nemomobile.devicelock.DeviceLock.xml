@@ -4,9 +4,8 @@
  <interface name="org.nemomobile.devicelock.DeviceLock">
   <property name="State" type="u" access="read"/>
   <property name="Enabled" type="b" access="read"/>
-  <method name="Unlock">
-   <arg name="requestor" type="o" direction="in"/>
-   <arg name="authentication_token" type="v" direction="in"/>
-  </method>
+  <property name="Unlocking" type="b" access="read"/>
+  <method name="Unlock"/>
+  <method name="Cancel"/>
  </interface>
 </node>

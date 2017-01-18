@@ -37,6 +37,20 @@
 namespace NemoDeviceLock
 {
 
+/*!
+    \class NemoDeviceLock::DeviceLock
+    \brief The DeviceLock class provides an interface to the security daemons device lock state.
+
+    Through this interface the current state of the device lock can be queried, and a request to
+    release the device lock may be made.  Unlocking requires user authentication which the
+    security daemon will independently request through the currently registered device lock
+    AuthenticationInput provider.
+*/
+
+/*!
+    Constructs a device lock interface instance which is a child of \a parent.
+*/
+
 DeviceLock::DeviceLock(QObject *parent)
     : QObject(parent)
     , ConnectionClient(
@@ -69,29 +83,63 @@ DeviceLock::DeviceLock(QObject *parent)
     }
 }
 
+/*!
+    Destroys a device lock interface instance.
+*/
+
 DeviceLock::~DeviceLock()
 {
 }
+
+/*!
+    \property NemoDeviceLock::DeviceLock::automaticLocking
+
+    This property holds the number of minutes of inactivity required before the device will
+    automatically lock.
+*/
 
 int DeviceLock::automaticLocking() const
 {
     return isEnabled() ? m_settings->automaticLocking : -1;
 }
 
+/*!
+    \property NemoDeviceLock::DeviceLock::enabled
+
+    This property holds whether device lock is enabled.
+*/
+
 bool DeviceLock::isEnabled() const
 {
     return m_enabled;
 }
+
+/*!
+    \property NemoDeviceLock::DeviceLock::unlocking
+
+    This property holds whether the user is currently being prompted for authentication to unlock
+    the device.
+*/
 
 bool DeviceLock::isUnlocking() const
 {
     return m_unlocking;
 }
 
+/*!
+    \property NemoDeviceLock::DeviceLock::state
+
+    This property holds the current state of the device lock.
+*/
+
 DeviceLock::LockState DeviceLock::state() const
 {
     return m_state;
 }
+
+/*!
+    Requests user authentication to unlock the device.
+*/
 
 void DeviceLock::unlock()
 {
@@ -108,6 +156,10 @@ void DeviceLock::unlock()
     }
 }
 
+/*!
+    Cancels a request for user authentication to unlock the device.
+*/
+
 void DeviceLock::cancel()
 {
     if (m_unlocking) {
@@ -118,6 +170,24 @@ void DeviceLock::cancel()
         emit unlockingChanged();
     }
 }
+
+/*!
+    \signal NemoDeviceLock::DeviceLock::locked()
+
+    Signals that the device has been locked.
+*/
+
+/*!
+    \signal NemoDeviceLock::DeviceLock::unlocked()
+
+    Signals that the device has been unlocked.
+*/
+
+/*!
+    \signal NemoDeviceLock::DeviceLock::unlockError()
+
+    Signals that there was an error requesting authentication to unlock the device.
+*/
 
 void DeviceLock::connected()
 {

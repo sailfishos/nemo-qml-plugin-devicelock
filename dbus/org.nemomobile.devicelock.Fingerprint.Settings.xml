@@ -4,7 +4,7 @@
  <interface name="org.nemomobile.devicelock.Fingerprint.Settings">
   <property name="Fingerprints" type="a{vss}" access="read"/>
   <method name="Remove">
-   <arg name="requester" type="o" direction="in"/>
+   <arg name="client" type="o" direction="in"/>
    <arg name="authentication_token" type="v" direction="in"/>
    <arg name="id" type="v" direction="in"/>
   </method>
