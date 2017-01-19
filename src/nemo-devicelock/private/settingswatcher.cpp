@@ -152,6 +152,10 @@ static void read(
 void SettingsWatcher::reloadSettings()
 {
     QSettings settings(m_settingsPath, QSettings::IniFormat);
+    // QSettings appears to be caching queried data between instances and that cache isn't
+    // being invalidated when the file is replaced but not deleted.  Forcing a sync makes it
+    // read the new file.
+    settings.sync();
 
     read(settings, this, automaticLockingKey, 10, &SettingsWatcher::automaticLocking, &SettingsWatcher::automaticLockingChanged);
     read(settings, this, minimumLengthKey, 5, &SettingsWatcher::minimumLength, &SettingsWatcher::minimumLengthChanged);
