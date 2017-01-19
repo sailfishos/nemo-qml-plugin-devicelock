@@ -143,6 +143,9 @@ void HostDeviceLock::enterSecurityCode(const QString &code)
             break;
         case SecurityCodeInHistory:
             break;
+        case LockedOut:
+            abortAuthentication(AuthenticationInput::LockedOut);
+            break;
         default: {
             const int maximum = maximumAttempts();
 
@@ -176,11 +179,9 @@ void HostDeviceLock::enterSecurityCode(const QString &code)
             // With disk encryption enabled changing the code can take a few seconds, don't leave
             // the user hanging.
 
-            const auto currentCode = m_currentCode;
-            m_currentCode.clear();
             m_newCode.clear();
 
-            setCodeFinished(setCode(currentCode, code));
+            setCodeFinished(setCode(m_currentCode, code));
         }
         break;
     case Unlocking:
@@ -226,6 +227,7 @@ void HostDeviceLock::setCodeFinished(int result)
     switch (result) {
     case Success:
         qCDebug(daemon, "Lock code changed.");
+        m_currentCode.clear();
         if (m_state == ChangingSecurityCode) {
             unlockFinished(unlockWithCode(m_newCode));
         } else if (m_state == Canceled) {
@@ -252,6 +254,7 @@ void HostDeviceLock::setCodeFinished(int result)
         return;
     default:
         qCDebug(daemon, "Lock code change failed.");
+        m_currentCode.clear();
         if (m_state == Canceled) {
             m_state = Idle;
 
@@ -289,6 +292,26 @@ void HostDeviceLock::confirmAuthentication()
     authenticationEnded(true);
 
     unlockingChanged();
+}
+
+void HostDeviceLock::abortAuthentication(AuthenticationInput::Error error)
+{
+    m_currentCode.clear();
+    m_newCode.clear();
+
+    switch (m_state) {
+    case Authenticating:
+    case Unlocking:
+    case EnteringNewSecurityCode:
+    case RepeatingNewSecurityCode:
+    case ChangingSecurityCode:
+        m_state = AuthenticationError;
+        break;
+    default:
+        break;
+    }
+
+    HostAuthenticationInput::abortAuthentication(error);
 }
 
 void HostDeviceLock::stateChanged()

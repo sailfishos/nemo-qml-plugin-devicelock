@@ -78,7 +78,7 @@ public:
 
     bool isUnlocking() const;
 
-    int automaticLocking() const;
+    virtual int automaticLocking() const;
 
     void unlock();
     void enterSecurityCode(const QString &code) override;
@@ -93,6 +93,7 @@ public:
     virtual void setState(DeviceLock::LockState state) = 0;
 
     void confirmAuthentication() override;
+    void abortAuthentication(AuthenticationInput::Error error) override;
 
     void stateChanged();
     void availabilityChanged();
