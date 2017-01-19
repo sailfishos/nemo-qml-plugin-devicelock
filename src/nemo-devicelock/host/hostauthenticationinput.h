@@ -70,7 +70,8 @@ public:
         Failure                 = -1,
         SecurityCodeExpired     = -2,
         SecurityCodeInHistory   = -3,
-        Evaluating              = -4
+        LockedOut               = -4,
+        Evaluating              = -5
     };
 
     enum Availability {
@@ -93,8 +94,8 @@ public:
     // AuthenticationInput
     virtual bool authorizeInput(unsigned long pid);
 
-    int maximumAttempts() const;
-    int currentAttempts() const;
+    virtual int maximumAttempts() const;
+    virtual int currentAttempts() const;
 
     virtual void enterSecurityCode(const QString &code) = 0;
     void cancel() override = 0;

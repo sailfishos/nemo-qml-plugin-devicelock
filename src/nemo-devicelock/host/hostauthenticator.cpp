@@ -211,17 +211,27 @@ void HostAuthenticator::enterSecurityCode(const QString &code)
         return;
     case Authenticating:
         qCDebug(daemon, "Lock code entered for authentication.");
-        if ((attempts = checkCode(code)) == Success) {
+        switch ((attempts = checkCode(code))) {
+        case Success:
+        case SecurityCodeExpired:
             confirmAuthentication();
+            return;
+        case LockedOut:
+            abortAuthentication(AuthenticationInput::LockedOut);
             return;
         }
         break;
     case AuthenticatingForChange:
         qCDebug(daemon, "Lock code entered for code change authentication.");
-        if ((attempts = checkCode(code)) == Success) {
+        switch ((attempts = checkCode(code))) {
+        case Success:
+        case SecurityCodeExpired:
             m_state = EnteringNewSecurityCode;
             m_currentCode = code;
             feedback(AuthenticationInput::EnterNewSecurityCode, -1);
+            return;
+        case LockedOut:
+            abortAuthentication(AuthenticationInput::LockedOut);
             return;
         }
         break;

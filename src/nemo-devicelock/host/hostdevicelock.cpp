@@ -143,6 +143,9 @@ void HostDeviceLock::enterSecurityCode(const QString &code)
             break;
         case SecurityCodeInHistory:
             break;
+        case LockedOut:
+            abortAuthentication(AuthenticationInput::LockedOut);
+            break;
         default: {
             const int maximum = maximumAttempts();
 
