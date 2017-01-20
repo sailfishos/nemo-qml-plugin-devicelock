@@ -112,7 +112,6 @@ void HostObject::propertyChanged(const QString &interface, const QString &proper
     }
 }
 
-
 unsigned long HostObject::connectionPid(const QDBusConnection &connection)
 {
     unsigned long pid = 0;
@@ -122,6 +121,24 @@ unsigned long HostObject::connectionPid(const QDBusConnection &connection)
     } else {
         return 0;
     }
+}
+
+unsigned long HostObject::connectionUid(const QDBusConnection &connection)
+{
+    unsigned long uid = 0;
+    if (dbus_connection_get_unix_user(
+                static_cast<DBusConnection *>(connection.internalPointer()), &uid)) {
+        return uid;
+    } else {
+        return 0;
+    }
+}
+
+bool HostObject::authorizeConnection(const QDBusConnection &connection)
+{
+    Q_UNUSED(connection);
+
+    return true;
 }
 
 bool HostObject::isActiveClient(const QString &client) const

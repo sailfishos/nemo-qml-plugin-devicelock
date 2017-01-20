@@ -53,6 +53,7 @@ class HostService : public QDBusServer
 {
     Q_OBJECT
 public:
+    HostService(const QVector<HostObject *> objects, QObject *parent = nullptr);
     HostService(
             HostAuthenticator *authenticator,
             HostDeviceLock *deviceLock,
@@ -69,18 +70,7 @@ private:
 
     void connectionReady(const QDBusConnection &connection);
 
-    union {
-        struct {
-            HostObject * const m_authenticator;
-            HostObject * const m_deviceLock;
-            HostObject * const m_deviceLockSettings;
-            HostObject * const m_deviceReset;
-            HostObject * const m_encryptionSettings;
-            HostObject * const m_fingerprintSensor;
-            HostObject * const m_fingerprintSettings;
-        };
-        HostObject * const m_objects[7];
-    };
+    const QVector<HostObject *> m_objects;
 };
 
 }
