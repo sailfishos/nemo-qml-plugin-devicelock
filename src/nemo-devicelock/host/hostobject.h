@@ -60,6 +60,9 @@ public:
     virtual void cancel();
 
     static unsigned long connectionPid(const QDBusConnection &connection);
+    static unsigned long connectionUid(const QDBusConnection &connection);
+
+    virtual bool authorizeConnection(const QDBusConnection &connection);
 
     bool isActiveClient(const QString &client) const;
     void setActiveClient(const QString &client);

@@ -40,8 +40,6 @@ namespace NemoDeviceLock
 
 Connection *Connection::sharedInstance = nullptr;
 
-static const auto systemdService = QStringLiteral("org.freedesktop.systemd1");
-
 static QDBusConnection connectToHost()
 {
     static int counter = 0;

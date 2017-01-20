@@ -347,7 +347,7 @@ void MceDeviceLockAdaptor::setState(int state)
     if (state != DeviceLock::Locked) {
         // Unauthenticated unlocking is not accepted.
         sendErrorReply(QDBusError::AccessDenied);
-    } else if (m_deviceLock->automaticLocking() == 1) {
+    } else if (m_deviceLock->automaticLocking() == -1) {
         sendErrorReply(QDBusError::AccessDenied, QStringLiteral("Device lock not in use"));
     } else {
         m_deviceLock->setState(DeviceLock::LockState(state));

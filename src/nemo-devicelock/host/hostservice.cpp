@@ -50,8 +50,6 @@
 namespace NemoDeviceLock
 {
 
-template <typename T, int N> constexpr int lengthOf(const T(&)[N]) { return N; }
-
 class ConnectionMonitor : public QObject
 {
     Q_OBJECT
@@ -68,8 +66,8 @@ public slots:
     {
         deleteLater();
 
-        for (int i = 0; i < lengthOf(m_service->m_objects); ++i) {
-            m_service->m_objects[i]->clientDisconnected(m_connectionName);
+        for (const auto object : m_service->m_objects) {
+            object->clientDisconnected(m_connectionName);
         }
     }
 
@@ -78,23 +76,9 @@ private:
     const QString m_connectionName;
 };
 
-HostService::HostService(
-        HostAuthenticator *authenticator,
-        HostDeviceLock *deviceLock,
-        HostDeviceLockSettings *deviceLockSettings,
-        HostDeviceReset *deviceReset,
-        HostEncryptionSettings *encryptionSettings,
-        HostFingerprintSensor *fingerprintSensor,
-        HostFingerprintSettings *fingerprintSettings,
-        QObject *parent)
+HostService::HostService(const QVector<HostObject *> objects, QObject *parent)
     : QDBusServer(QStringLiteral("unix:path=/run/nemo-devicelock/socket"), parent)
-    , m_authenticator(authenticator)
-    , m_deviceLock(deviceLock)
-    , m_deviceLockSettings(deviceLockSettings)
-    , m_deviceReset(deviceReset)
-    , m_encryptionSettings(encryptionSettings)
-    , m_fingerprintSensor(fingerprintSensor)
-    , m_fingerprintSettings(fingerprintSettings)
+    , m_objects(objects)
 {
     setAnonymousAuthenticationAllowed(true);
 
@@ -114,6 +98,28 @@ HostService::HostService(
         qCCritical(daemon, "Failed to start device lock DBus server: %s",
                     qPrintable(lastError().message()));
     }
+}
+
+HostService::HostService(
+        HostAuthenticator *authenticator,
+        HostDeviceLock *deviceLock,
+        HostDeviceLockSettings *deviceLockSettings,
+        HostDeviceReset *deviceReset,
+        HostEncryptionSettings *encryptionSettings,
+        HostFingerprintSensor *fingerprintSensor,
+        HostFingerprintSettings *fingerprintSettings,
+        QObject *parent)
+    : HostService(
+        QVector<HostObject *>()
+            << authenticator
+            << deviceLock
+            << deviceLockSettings
+            << deviceReset
+            << encryptionSettings
+            << fingerprintSensor
+            << fingerprintSettings
+        , parent)
+{
 }
 
 HostService::~HostService()
@@ -149,11 +155,11 @@ void HostService::connectionReady(const QDBusConnection &newConnection)
 
     const auto connectionName = newConnection.name();
 
-    for (int i = 0; i < lengthOf(m_objects); ++i) {
-        const auto object = m_objects[i];
-
-        registerObject(connection, object->path(), object);
-        object->clientConnected(connectionName);
+    for (const auto object : m_objects) {
+        if (object->authorizeConnection(newConnection)) {
+            registerObject(connection, object->path(), object);
+            object->clientConnected(connectionName);
+        }
     }
 }
 
