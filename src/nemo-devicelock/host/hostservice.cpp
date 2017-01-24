@@ -43,6 +43,7 @@
 #include <QDBusConnection>
 #include <QDBusMetaType>
 #include <QDir>
+#include <QThread>
 
 #include <dbus/dbus.h>
 #include <systemd/sd-daemon.h>
@@ -153,10 +154,20 @@ void HostService::connectionReady(const QDBusConnection &newConnection)
         qCWarning(daemon, "Failed to connect to disconnect signal");
     }
 
-    const auto connectionName = newConnection.name();
+    // The PID and UID of the connecting process can't be acquired until after the connection
+    // is authenticated which is done concurrently to the invokation of this slot.  Block until
+    // the connection is authenticated or disconnected before trying to decide which services
+    // a process should have access to.
+    auto internalConnection = static_cast<DBusConnection *>(connection.internalPointer());
+    while (dbus_connection_get_is_connected(internalConnection)
+           && !dbus_connection_get_is_authenticated(internalConnection)) {
+        QThread::usleep(100);
+    }
+
+    const auto connectionName = connection.name();
 
     for (const auto object : m_objects) {
-        if (object->authorizeConnection(newConnection)) {
+        if (object->authorizeConnection(connection)) {
             registerObject(connection, object->path(), object);
             object->clientConnected(connectionName);
         }
