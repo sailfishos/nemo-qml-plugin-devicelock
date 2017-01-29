@@ -63,7 +63,7 @@ MceDeviceLock::MceDeviceLock(Authenticator::Methods allowedMethods, QObject *par
           QStringLiteral(MCE_SERVICE),
           QStringLiteral(MCE_REQUEST_PATH),
           QStringLiteral(MCE_REQUEST_IF))
-    , m_deviceLockState(DeviceLock::Undefined)
+    , m_locked(false)
     , m_callActive(false)
     , m_displayOn(true)
     , m_tklockActive(true)
@@ -188,42 +188,34 @@ void MceDeviceLock::handleInactivityStateChanged(const bool state)
 
 /** Helper for producing human readable devicelock state logging
  */
-static const char *reprLockState(int state)
+static const char *reprLockState(bool locked)
 {
-    switch (state) {
-    case DeviceLock::Unlocked:  return "Unlocked";
-    case DeviceLock::Locked:    return "Locked";
-    case DeviceLock::Undefined: return "Undefined";
-    default: break;
-    }
-    return "Invalid";
+    return locked ? "Locked" : "Unlocked";
 }
 
 /** Evaluate initial devicelock state
  */
 void MceDeviceLock::init()
 {
-    setState(automaticLocking() < 0 ? DeviceLock::Unlocked : DeviceLock::Locked);
+    setLocked(automaticLocking() >= 0);
 }
 
 /** Evaluate devicelock state we should be in
  */
-DeviceLock::LockState MceDeviceLock::getRequiredLockState()
+bool MceDeviceLock::getRequiredLockState()
 {
     /* Assume current state is ok */
-    DeviceLock::LockState requiredState = m_deviceLockState;
+    bool locked = m_locked;
 
-    if (m_deviceLockState == DeviceLock::Undefined) {
-        /* Initial state must be decided by init() */
-    } else if (automaticLocking() < 0) {
+    if (automaticLocking() < 0) {
         /* Device locking is disabled */
-        requiredState = DeviceLock::Unlocked;
+        locked = false;
     } else if (automaticLocking() == 0 && !m_displayOn) {
         /* Display is off in immediate lock mode */
-        requiredState = DeviceLock::Locked;
+        locked = true;
     }
 
-    return requiredState;
+    return locked;
 }
 
 /** Check if devicelock timer should be running
@@ -231,7 +223,7 @@ DeviceLock::LockState MceDeviceLock::getRequiredLockState()
 bool MceDeviceLock::needLockTimer()
 {
     /* Must be currently unlocked */
-    if (m_deviceLockState != DeviceLock::Unlocked)
+    if (!m_locked)
         return false;
 
     /* Must not be disabled or in lock-immediate mode */
@@ -253,15 +245,15 @@ bool MceDeviceLock::needLockTimer()
  */
 void MceDeviceLock::setStateAndSetupLockTimer()
 {
-    DeviceLock::LockState requiredState = getRequiredLockState();
+    const bool requiredState = getRequiredLockState();
 
-    if (m_deviceLockState != requiredState) {
+    if (m_locked != requiredState) {
         /* We should be in different deviceLockState. Set the state
          * and assume that setState() recurses back here so that we
          * get another chance to deal with the stable state. */
             qCDebug(daemon, "forcing %s instead of %s",
-                        reprLockState(requiredState), reprLockState(m_deviceLockState));
-        setState(requiredState);
+                        reprLockState(requiredState), reprLockState(m_locked));
+        setLocked(requiredState);
     } else if (needLockTimer()) {
         /* Start devicelock timer */
         if (!m_hbTimer.isWaiting()) {
@@ -290,7 +282,7 @@ void MceDeviceLock::lock()
 {
     qCInfo(daemon, "devicelock triggered");
 
-    setState(DeviceLock::Locked);
+    setLocked(true);
 
     /* The setState() call should end up terminating/restarting the
      * timer. If that does not happen, it is a bug. Nevertheless, we
@@ -303,24 +295,30 @@ void MceDeviceLock::lock()
 
 }
 
-DeviceLock::LockState MceDeviceLock::state() const
+bool MceDeviceLock::isLocked() const
 {
-    return m_deviceLockState;
+    return m_locked;
 }
 
 /** Explicitly set devicelock state
  */
-void MceDeviceLock::setState(DeviceLock::LockState state)
+void MceDeviceLock::setLocked(bool locked)
 {
-    if (m_deviceLockState == state) {
+    if (m_locked == locked) {
         return;
     }
 
-    qCInfo(daemon, "%s -> %s", reprLockState(m_deviceLockState), reprLockState(state));
+    qCInfo(daemon, "%s -> %s", reprLockState(m_locked), reprLockState(locked));
 
-    m_deviceLockState = state;
-    emit m_adaptor.stateChanged(m_deviceLockState);
-    emit stateChanged();
+    m_locked = locked;
+
+    stateChanged();
+}
+
+void MceDeviceLock::stateChanged()
+{
+    emit m_adaptor.stateChanged(state());
+    emit HostDeviceLock::stateChanged();
 
     setStateAndSetupLockTimer();
 }
@@ -350,7 +348,7 @@ void MceDeviceLockAdaptor::setState(int state)
     } else if (m_deviceLock->automaticLocking() == -1) {
         sendErrorReply(QDBusError::AccessDenied, QStringLiteral("Device lock not in use"));
     } else {
-        m_deviceLock->setState(DeviceLock::LockState(state));
+        m_deviceLock->setLocked(true);
     }
 }
 

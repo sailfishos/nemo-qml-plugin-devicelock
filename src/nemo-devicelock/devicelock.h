@@ -33,6 +33,7 @@ class NEMODEVICELOCK_EXPORT DeviceLock : public QObject, private ConnectionClien
     Q_PROPERTY(bool unlocking READ isUnlocking NOTIFY unlockingChanged)
     Q_PROPERTY(LockState state READ state NOTIFY stateChanged)
     Q_PROPERTY(int automaticLocking READ automaticLocking NOTIFY automaticLockingChanged)
+    Q_PROPERTY(bool showNotifications READ showNotifications NOTIFY showNotificationsChanged)
 public:
     explicit DeviceLock(QObject *parent = nullptr);
     ~DeviceLock();
@@ -41,6 +42,9 @@ public:
     {
         Unlocked = 0,           /*!< Unlocked - The lock is unlocked */
         Locked,                 /*!< Locked - The lock is being used */
+        ManagerLockout,         /*!< ManagerLockout - Access has been restricted by a device manager. */
+        TemporaryLockout,       /*!< TemporaryLockout - Access has been temporarily restricted because of excessive incorrect unlock attempts. */
+        PermanentLockout,       /*!< PermanentLockout - Access has been permanently restricted because of excessive incorrect unlock attempts. */
         Undefined               /*!< Undefined - The state of the lock is unknown */
     };
 
@@ -49,6 +53,7 @@ public:
     LockState state() const;
 
     int automaticLocking() const;
+    bool showNotifications() const;
 
     Q_INVOKABLE void unlock();
     Q_INVOKABLE void cancel();
@@ -58,6 +63,7 @@ signals:
     void unlockingChanged();
     void stateChanged();
     void automaticLockingChanged();
+    void showNotificationsChanged();
 
     void locked();
     void unlocked();

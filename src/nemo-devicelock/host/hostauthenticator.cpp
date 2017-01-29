@@ -136,9 +136,24 @@ void HostAuthenticator::authenticate(
         qCDebug(daemon, "Authentication requested using methods %i.", int(methods));
         authenticationStarted(methods, AuthenticationInput::EnterSecurityCode);
         break;
-    case AuthenticationLocked:
+    case SecurityCodeRequired:
         m_challengeCode.clear();
-        authenticationUnavailable(AuthenticationInput::LockedOut);
+        authenticationUnavailable(AuthenticationInput::FunctionUnavailable);
+        break;
+    case ManagerLocked:
+        m_challengeCode.clear();
+        authenticationUnavailable(AuthenticationInput::LockedByManager);
+        feedback(AuthenticationInput::ContactSupport, -1);
+        break;
+    case TemporarilyLocked:
+        m_challengeCode.clear();
+        authenticationUnavailable(AuthenticationInput::MaximumAttemptsExceeded);
+        feedback(AuthenticationInput::TemporarilyLocked, -1);
+        break;
+    case PermanentlyLocked:
+        m_challengeCode.clear();
+        authenticationUnavailable(AuthenticationInput::MaximumAttemptsExceeded);
+        feedback(AuthenticationInput::PermanentlyLocked, -1);
         break;
     }
 }
@@ -166,12 +181,14 @@ void HostAuthenticator::handleChangeSecurityCode(const QString &client, const QV
     case CanAuthenticate:
         authenticationStarted(Authenticator::SecurityCode, AuthenticationInput::EnterSecurityCode);
         break;
-    case AuthenticationLocked:
+    case SecurityCodeRequired:
+    case ManagerLocked:
+    case TemporarilyLocked:
+    case PermanentlyLocked:
         m_challengeCode.clear();
-        authenticationUnavailable(AuthenticationInput::LockedOut);
+        authenticationUnavailable(AuthenticationInput::FunctionUnavailable);
         break;
     }
-
 }
 
 void HostAuthenticator::handleClearSecurityCode(const QString &client)
@@ -196,8 +213,11 @@ void HostAuthenticator::handleClearSecurityCode(const QString &client)
     case CanAuthenticate:
         authenticationStarted(Authenticator::SecurityCode, AuthenticationInput::EnterSecurityCode);
         break;
-    case AuthenticationLocked:
-        authenticationUnavailable(AuthenticationInput::LockedOut);
+    case SecurityCodeRequired:
+    case ManagerLocked:
+    case TemporarilyLocked:
+    case PermanentlyLocked:
+        authenticationUnavailable(AuthenticationInput::FunctionUnavailable);
         break;
     }
 }
@@ -217,7 +237,7 @@ void HostAuthenticator::enterSecurityCode(const QString &code)
             confirmAuthentication();
             return;
         case LockedOut:
-            abortAuthentication(AuthenticationInput::LockedOut);
+            lockedOut();
             return;
         }
         break;
@@ -231,7 +251,7 @@ void HostAuthenticator::enterSecurityCode(const QString &code)
             feedback(AuthenticationInput::EnterNewSecurityCode, -1);
             return;
         case LockedOut:
-            abortAuthentication(AuthenticationInput::LockedOut);
+            lockedOut();
             return;
         }
         break;
@@ -288,7 +308,7 @@ void HostAuthenticator::enterSecurityCode(const QString &code)
         feedback(AuthenticationInput::IncorrectSecurityCode, qMax(0, maximum - attempts));
 
         if (attempts >= maximum) {
-            abortAuthentication(AuthenticationInput::LockedOut);
+            lockedOut();
             return;
         }
     } else {

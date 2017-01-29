@@ -85,12 +85,13 @@ public:
     explicit MceDeviceLock(Authenticator::Methods allowedMethods, QObject *parent = nullptr);
     ~MceDeviceLock();
 
-    DeviceLock::LockState state() const override;
+    bool isLocked() const override;
+    void setLocked(bool locked) override;
 
 protected:
     void init();
-    void setState(DeviceLock::LockState state) override;
     void automaticLockingChanged() override;
+    void stateChanged() override;
 
 protected slots:
     void lock();
@@ -108,7 +109,7 @@ private:
             void (MceDeviceLock::*replySlot)(const QString &));
 
     void setStateAndSetupLockTimer();
-    DeviceLock::LockState getRequiredLockState();
+    bool getRequiredLockState();
     bool needLockTimer();
 
     MceDeviceLockAdaptor m_adaptor;
@@ -116,7 +117,7 @@ private:
 
     BackgroundActivity m_hbTimer;
 
-    DeviceLock::LockState m_deviceLockState;
+    bool m_locked;
     bool m_callActive;
     bool m_displayOn;
     bool m_tklockActive;

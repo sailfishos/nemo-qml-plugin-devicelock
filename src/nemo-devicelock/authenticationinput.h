@@ -48,6 +48,7 @@ public:
 public slots:
     Q_NOREPLY void AuthenticationStarted(uint pid, uint utilizedMethods, uint instruction);
     Q_NOREPLY void AuthenticationUnavailable(uint pid, uint error);
+    Q_NOREPLY void AuthenticationResumed(uint utilizedMethods, uint instruction);
     Q_NOREPLY void AuthenticationEvaluating();
     Q_NOREPLY void AuthenticationProgress(int current, int maximum);
     Q_NOREPLY void AuthenticationEnded(bool confirmed);
@@ -88,11 +89,17 @@ public:
         SwipeFaster,
         SwipeSlower,
         UnrecognizedFinger,
-        IncorrectSecurityCode
+        IncorrectSecurityCode,
+        ContactSupport,
+        TemporarilyLocked,
+        PermanentlyLocked,
+        UnlockToPerformOperation
     };
 
     enum Error {
-        LockedOut,
+        FunctionUnavailable,
+        LockedByManager,
+        MaximumAttemptsExceeded,
         Canceled,
         SoftwareError
     };
@@ -157,6 +164,7 @@ private:
     inline void handleAuthenticationStarted(
             int pid, Authenticator::Methods utilizedMethods, Feedback feedback);
     inline void handleAuthenticationUnavailable(int pid, Error error);
+    inline void handleAuthenticationResumed(Authenticator::Methods utilizedMethods, Feedback feedback);
     inline void handleAuthenticationEvaluating();
     inline void handleAuthenticationEnded(bool confirmed);
     inline void handleFeedback(

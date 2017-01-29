@@ -61,7 +61,7 @@ HostAuthenticationInput::Availability CliDeviceLock::availability() const
         const int attempts = currentAttempts();
 
         if (maximum > 0 && attempts >= maximum) {
-            return AuthenticationLocked;
+            return PermanentlyLocked;
         } else {
             return CanAuthenticate;
         }
