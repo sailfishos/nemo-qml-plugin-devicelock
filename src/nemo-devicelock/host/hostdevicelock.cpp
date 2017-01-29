@@ -73,6 +73,7 @@ HostDeviceLock::HostDeviceLock(Authenticator::Methods supportedMethods, QObject 
     , m_adaptor(this)
     , m_settings(SettingsWatcher::instance())
     , m_state(Idle)
+    , m_lockState(DeviceLock::Undefined)
 {
     connect(m_settings.data(), &SettingsWatcher::automaticLockingChanged,
             this, &HostDeviceLock::automaticLockingChanged);
@@ -80,6 +81,11 @@ HostDeviceLock::HostDeviceLock(Authenticator::Methods supportedMethods, QObject 
 
 HostDeviceLock::~HostDeviceLock()
 {
+}
+
+DeviceLock::LockState HostDeviceLock::state() const
+{
+    return m_lockState;
 }
 
 int HostDeviceLock::automaticLocking() const
@@ -99,6 +105,7 @@ bool HostDeviceLock::isUnlocking() const
 
 void HostDeviceLock::unlock()
 {
+    qDebug() << "Unlock" << m_state << state();
     if (m_state != Idle || state() == DeviceLock::Unlocked) {
         return;
     }
@@ -108,7 +115,7 @@ void HostDeviceLock::unlock()
     switch (availability()) {
     case AuthenticationNotRequired:
         m_state = Idle;
-        setState(DeviceLock::Unlocked);
+        setLocked(false);
         return;
     case CanAuthenticate:
         authenticationStarted(
@@ -118,8 +125,24 @@ void HostDeviceLock::unlock()
     case CanAuthenticateSecurityCode:
         authenticationStarted(Authenticator::SecurityCode, AuthenticationInput::EnterSecurityCode);
         break;
-    case AuthenticationLocked:
-        authenticationUnavailable(AuthenticationInput::LockedOut);
+    case SecurityCodeRequired:
+        m_state = EnteringNewSecurityCode;
+        authenticationStarted(Authenticator::SecurityCode, AuthenticationInput::EnterNewSecurityCode);
+        break;
+    case ManagerLocked:
+        m_state = AuthenticationError;
+        authenticationUnavailable(AuthenticationInput::LockedByManager);
+        feedback(AuthenticationInput::ContactSupport, -1);
+        break;
+    case TemporarilyLocked:
+        m_state = AuthenticationError;
+        authenticationUnavailable(AuthenticationInput::MaximumAttemptsExceeded);
+        feedback(AuthenticationInput::TemporarilyLocked, -1);
+        break;
+    case PermanentlyLocked:
+        m_state = AuthenticationError;
+        authenticationUnavailable(AuthenticationInput::MaximumAttemptsExceeded);
+        feedback(AuthenticationInput::PermanentlyLocked, -1);
         break;
     }
 
@@ -144,7 +167,7 @@ void HostDeviceLock::enterSecurityCode(const QString &code)
         case SecurityCodeInHistory:
             break;
         case LockedOut:
-            abortAuthentication(AuthenticationInput::LockedOut);
+            lockedOut();
             break;
         default: {
             const int maximum = maximumAttempts();
@@ -153,7 +176,7 @@ void HostDeviceLock::enterSecurityCode(const QString &code)
                 feedback(AuthenticationInput::IncorrectSecurityCode, qMax(0, maximum - result));
 
                 if (result >= maximum) {
-                    abortAuthentication(AuthenticationInput::LockedOut);
+                    lockedOut();
                 }
             } else {
                 feedback(AuthenticationInput::IncorrectSecurityCode, -1);
@@ -287,9 +310,21 @@ void HostDeviceLock::confirmAuthentication()
 {
     m_state = Idle;
 
-    setState(DeviceLock::Unlocked);
+    switch (availability()) {
+    case AuthenticationNotRequired:
+    case CanAuthenticate:
+    case CanAuthenticateSecurityCode:
+    case SecurityCodeRequired:
+        setLocked(false);
 
-    authenticationEnded(true);
+        authenticationEnded(true);
+        break;
+    case ManagerLocked:
+    case TemporarilyLocked:
+    case PermanentlyLocked:
+        authenticationEnded(false);
+        break;
+    }
 
     unlockingChanged();
 }
@@ -316,18 +351,142 @@ void HostDeviceLock::abortAuthentication(AuthenticationInput::Error error)
 
 void HostDeviceLock::stateChanged()
 {
-    propertyChanged(
-                QStringLiteral("org.nemomobile.devicelock.DeviceLock"),
-                QStringLiteral("State"),
-                QVariant::fromValue(uint(state())));
+    const auto previousState = m_lockState;
+
+    switch (availability()) {
+    case ManagerLocked:
+        m_lockState = DeviceLock::ManagerLockout;
+        break;
+    case TemporarilyLocked:
+        m_lockState = DeviceLock::TemporaryLockout;
+        break;
+    case PermanentlyLocked:
+        m_lockState = DeviceLock::PermanentLockout;
+        break;
+    default:
+        m_lockState = isLocked()
+                ? DeviceLock::Locked
+                : DeviceLock::Unlocked;
+    }
+
+    if (m_lockState != previousState) {
+        propertyChanged(
+                    QStringLiteral("org.nemomobile.devicelock.DeviceLock"),
+                    QStringLiteral("State"),
+                    QVariant::fromValue(uint(m_lockState)));
+    }
+}
+
+void HostDeviceLock::lockedChanged()
+{
+    stateChanged();
 }
 
 void HostDeviceLock::availabilityChanged()
 {
+    const auto available = availability();
+
+    switch (available) {
+    case AuthenticationNotRequired:
+        switch (m_state) {
+        case Authenticating:
+        case AuthenticationError:
+            m_state = Idle;
+            setLocked(false);
+            break;
+        default:
+            break;
+        }
+        break;
+    case CanAuthenticate:
+        switch (m_state) {
+        case AuthenticationError:
+            m_state = Authenticating;
+            authenticationResumed(AuthenticationInput::EnterSecurityCode);
+            break;
+        default:
+            break;
+        }
+        break;
+    case CanAuthenticateSecurityCode:
+        switch (m_state) {
+        case Authenticating:
+            feedback(AuthenticationInput::EnterSecurityCode, -1, Authenticator::SecurityCode);
+            break;
+        case AuthenticationError:
+            m_state = Authenticating;
+            authenticationResumed(AuthenticationInput::EnterSecurityCode, Authenticator::SecurityCode);
+            break;
+        default:
+            break;
+        }
+        break;
+    case SecurityCodeRequired:
+        switch (m_state) {
+        case Authenticating:
+            m_state = EnteringNewSecurityCode;
+            feedback(AuthenticationInput::EnterNewSecurityCode, -1, Authenticator::SecurityCode);
+            break;
+        case AuthenticationError:
+            m_state = EnteringNewSecurityCode;
+            authenticationResumed(AuthenticationInput::EnterNewSecurityCode, Authenticator::SecurityCode);
+            break;
+        default:
+            break;
+        }
+        break;
+    case ManagerLocked:
+        setLocked(true);
+
+        switch (m_state) {
+        case Authenticating:
+        case EnteringNewSecurityCode:
+        case RepeatingNewSecurityCode:
+        case AuthenticationError:
+            abortAuthentication(AuthenticationInput::LockedByManager);
+            feedback(AuthenticationInput::ContactSupport, -1);
+            break;
+        default:
+            break;
+        }
+        break;
+    case TemporarilyLocked:
+        setLocked(true);
+
+        switch (m_state) {
+        case Authenticating:
+        case EnteringNewSecurityCode:
+        case RepeatingNewSecurityCode:
+        case AuthenticationError:
+            abortAuthentication(AuthenticationInput::MaximumAttemptsExceeded);
+            feedback(AuthenticationInput::TemporarilyLocked, -1);
+            break;
+        default:
+            break;
+        }
+        break;
+    case PermanentlyLocked:
+        setLocked(true);
+
+        switch (m_state) {
+        case Authenticating:
+        case EnteringNewSecurityCode:
+        case RepeatingNewSecurityCode:
+        case AuthenticationError:
+            abortAuthentication(AuthenticationInput::MaximumAttemptsExceeded);
+            feedback(AuthenticationInput::PermanentlyLocked, -1);
+            break;
+        default:
+            break;
+        }
+        break;
+    }
+
     propertyChanged(
                 QStringLiteral("org.nemomobile.devicelock.DeviceLock"),
                 QStringLiteral("Enabled"),
-                isEnabled());
+                available != AuthenticationNotRequired);
+    stateChanged();
 }
 
 void HostDeviceLock::unlockingChanged()

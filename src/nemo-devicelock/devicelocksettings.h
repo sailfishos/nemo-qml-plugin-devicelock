@@ -51,7 +51,7 @@ class NEMODEVICELOCK_EXPORT DeviceLockSettings : public QObject,  private Connec
     Q_PROPERTY(int showNotifications READ showNotifications NOTIFY showNotificationsChanged)
     Q_PROPERTY(bool inputIsKeyboard READ inputIsKeyboard NOTIFY inputIsKeyboardChanged)
     Q_PROPERTY(bool currentCodeIsDigitOnly READ currentCodeIsDigitOnly NOTIFY currentCodeIsDigitOnlyChanged)
-    Q_PROPERTY(bool isHomeEncrypted READ isHomeEncrypted CONSTANT)
+    Q_PROPERTY(bool homeEncrypted READ isHomeEncrypted CONSTANT)
 public:
     explicit DeviceLockSettings(QObject *parent = nullptr);
     ~DeviceLockSettings();

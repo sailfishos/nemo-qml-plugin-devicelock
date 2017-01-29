@@ -78,7 +78,10 @@ public:
         AuthenticationNotRequired,
         CanAuthenticate,
         CanAuthenticateSecurityCode,
-        AuthenticationLocked
+        SecurityCodeRequired,
+        ManagerLocked,
+        TemporarilyLocked,
+        PermanentlyLocked
     };
 
     explicit HostAuthenticationInput(
@@ -105,6 +108,9 @@ public:
             Authenticator::Methods methods,
             AuthenticationInput::Feedback feedback = AuthenticationInput::EnterSecurityCode);
     void authenticationUnavailable(AuthenticationInput::Error error);
+    void authenticationResumed(
+            AuthenticationInput::Feedback feedback,
+            Authenticator::Methods utilizedMethods = Authenticator::Methods());
     void authenticationEvaluating();
     void authenticationProgress(int current, int maximum);
     virtual void authenticationEnded(bool confirmed);
@@ -123,6 +129,9 @@ public:
 
     // Housekeeping
     void clientDisconnected(const QString &connectionName) override;
+
+protected:
+    void lockedOut();
 
 private:
     friend class HostAuthenticationInputAdaptor;

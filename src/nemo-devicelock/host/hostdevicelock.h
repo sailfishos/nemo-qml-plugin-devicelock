@@ -74,7 +74,7 @@ public:
     explicit HostDeviceLock(Authenticator::Methods supportedMethods, QObject *parent = nullptr);
     ~HostDeviceLock();
 
-    virtual DeviceLock::LockState state() const = 0;
+    DeviceLock::LockState state() const;
 
     bool isUnlocking() const;
 
@@ -90,18 +90,22 @@ public:
 
     virtual int unlockWithCode(const QString &code) = 0;
 
-    virtual void setState(DeviceLock::LockState state) = 0;
+    virtual bool isLocked() const = 0;
+    virtual void setLocked(bool locked) = 0;
 
     void confirmAuthentication() override;
     void abortAuthentication(AuthenticationInput::Error error) override;
 
-    void stateChanged();
+    void lockedChanged();
     void availabilityChanged();
 
     virtual void automaticLockingChanged();
 
     void unlockFinished(int result);
     void setCodeFinished(int result);
+
+protected:
+    virtual void stateChanged();
 
 private:
     friend class HostDeviceLockAdaptor;
@@ -125,6 +129,7 @@ private:
     QString m_currentCode;
     QString m_newCode;
     State m_state;
+    DeviceLock::LockState m_lockState;
 };
 
 }

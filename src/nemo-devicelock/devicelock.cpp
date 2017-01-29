@@ -143,7 +143,7 @@ DeviceLock::LockState DeviceLock::state() const
 
 void DeviceLock::unlock()
 {
-    if (!m_unlocking && m_state == Locked) {
+    if (!m_unlocking && m_state >= Locked && m_state < Undefined) {
         m_unlocking = true;
 
         const auto response = call(QStringLiteral("Unlock"));
@@ -207,13 +207,15 @@ void DeviceLock::connected()
     });
     subscribeToProperty<uint>(QStringLiteral("State"), [this](uint state) {
         if (m_state != state) {
+            bool wasLocked = m_state >= Locked;
+
             m_state = LockState(state);
 
             emit stateChanged();
 
-            if (m_state == Locked) {
+            if (!wasLocked && m_state >= Locked && m_state < Undefined) {
                 emit locked();
-            } else if (m_state == Unlocked) {
+            } else if (wasLocked && m_state == Unlocked) {
                 emit unlocked();
             }
         }
