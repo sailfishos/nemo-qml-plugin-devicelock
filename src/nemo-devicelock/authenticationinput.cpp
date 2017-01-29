@@ -59,6 +59,13 @@ void AuthenticationInputAdaptor::AuthenticationUnavailable(uint pid, uint error)
                 AuthenticationInput::Error(error));
 }
 
+void AuthenticationInputAdaptor::AuthenticationResumed(uint utilizedMethods, uint instruction)
+{
+    m_authenticationInput->handleAuthenticationResumed(
+                Authenticator::Methods(utilizedMethods),
+                AuthenticationInput::Feedback(instruction));
+}
+
 void AuthenticationInputAdaptor::AuthenticationEvaluating()
 {
     m_authenticationInput->handleAuthenticationEvaluating();
@@ -389,6 +396,27 @@ void AuthenticationInput::handleAuthenticationUnavailable(int pid, Error error)
     }
 
     emit authenticationUnavailable(error);
+
+    if (m_status != previousStatus) {
+        emit statusChanged();
+    }
+}
+
+
+void AuthenticationInput::handleAuthenticationResumed(
+        Authenticator::Methods utilizedMethods, Feedback feedback)
+{
+    const auto previousStatus = m_status;
+    const auto previousMethods = m_utilizedMethods;
+
+    m_status = Authenticating;
+    m_utilizedMethods = utilizedMethods;
+
+    if (m_utilizedMethods != previousMethods) {
+        emit utilizedMethodsChanged();
+    }
+
+    emit AuthenticationInput::feedback(feedback, -1);
 
     if (m_status != previousStatus) {
         emit statusChanged();

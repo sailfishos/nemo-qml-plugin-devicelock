@@ -98,7 +98,7 @@ void HostAuthenticationInput::authenticationStarted(
                     clientInterface,
                     QStringLiteral("AuthenticationStarted"),
                     pid,
-                    uint(methods),
+                    uint(m_activeMethods),
                     uint(feedback));
     }
 }
@@ -117,6 +117,29 @@ void HostAuthenticationInput::authenticationUnavailable(AuthenticationInput::Err
                     QStringLiteral("AuthenticationUnavailable"),
                     pid,
                     uint(error));
+    }
+}
+
+
+void HostAuthenticationInput::authenticationResumed(
+        AuthenticationInput::Feedback feedback, Authenticator::Methods utilizedMethods)
+{
+    qCDebug(daemon, "Authentication resumed");
+
+    if (!m_inputStack.isEmpty()) {
+        if (utilizedMethods != 0) { // Utilized methods can be empty if there is no change.
+            utilizedMethods = m_activeMethods;
+        }
+        m_activeMethods = utilizedMethods & m_supportedMethods;
+
+        m_authenticating = true;
+        NemoDBus::send(
+                    m_inputStack.last().connection,
+                    m_inputStack.last().path,
+                    clientInterface,
+                    QStringLiteral("AuthenticationResumed"),
+                    uint(m_activeMethods),
+                    uint(feedback));
     }
 }
 
@@ -268,6 +291,29 @@ void HostAuthenticationInput::feedback(
                     uint(m_activeMethods));
     }
 }
+
+void HostAuthenticationInput::lockedOut()
+{
+    switch (availability()) {
+    case ManagerLocked:
+        abortAuthentication(AuthenticationInput::LockedByManager);
+        feedback(AuthenticationInput::ContactSupport, -1);
+        break;
+    case TemporarilyLocked:
+        abortAuthentication(AuthenticationInput::MaximumAttemptsExceeded);
+        feedback(AuthenticationInput::TemporarilyLocked, -1);
+        break;
+    case PermanentlyLocked:
+        abortAuthentication(AuthenticationInput::MaximumAttemptsExceeded);
+        feedback(AuthenticationInput::PermanentlyLocked, -1);
+        break;
+    default:
+        // Locked out but availability doesn't reflect this.  This shouldn't be reachable
+        // under normal circumstances.
+        abortAuthentication(AuthenticationInput::SoftwareError);
+    }
+}
+
 
 void HostAuthenticationInput::abortAuthentication(AuthenticationInput::Error error)
 {
