@@ -1,0 +1,14 @@
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<node>
+ <interface name="org.nemomobile.devicelock.Authorization">
+  <method name="RequestChallenge">
+   <arg name="client" type="o" direction="in"/>
+   <arg name="challenge_code" type="v" direction="out"/>
+   <arg name="allowed_methods" type="u" direction="out"/>
+  </method>
+  <method name="RelinquishChallenge">
+   <arg name="client" type="o" direction="in"/>
+  </method>
+ </interface>
+</node>

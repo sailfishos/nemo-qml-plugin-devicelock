@@ -1,0 +1,16 @@
+
+QT *= dbus
+
+CONFIG *= \
+        c++11 \
+        link_pkgconfig
+
+PKGCONFIG += \
+        dbus-1 \
+        libsystemd-daemon \
+        keepalive \
+        nemodbus \
+        nemodevicelock \
+
+LIBS += \
+        -lnemodevicelock-host

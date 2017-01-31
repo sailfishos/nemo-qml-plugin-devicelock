@@ -13,21 +13,11 @@ CONFIG += \
         c++11 \
         link_pkgconfig
 
-PKGCONFIG += \
-        keepalive \
-        mlite5
+INCLUDEPATH += \
+        $$PWD/../ \
+        $$PWD/../nemo-devicelock
 
-INCLUDEPATH += $$PWD/../lib
-LIBS += -L$$OUT_PWD/../lib -lnemodevicelock
-
-DEPENDPATH += \
-        $$PWD/../lib
-
-PRE_TARGETDEPS += \ \
-        $$PWD/../lib/libnemodevicelock.a
-
-DEFINES += \
-        NEMO_DEVICE_LOCK_EMULATE_FINGER_SENSOR
+LIBS += -L$$OUT_PWD/../nemo-devicelock -lnemodevicelock
 
 SOURCES = \
         plugin.cpp

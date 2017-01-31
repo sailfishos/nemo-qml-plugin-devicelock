@@ -1,0 +1,12 @@
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<node>
+ <interface name="org.nemomobile.devicelock.client.SecurityCodeSettings">
+  <method name="Changed">
+   <arg name="authentication_token" type="v" direction="in"/>
+  </method>
+  <method name="ChangeAborted"/>
+  <method name="Cleared"/>
+  <method name="ClearAborted"/>
+ </interface>
+</node>

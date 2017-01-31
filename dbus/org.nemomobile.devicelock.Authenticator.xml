@@ -1,0 +1,15 @@
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<node name="/authenticator">
+ <interface name="org.nemomobile.devicelock.Authenticator">
+  <property name="AvailableMethods" type="u" access="read"/>
+  <method name="Authenticate">
+   <arg name="client" type="o" direction="in"/>
+   <arg name="challenge_code" type="v" direction="in"/>
+   <arg name="methods" type="u" direction="in"/>
+  </method>
+  <method name="Cancel">
+   <arg name="client" type="o" direction="in"/>
+  </method>
+ </interface>
+</node>

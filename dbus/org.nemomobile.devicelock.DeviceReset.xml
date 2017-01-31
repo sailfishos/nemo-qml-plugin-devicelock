@@ -1,0 +1,11 @@
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
+"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<node name="/devicereset">
+ <interface name="org.nemomobile.devicelock.DeviceReset">
+  <method name="ClearDevice">
+   <arg name="client" type="o" direction="in"/>
+   <arg name="authentication_token" type="v" direction="in"/>
+   <arg name="mode" type="u" direction="in"/>
+  </method>
+ </interface>
+</node>

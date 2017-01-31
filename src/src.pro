@@ -1,8 +1,12 @@
 TEMPLATE = subdirs
 
 SUBDIRS = \
-        lib \
+        daemon \
+        nemo-devicelock \
         plugin
 
+daemon.depends = \
+        nemo-devicelock
+
 plugin.depends = \
-        lib
+        nemo-devicelock
