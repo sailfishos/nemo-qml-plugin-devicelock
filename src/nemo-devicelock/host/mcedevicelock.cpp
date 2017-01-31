@@ -198,6 +198,7 @@ static const char *reprLockState(bool locked)
 void MceDeviceLock::init()
 {
     setLocked(automaticLocking() >= 0);
+    stateChanged();
 }
 
 /** Evaluate devicelock state we should be in

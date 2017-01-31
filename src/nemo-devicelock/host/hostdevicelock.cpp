@@ -105,7 +105,6 @@ bool HostDeviceLock::isUnlocking() const
 
 void HostDeviceLock::unlock()
 {
-    qDebug() << "Unlock" << m_state << state();
     if (m_state != Idle || state() == DeviceLock::Unlocked) {
         return;
     }
