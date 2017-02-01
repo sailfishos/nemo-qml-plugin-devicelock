@@ -293,7 +293,6 @@ void MceDeviceLock::lock()
 
         m_hbTimer.stop();
     }
-
 }
 
 bool MceDeviceLock::isLocked() const
@@ -318,10 +317,10 @@ void MceDeviceLock::setLocked(bool locked)
 
 void MceDeviceLock::stateChanged()
 {
-    emit m_adaptor.stateChanged(state());
-    emit HostDeviceLock::stateChanged();
-
     setStateAndSetupLockTimer();
+
+    emit HostDeviceLock::stateChanged();
+    emit m_adaptor.stateChanged(state());
 }
 
 void MceDeviceLock::automaticLockingChanged()

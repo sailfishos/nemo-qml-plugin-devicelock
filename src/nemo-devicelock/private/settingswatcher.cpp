@@ -37,6 +37,7 @@
 #include <QFile>
 #include <QSettings>
 
+#include <glib.h>
 #include <sys/inotify.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
@@ -130,16 +131,59 @@ bool SettingsWatcher::event(QEvent *event)
     }
 }
 
+
+template <typename T> T readConfigValue(GKeyFile *config, const char *group, const char *key, T defaultValue);
+
+template <> int readConfigValue<int>(GKeyFile *config, const char *group, const char *key, int defaultValue)
+{
+    GError *error = nullptr;
+    const int value = g_key_file_get_integer(config, group, key, &error);
+    if (error ) {
+        if (error->code != G_KEY_FILE_ERROR_KEY_NOT_FOUND
+                && error->code != G_KEY_FILE_ERROR_GROUP_NOT_FOUND) {
+            qCWarning(devicelock) << "Error reading" << group << key << error->message;
+        }
+        g_error_free(error);
+
+        return defaultValue;
+    } else {
+        return value;
+    }
+}
+
+template <> bool readConfigValue<bool>(
+        GKeyFile *config, const char *group, const char *key, bool defaultValue)
+{
+    GError *error = nullptr;
+    const gboolean value = g_key_file_get_boolean(config, group, key, &error);
+    if (error) {
+        if (error->code != G_KEY_FILE_ERROR_KEY_NOT_FOUND
+                && error->code != G_KEY_FILE_ERROR_GROUP_NOT_FOUND) {
+            qCWarning(devicelock) << "Error reading" << group << key << error->message;
+        }
+        g_error_free(error);
+
+        return defaultValue;
+    } else {
+        return value;
+    }
+}
+
+
 template <typename T>
 static void read(
-        const QSettings &settings,
+        GKeyFile *settings,
         SettingsWatcher *watcher,
         const char *key,
         T defaultValue,
         T (SettingsWatcher::*member),
         void (SettingsWatcher::*changed)() = nullptr)
 {
-    T value = settings.value(QString::fromUtf8(key), QVariant(defaultValue)).value<T>();
+    const T value = readConfigValue<T>(
+                settings,
+                "desktop",
+                QByteArray(key + 9 /* /desktop/ */).replace('/',  '\\').constData(),
+                defaultValue);
 
     if (watcher->*member != value) {
         watcher->*member = value;
@@ -151,11 +195,8 @@ static void read(
 
 void SettingsWatcher::reloadSettings()
 {
-    QSettings settings(m_settingsPath, QSettings::IniFormat);
-    // QSettings appears to be caching queried data between instances and that cache isn't
-    // being invalidated when the file is replaced but not deleted.  Forcing a sync makes it
-    // read the new file.
-    settings.sync();
+    GKeyFile * const settings = g_key_file_new();
+    g_key_file_load_from_file(settings, m_settingsPath.toUtf8().constData(), G_KEY_FILE_NONE, 0);
 
     read(settings, this, automaticLockingKey, 10, &SettingsWatcher::automaticLocking, &SettingsWatcher::automaticLockingChanged);
     read(settings, this, minimumLengthKey, 5, &SettingsWatcher::minimumLength, &SettingsWatcher::minimumLengthChanged);
@@ -168,6 +209,8 @@ void SettingsWatcher::reloadSettings()
     read(settings, this, inputIsKeyboardKey, false, &SettingsWatcher::inputIsKeyboard, &SettingsWatcher::inputIsKeyboardChanged);
     read(settings, this, currentIsDigitOnlyKey, true, &SettingsWatcher::currentCodeIsDigitOnly, &SettingsWatcher::currentCodeIsDigitOnlyChanged);
     read(settings, this, isHomeEncryptedKey, false, &SettingsWatcher::isHomeEncrypted);
+
+    g_key_file_free(settings);
 }
 
 }
