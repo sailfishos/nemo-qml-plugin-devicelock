@@ -12,7 +12,9 @@ CONFIG += \
 QT -= gui
 QT += dbus
 
-PKGCONFIG += nemodbus
+PKGCONFIG += \
+        glib-2.0 \
+        nemodbus
 
 INCLUDEPATH += ..
 
