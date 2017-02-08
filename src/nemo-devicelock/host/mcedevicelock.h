@@ -47,7 +47,7 @@ namespace NemoDeviceLock
 
 class MceDeviceLock;
 
-class MceDeviceLockAdaptor : public QDBusAbstractAdaptor, protected QDBusContext
+class MceDeviceLockAdaptor : public QDBusAbstractAdaptor
 {
     Q_OBJECT
     Q_CLASSINFO("D-Bus Interface", "org.nemomobile.lipstick.devicelock")
