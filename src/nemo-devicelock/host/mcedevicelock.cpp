@@ -224,7 +224,7 @@ bool MceDeviceLock::getRequiredLockState()
 bool MceDeviceLock::needLockTimer()
 {
     /* Must be currently unlocked */
-    if (!m_locked)
+    if (m_locked)
         return false;
 
     /* Must not be disabled or in lock-immediate mode */
@@ -344,9 +344,9 @@ void MceDeviceLockAdaptor::setState(int state)
 {
     if (state != DeviceLock::Locked) {
         // Unauthenticated unlocking is not accepted.
-        sendErrorReply(QDBusError::AccessDenied);
+        m_deviceLock->sendErrorReply(QDBusError::AccessDenied);
     } else if (m_deviceLock->automaticLocking() == -1) {
-        sendErrorReply(QDBusError::AccessDenied, QStringLiteral("Device lock not in use"));
+        m_deviceLock->sendErrorReply(QDBusError::AccessDenied, QStringLiteral("Device lock not in use"));
     } else {
         m_deviceLock->setLocked(true);
     }
