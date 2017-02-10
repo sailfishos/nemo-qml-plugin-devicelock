@@ -302,6 +302,13 @@ void AuthenticationInput::setRegistered(bool registered)
 
         call(QStringLiteral("SetRegistered"), m_localPath, registered);
 
+        // A cancel is implicit in unregistering, reset the state to idle.
+        if (m_status != Idle) {
+            m_status = Idle;
+
+            emit statusChanged();
+        }
+
         emit registeredChanged();
     }
 }
