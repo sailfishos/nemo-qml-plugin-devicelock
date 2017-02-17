@@ -385,6 +385,11 @@ void HostDeviceLock::availabilityChanged()
 {
     const auto available = availability();
 
+    propertyChanged(
+                QStringLiteral("org.nemomobile.devicelock.DeviceLock"),
+                QStringLiteral("Enabled"),
+                available != AuthenticationNotRequired);
+
     switch (available) {
     case AuthenticationNotRequired:
         switch (m_state) {
@@ -481,10 +486,6 @@ void HostDeviceLock::availabilityChanged()
         break;
     }
 
-    propertyChanged(
-                QStringLiteral("org.nemomobile.devicelock.DeviceLock"),
-                QStringLiteral("Enabled"),
-                available != AuthenticationNotRequired);
     stateChanged();
 }
 
