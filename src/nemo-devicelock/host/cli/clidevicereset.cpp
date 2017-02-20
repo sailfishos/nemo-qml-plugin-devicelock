@@ -52,13 +52,16 @@ CliDeviceReset::~CliDeviceReset()
 }
 
 void CliDeviceReset::clearDevice(
-        const QString &, const QVariant &authenticationToken, DeviceReset::ResetMode mode)
+        const QString &, const QVariant &authenticationToken, DeviceReset::Options options)
 {
     QStringList arguments = QStringList()
             << QStringLiteral("--clear-device")
             << authenticationToken.toString();
-    if (mode == DeviceReset::Reboot) {
+    if (options & DeviceReset::Reboot) {
         arguments << QStringLiteral("--reboot");
+    }
+    if (options & DeviceReset::WipePartitions) {
+        arguments << QStringLiteral("--wipe");
     }
 
     if (m_watcher->runPlugin(arguments) != HostAuthenticationInput::Success) {
