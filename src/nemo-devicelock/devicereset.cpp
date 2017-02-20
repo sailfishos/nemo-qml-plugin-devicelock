@@ -41,6 +41,14 @@ namespace NemoDeviceLock
 */
 
 /*!
+    \enum NemoDeviceLock::DeviceReset::Option
+
+    \value Shutdown Shutdown the device after reset.
+    \value Reboot   Reboot the device after reset.
+    \value WipePartitions Zero all bytes not overwritten by the factory image.
+*/
+
+/*!
     Constructs a new device reset instance which is a child of \a parent.
 */
 
@@ -85,15 +93,16 @@ Authorization *DeviceReset::authorization()
 /*!
     Requests a reset of the device to factory settings.
 
-    Depending on the \a mode the device may be restarted or shutdown once the reset is completed.
+    Use the \a options parameter to supply Additional instructions like whether to reboot the device
+    after a reset is compleleted or if the data partitions should be completely wiped .
 
     The reset authorization challenge code must be authenticated before this is called and the
     \a authenticationToken produced passed as an argument.
 */
-void DeviceReset::clearDevice(const QVariant &authenticationToken, ResetMode mode)
+void DeviceReset::clearDevice(const QVariant &authenticationToken, Options options)
 {
     if (m_authorization.status() == Authorization::ChallengeIssued) {
-        auto response = call(QStringLiteral("ClearDevice"), m_localPath, authenticationToken, uint(mode));
+        auto response = call(QStringLiteral("ClearDevice"), m_localPath, authenticationToken, uint(options));
 
         response->onFinished([this]() {
             emit clearingDevice();

@@ -49,7 +49,7 @@ public:
     ~CliDeviceReset();
 
     void clearDevice(
-            const QString &requestor, const QVariant &authenticationToken, DeviceReset::ResetMode mode);
+            const QString &requestor, const QVariant &authenticationToken, DeviceReset::Options options);
 
 private:
     QExplicitlySharedDataPointer<LockCodeWatcher> m_watcher;
