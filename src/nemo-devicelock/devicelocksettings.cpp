@@ -152,9 +152,9 @@ void DeviceLockSettings::setMaximumAttempts(const QVariant &authenticationToken,
     This property holds whether peeking from the lock screen is allowed when the device is locked.
 */
 
-int DeviceLockSettings::peekingAllowed() const
+bool DeviceLockSettings::peekingAllowed() const
 {
-    return m_settings->peekingAllowed;
+    return m_settings->peekingAllowed > 0;
 }
 
 /*!
@@ -164,9 +164,9 @@ int DeviceLockSettings::peekingAllowed() const
     \a authenticationToken produced passed as an argument.
 */
 
-void DeviceLockSettings::setPeekingAllowed(const QVariant &authenticationToken, int value)
+void DeviceLockSettings::setPeekingAllowed(const QVariant &authenticationToken, bool value)
 {
-    changeSetting(authenticationToken, QString::fromUtf8(SettingsWatcher::peekingAllowedKey), value);
+    changeSetting(authenticationToken, QString::fromUtf8(SettingsWatcher::peekingAllowedKey), value ? 1 : 0);
 }
 
 /*!
@@ -175,9 +175,9 @@ void DeviceLockSettings::setPeekingAllowed(const QVariant &authenticationToken, 
     This property holds whether sideloading of APK packages is allowed.
 */
 
-int DeviceLockSettings::sideloadingAllowed() const
+bool DeviceLockSettings::sideloadingAllowed() const
 {
-    return m_settings->sideloadingAllowed;
+    return m_settings->sideloadingAllowed > 0;
 }
 
 /*!
@@ -187,9 +187,9 @@ int DeviceLockSettings::sideloadingAllowed() const
     \a authenticationToken produced passed as an argument.
 */
 
-void DeviceLockSettings::setSideloadingAllowed(const QVariant &authenticationToken, int value)
+void DeviceLockSettings::setSideloadingAllowed(const QVariant &authenticationToken, bool value)
 {
-    changeSetting(authenticationToken, QString::fromUtf8(SettingsWatcher::sideloadingAllowedKey), value);
+    changeSetting(authenticationToken, QString::fromUtf8(SettingsWatcher::sideloadingAllowedKey), value ? 1 : 0);
 }
 
 /*!
@@ -198,9 +198,9 @@ void DeviceLockSettings::setSideloadingAllowed(const QVariant &authenticationTok
     This property holds whether notifications are shown on the lock screen when the device is locked.
 */
 
-int DeviceLockSettings::showNotifications() const
+bool DeviceLockSettings::showNotifications() const
 {
-    return m_settings->showNotifications;
+    return m_settings->showNotifications > 0;
 }
 
 /*!
@@ -210,9 +210,9 @@ int DeviceLockSettings::showNotifications() const
     \a authenticationToken produced passed as an argument.
 */
 
-void DeviceLockSettings::setShowNotifications(const QVariant &authenticationToken, int value)
+void DeviceLockSettings::setShowNotifications(const QVariant &authenticationToken, bool value)
 {
-    changeSetting(authenticationToken, QString::fromUtf8(SettingsWatcher::showNotificationsKey), value);
+    changeSetting(authenticationToken, QString::fromUtf8(SettingsWatcher::showNotificationsKey), value ? 1 : 0);
 }
 
 /*!
