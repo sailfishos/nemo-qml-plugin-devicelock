@@ -40,15 +40,15 @@ namespace NemoDeviceLock
 
 class SettingsWatcher;
 
-class NEMODEVICELOCK_EXPORT DeviceLockSettings : public QObject,  private ConnectionClient
+class NEMODEVICELOCK_EXPORT DeviceLockSettings : public QObject, private ConnectionClient
 {
     Q_OBJECT
     Q_PROPERTY(NemoDeviceLock::Authorization *authorization READ authorization CONSTANT)
     Q_PROPERTY(int automaticLocking READ automaticLocking NOTIFY automaticLockingChanged)
     Q_PROPERTY(int maximumAttempts READ maximumAttempts NOTIFY maximumAttemptsChanged)
-    Q_PROPERTY(int peekingAllowed READ peekingAllowed NOTIFY peekingAllowedChanged)
-    Q_PROPERTY(int sideloadingAllowed READ sideloadingAllowed NOTIFY sideloadingAllowedChanged)
-    Q_PROPERTY(int showNotifications READ showNotifications NOTIFY showNotificationsChanged)
+    Q_PROPERTY(bool peekingAllowed READ peekingAllowed NOTIFY peekingAllowedChanged)
+    Q_PROPERTY(bool sideloadingAllowed READ sideloadingAllowed NOTIFY sideloadingAllowedChanged)
+    Q_PROPERTY(bool showNotifications READ showNotifications NOTIFY showNotificationsChanged)
     Q_PROPERTY(bool inputIsKeyboard READ inputIsKeyboard NOTIFY inputIsKeyboardChanged)
     Q_PROPERTY(bool currentCodeIsDigitOnly READ currentCodeIsDigitOnly NOTIFY currentCodeIsDigitOnlyChanged)
     Q_PROPERTY(bool homeEncrypted READ isHomeEncrypted CONSTANT)
@@ -64,14 +64,14 @@ public:
     int maximumAttempts() const;
     Q_INVOKABLE void setMaximumAttempts(const QVariant &authenticationToken, int value);
 
-    int peekingAllowed() const;
-    Q_INVOKABLE void setPeekingAllowed(const QVariant &authenticationToken, int value);
+    bool peekingAllowed() const;
+    Q_INVOKABLE void setPeekingAllowed(const QVariant &authenticationToken, bool value);
 
-    int sideloadingAllowed() const;
-    Q_INVOKABLE void setSideloadingAllowed(const QVariant &authenticationToken, int value);
+    bool sideloadingAllowed() const;
+    Q_INVOKABLE void setSideloadingAllowed(const QVariant &authenticationToken, bool value);
 
-    int showNotifications() const;
-    Q_INVOKABLE void setShowNotifications(const QVariant &authenticationToken,int value);
+    bool showNotifications() const;
+    Q_INVOKABLE void setShowNotifications(const QVariant &authenticationToken, bool value);
 
     bool inputIsKeyboard() const;
     Q_INVOKABLE void setInputIsKeyboard(const QVariant &authenticationToken, bool value);
