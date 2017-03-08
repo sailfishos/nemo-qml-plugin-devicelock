@@ -198,7 +198,7 @@ void SettingsWatcher::reloadSettings()
     GKeyFile * const settings = g_key_file_new();
     g_key_file_load_from_file(settings, m_settingsPath.toUtf8().constData(), G_KEY_FILE_NONE, 0);
 
-    read(settings, this, automaticLockingKey, 10, &SettingsWatcher::automaticLocking, &SettingsWatcher::automaticLockingChanged);
+    read(settings, this, automaticLockingKey, 5, &SettingsWatcher::automaticLocking, &SettingsWatcher::automaticLockingChanged);
     read(settings, this, minimumLengthKey, 5, &SettingsWatcher::minimumLength, &SettingsWatcher::minimumLengthChanged);
     read(settings, this, maximumLengthKey, 42, &SettingsWatcher::maximumLength, &SettingsWatcher::maximumLengthChanged);
     read(settings, this, maximumAttemptsKey, -1, &SettingsWatcher::maximumAttempts, &SettingsWatcher::maximumAttemptsChanged);
