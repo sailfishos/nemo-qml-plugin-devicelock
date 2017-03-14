@@ -269,12 +269,15 @@ void HostAuthenticator::enterSecurityCode(const QString &code)
 
             feedback(AuthenticationInput::SecurityCodesDoNotMatch, -1);
 
-            if (availability() != AuthenticationNotRequired) {
+            switch (availability()) {
+            case AuthenticationNotRequired:
+            case SecurityCodeRequired:
                 m_state = EnteringNewSecurityCode;
-                feedback(AuthenticationInput::EnterSecurityCode, -1);
-            } else {
-                m_state = AuthenticatingForChange;
                 feedback(AuthenticationInput::EnterNewSecurityCode, -1);
+                break;
+            default:
+                m_state = AuthenticatingForChange;
+                feedback(AuthenticationInput::EnterSecurityCode, -1);
             }
 
             return;

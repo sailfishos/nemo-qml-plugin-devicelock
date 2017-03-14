@@ -162,6 +162,7 @@ void HostDeviceLock::enterSecurityCode(const QString &code)
             m_state = EnteringNewSecurityCode;
             m_currentCode = code;
             feedback(AuthenticationInput::SecurityCodeExpired, -1);
+            feedback(AuthenticationInput::EnterNewSecurityCode, -1);
             break;
         case SecurityCodeInHistory:
             break;
@@ -192,17 +193,23 @@ void HostDeviceLock::enterSecurityCode(const QString &code)
         break;
     case RepeatingNewSecurityCode:
         if (m_newCode != code) {
-            m_currentCode.clear();
-
-            m_state = Authenticating;
-            feedback(AuthenticationInput::SecurityCodesDoNotMatch, -1);
-            feedback(AuthenticationInput::EnterNewSecurityCode, -1);
-        } else {
-            // With disk encryption enabled changing the code can take a few seconds, don't leave
-            // the user hanging.
-
             m_newCode.clear();
 
+            feedback(AuthenticationInput::SecurityCodesDoNotMatch, -1);
+
+            switch (availability()) {
+            case AuthenticationNotRequired:
+            case SecurityCodeRequired:
+                m_state = EnteringNewSecurityCode;
+                feedback(AuthenticationInput::EnterNewSecurityCode, -1);
+                break;
+            default:
+                m_state = Authenticating;
+                feedback(AuthenticationInput::EnterSecurityCode, -1);
+                break;
+            }
+            break;
+        } else {
             setCodeFinished(setCode(m_currentCode, code));
         }
         break;
@@ -250,7 +257,7 @@ void HostDeviceLock::setCodeFinished(int result)
     case Success:
         qCDebug(daemon, "Lock code changed.");
         m_currentCode.clear();
-        if (m_state == ChangingSecurityCode) {
+        if (m_state == ChangingSecurityCode || m_state == RepeatingNewSecurityCode) {
             unlockFinished(unlockWithCode(m_newCode));
         } else if (m_state == Canceled) {
             m_state = Idle;
@@ -258,6 +265,8 @@ void HostDeviceLock::setCodeFinished(int result)
             authenticationEnded(false);
 
             unlockingChanged();
+        } else {
+            abortAuthentication(AuthenticationInput::SoftwareError);
         }
         break;
     case SecurityCodeInHistory:
