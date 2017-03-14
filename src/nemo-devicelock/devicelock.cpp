@@ -115,7 +115,14 @@ int DeviceLock::automaticLocking() const
 
 bool DeviceLock::showNotifications() const
 {
-    return m_state <= Locked && m_settings->showNotifications > 0;
+    switch (m_state) {
+    case Unlocked:
+        return true;
+    case Locked:
+        return m_settings->showNotifications > 0;
+    default:
+        return false;
+    }
 }
 
 /*!
