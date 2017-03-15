@@ -112,7 +112,13 @@ bool HostAuthenticator::authorizeSecurityCodeSettings(unsigned long)
 
 bool HostAuthenticator::isSecurityCodeSet() const
 {
-    return availability() != HostAuthenticationInput::AuthenticationNotRequired;
+    switch (availability()) {
+    case HostAuthenticationInput::AuthenticationNotRequired:
+    case HostAuthenticationInput::SecurityCodeRequired:
+        return false;
+    default:
+        return true;
+    }
 }
 
 void HostAuthenticator::authenticate(
@@ -174,6 +180,7 @@ void HostAuthenticator::handleChangeSecurityCode(const QString &client, const QV
 
     switch (availability()) {
     case AuthenticationNotRequired:
+    case SecurityCodeRequired:
         m_state = EnteringNewSecurityCode;
         authenticationStarted(Authenticator::SecurityCode, AuthenticationInput::EnterNewSecurityCode);
         break;
@@ -181,7 +188,6 @@ void HostAuthenticator::handleChangeSecurityCode(const QString &client, const QV
     case CanAuthenticate:
         authenticationStarted(Authenticator::SecurityCode, AuthenticationInput::EnterSecurityCode);
         break;
-    case SecurityCodeRequired:
     case ManagerLocked:
     case TemporarilyLocked:
     case PermanentlyLocked:

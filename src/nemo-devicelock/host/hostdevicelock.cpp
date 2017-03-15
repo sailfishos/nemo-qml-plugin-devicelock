@@ -371,6 +371,9 @@ void HostDeviceLock::stateChanged()
     case PermanentlyLocked:
         m_lockState = DeviceLock::PermanentLockout;
         break;
+    case SecurityCodeRequired:
+        m_lockState = DeviceLock::Locked;
+        break;
     default:
         m_lockState = isLocked()
                 ? DeviceLock::Locked
