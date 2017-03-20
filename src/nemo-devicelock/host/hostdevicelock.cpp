@@ -171,11 +171,12 @@ void HostDeviceLock::enterSecurityCode(const QString &code)
         default: {
             const int maximum = maximumAttempts();
 
-            if (maximum > 0) {
-                feedback(AuthenticationInput::IncorrectSecurityCode, qMax(0, maximum - result));
 
+            if (maximum > 0) {
                 if (result >= maximum) {
                     lockedOut();
+                } else {
+                    feedback(AuthenticationInput::IncorrectSecurityCode, qMax(0, maximum - result));
                 }
             } else {
                 feedback(AuthenticationInput::IncorrectSecurityCode, -1);
