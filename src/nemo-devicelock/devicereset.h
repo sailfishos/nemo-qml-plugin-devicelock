@@ -42,19 +42,21 @@ class NEMODEVICELOCK_EXPORT DeviceReset : public QObject, private ConnectionClie
 {
     Q_OBJECT
     Q_PROPERTY(NemoDeviceLock::Authorization *authorization READ authorization CONSTANT)
-    Q_ENUMS(ResetMode)
 public:
-    enum ResetMode {
-        Shutdown,
-        Reboot
+    enum Option {
+        Shutdown        = 0x00,
+        Reboot          = 0x01,
+        WipePartitions  = 0x02
     };
+    Q_DECLARE_FLAGS(Options, Option)
+    Q_FLAG(Options)
 
     explicit DeviceReset(QObject *parent = nullptr);
     ~DeviceReset();
 
     Authorization *authorization();
 
-    Q_INVOKABLE void clearDevice(const QVariant &authenticationToken, ResetMode mode = Shutdown);
+    Q_INVOKABLE void clearDevice(const QVariant &authenticationToken, Options options = Shutdown);
 
 signals:
     void clearingDevice();
@@ -68,5 +70,7 @@ private:
 };
 
 }
+
+Q_DECLARE_OPERATORS_FOR_FLAGS(NemoDeviceLock::DeviceReset::Options)
 
 #endif
