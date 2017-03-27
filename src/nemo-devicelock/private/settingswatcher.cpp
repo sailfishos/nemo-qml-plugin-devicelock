@@ -47,17 +47,35 @@
 namespace NemoDeviceLock
 {
 
-const char * const SettingsWatcher::automaticLockingKey = "/desktop/nemo/devicelock/automatic_locking";
-const char * const SettingsWatcher::minimumLengthKey = "/desktop/nemo/devicelock/code_min_length";
-const char * const SettingsWatcher::maximumLengthKey = "/desktop/nemo/devicelock/code_max_length";
-const char * const SettingsWatcher::maximumAttemptsKey = "/desktop/nemo/devicelock/maximum_attempts";
-const char * const SettingsWatcher::currentAttemptsKey = "/desktop/nemo/devicelock/current_attempts";
-const char * const SettingsWatcher::peekingAllowedKey = "/desktop/nemo/devicelock/peeking_allowed";
-const char * const SettingsWatcher::sideloadingAllowedKey = "/desktop/nemo/devicelock/sideloading_allowed";
-const char * const SettingsWatcher::showNotificationsKey = "/desktop/nemo/devicelock/show_notification";
-const char * const SettingsWatcher::inputIsKeyboardKey = "/desktop/nemo/devicelock/code_input_is_keyboard";
-const char * const SettingsWatcher::currentIsDigitOnlyKey = "/desktop/nemo/devicelock/code_current_is_digit_only";
-const char * const SettingsWatcher::isHomeEncryptedKey = "/desktop/nemo/devicelock/encrypt_home";
+QMetaEnum resolveMetaEnum(const QMetaObject *metaObject, const char *name)
+{
+    const int index = metaObject->indexOfEnumerator(name);
+    return index != -1 ? metaObject->enumerator(index) : QMetaEnum();
+}
+
+int flagsFromString(const QMetaEnum &enumeration, const char *string)
+{
+    int flags = 0;
+    for (const QByteArray &key : QByteArray(string).split(',')) {
+        const int value = enumeration.keyToValue(key);
+        if (value != -1) {
+            flags |= value;
+        }
+    }
+    return flags;
+}
+
+const char * const SettingsWatcher::automaticLockingKey = "automatic_locking";
+const char * const SettingsWatcher::minimumLengthKey = "code_min_length";
+const char * const SettingsWatcher::maximumLengthKey = "code_max_length";
+const char * const SettingsWatcher::maximumAttemptsKey = "maximum_attempts";
+const char * const SettingsWatcher::currentAttemptsKey = "current_attempts";
+const char * const SettingsWatcher::peekingAllowedKey = "peeking_allowed";
+const char * const SettingsWatcher::sideloadingAllowedKey = "sideloading_allowed";
+const char * const SettingsWatcher::showNotificationsKey = "show_notification";
+const char * const SettingsWatcher::inputIsKeyboardKey = "code_input_is_keyboard";
+const char * const SettingsWatcher::currentIsDigitOnlyKey = "code_current_is_digit_only";
+const char * const SettingsWatcher::isHomeEncryptedKey = "encrypt_home";
 
 SettingsWatcher *SettingsWatcher::sharedInstance = nullptr;
 
@@ -71,9 +89,13 @@ SettingsWatcher::SettingsWatcher(QObject *parent)
     , peekingAllowed(1)
     , sideloadingAllowed(-1)
     , showNotifications(1)
+    , maximumAutomaticLocking(-1)
+    , absoluteMaximumAttempts(-1)
+    , supportedDeviceResetOptions(DeviceReset::Reboot)
     , inputIsKeyboard(false)
     , currentCodeIsDigitOnly(true)
     , isHomeEncrypted(false)
+    , codeIsMandatory(false)
     , m_settingsPath(QStringLiteral("/usr/share/lipstick/devicelock/devicelock_settings.conf"))
     , m_watch(-1)
 {
@@ -131,8 +153,26 @@ bool SettingsWatcher::event(QEvent *event)
     }
 }
 
+template <typename T> T readConfigValue(GKeyFile *config, const char *group, const char *key, T defaultValue)
+{
+    GError *error = nullptr;
+    gchar *string = g_key_file_get_string(config, group, key, &error);
+    if (error) {
+        if (error->code != G_KEY_FILE_ERROR_KEY_NOT_FOUND
+                && error->code != G_KEY_FILE_ERROR_GROUP_NOT_FOUND) {
+            qCWarning(devicelock) << "Error reading" << group << key << error->message;
+        }
+        g_error_free(error);
 
-template <typename T> T readConfigValue(GKeyFile *config, const char *group, const char *key, T defaultValue);
+        return defaultValue;
+    } else {
+        const T value = settingsValueFromString<T>(string);
+
+        g_free(string);
+
+        return value;
+    }
+}
 
 template <> int readConfigValue<int>(GKeyFile *config, const char *group, const char *key, int defaultValue)
 {
@@ -169,6 +209,25 @@ template <> bool readConfigValue<bool>(
     }
 }
 
+template <typename T>
+static void read(
+        GKeyFile *settings,
+        SettingsWatcher *watcher,
+        const char *group,
+        const char *key,
+        T defaultValue,
+        T *member,
+        void (SettingsWatcher::*changed)() = nullptr)
+{
+    const T value = readConfigValue<T>(settings, group, key, defaultValue);
+
+    if (*member != value) {
+        *member = value;
+        if (changed) {
+            emit (watcher->*changed)();
+        }
+    }
+}
 
 template <typename T>
 static void read(
@@ -176,21 +235,16 @@ static void read(
         SettingsWatcher *watcher,
         const char *key,
         T defaultValue,
-        T (SettingsWatcher::*member),
+        T *member,
         void (SettingsWatcher::*changed)() = nullptr)
 {
-    const T value = readConfigValue<T>(
-                settings,
+    read(settings,
+                watcher,
                 "desktop",
-                QByteArray(key + 9 /* /desktop/ */).replace('/',  '\\').constData(),
-                defaultValue);
-
-    if (watcher->*member != value) {
-        watcher->*member = value;
-        if (changed) {
-            emit (watcher->*changed)();
-        }
-    }
+                (QByteArrayLiteral("nemo\\devicelock\\") + key).constData(),
+                defaultValue,
+                member,
+                changed);
 }
 
 void SettingsWatcher::reloadSettings()
@@ -198,17 +252,22 @@ void SettingsWatcher::reloadSettings()
     GKeyFile * const settings = g_key_file_new();
     g_key_file_load_from_file(settings, m_settingsPath.toUtf8().constData(), G_KEY_FILE_NONE, 0);
 
-    read(settings, this, automaticLockingKey, 5, &SettingsWatcher::automaticLocking, &SettingsWatcher::automaticLockingChanged);
-    read(settings, this, minimumLengthKey, 5, &SettingsWatcher::minimumLength, &SettingsWatcher::minimumLengthChanged);
-    read(settings, this, maximumLengthKey, 42, &SettingsWatcher::maximumLength, &SettingsWatcher::maximumLengthChanged);
-    read(settings, this, maximumAttemptsKey, -1, &SettingsWatcher::maximumAttempts, &SettingsWatcher::maximumAttemptsChanged);
-    read(settings, this, currentAttemptsKey, 0, &SettingsWatcher::currentAttempts, &SettingsWatcher::currentAttemptsChanged);
-    read(settings, this, peekingAllowedKey, 1, &SettingsWatcher::peekingAllowed, &SettingsWatcher::peekingAllowedChanged);
-    read(settings, this, sideloadingAllowedKey, -1, &SettingsWatcher::sideloadingAllowed, &SettingsWatcher::sideloadingAllowedChanged);
-    read(settings, this, showNotificationsKey, 1, &SettingsWatcher::showNotifications, &SettingsWatcher::showNotificationsChanged);
-    read(settings, this, inputIsKeyboardKey, false, &SettingsWatcher::inputIsKeyboard, &SettingsWatcher::inputIsKeyboardChanged);
-    read(settings, this, currentIsDigitOnlyKey, true, &SettingsWatcher::currentCodeIsDigitOnly, &SettingsWatcher::currentCodeIsDigitOnlyChanged);
-    read(settings, this, isHomeEncryptedKey, false, &SettingsWatcher::isHomeEncrypted);
+    read(settings, this, automaticLockingKey, 5, &automaticLocking, &SettingsWatcher::automaticLockingChanged);
+    read(settings, this, minimumLengthKey, 5, &minimumLength, &SettingsWatcher::minimumLengthChanged);
+    read(settings, this, maximumLengthKey, 42, &maximumLength, &SettingsWatcher::maximumLengthChanged);
+    read(settings, this, maximumAttemptsKey, -1, &maximumAttempts, &SettingsWatcher::maximumAttemptsChanged);
+    read(settings, this, currentAttemptsKey, 0, &currentAttempts, &SettingsWatcher::currentAttemptsChanged);
+    read(settings, this, peekingAllowedKey, 1, &peekingAllowed, &SettingsWatcher::peekingAllowedChanged);
+    read(settings, this, sideloadingAllowedKey, -1, &sideloadingAllowed, &SettingsWatcher::sideloadingAllowedChanged);
+    read(settings, this, showNotificationsKey, 1, &showNotifications, &SettingsWatcher::showNotificationsChanged);
+    read(settings, this, inputIsKeyboardKey, false, &inputIsKeyboard, &SettingsWatcher::inputIsKeyboardChanged);
+    read(settings, this, currentIsDigitOnlyKey, true, &currentCodeIsDigitOnly, &SettingsWatcher::currentCodeIsDigitOnlyChanged);
+    read(settings, this, isHomeEncryptedKey, false, &isHomeEncrypted);
+
+    read(settings, this, "maximum_automatic_locking", -1, &maximumAutomaticLocking, &SettingsWatcher::maximumAutomaticLockingChanged);
+    read(settings, this, "absolute_maximum_attempts", -1, &absoluteMaximumAttempts, &SettingsWatcher::absoluteMaximumAttemptsChanged);
+    read(settings, this, "supported_device_reset_options", DeviceReset::Options(DeviceReset::Reboot), &supportedDeviceResetOptions, &SettingsWatcher::supportedDeviceResetOptionsChanged);
+    read(settings, this, "code_is_mandatory", false, &codeIsMandatory, &SettingsWatcher::codeIsMandatoryChanged);
 
     g_key_file_free(settings);
 }

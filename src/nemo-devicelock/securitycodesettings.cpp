@@ -78,10 +78,14 @@ SecurityCodeSettings::SecurityCodeSettings(QObject *parent)
           QStringLiteral("/authenticator"),
           QStringLiteral("org.nemomobile.devicelock.SecurityCodeSettings"))
     , m_adaptor(this)
+    , m_settings(SettingsWatcher::instance())
     , m_set(false)
     , m_changing(false)
     , m_clearing(false)
 {
+    connect(m_settings.data(), &SettingsWatcher::codeIsMandatoryChanged,
+            this, &SecurityCodeSettings::mandatoryChanged);
+
     m_connection->onConnected(this, [this] {
         connected();
     });
@@ -113,6 +117,11 @@ SecurityCodeSettings::~SecurityCodeSettings()
 bool SecurityCodeSettings::isSet() const
 {
     return m_set;
+}
+
+bool SecurityCodeSettings::isMandatory() const
+{
+    return m_settings->codeIsMandatory;
 }
 
 /*!

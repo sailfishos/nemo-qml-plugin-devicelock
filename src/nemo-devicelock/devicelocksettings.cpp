@@ -70,6 +70,10 @@ DeviceLockSettings::DeviceLockSettings(QObject *parent)
             this, &DeviceLockSettings::inputIsKeyboardChanged);
     connect(m_settings.data(), &SettingsWatcher::currentCodeIsDigitOnlyChanged,
             this, &DeviceLockSettings::currentCodeIsDigitOnlyChanged);
+    connect(m_settings.data(), &SettingsWatcher::maximumAutomaticLockingChanged,
+            this, &DeviceLockSettings::maximumAutomaticLockingChanged);
+    connect(m_settings.data(), &SettingsWatcher::absoluteMaximumAttemptsChanged,
+            this, &DeviceLockSettings::absoluteMaximumAttemptsChanged);
 
     m_connection->onConnected(this, [this] {
         connected();
@@ -259,11 +263,39 @@ bool DeviceLockSettings::isHomeEncrypted() const
     return m_settings->isHomeEncrypted;
 }
 
+/*!
+    \property NemoDeviceLock::DeviceLockSettings::maximumAutomaticLocking
+
+    This property holds the maximum possible value of \l automaticLocking.  If theres is no limit
+    this will be equal to -1.
+*/
+
+int DeviceLockSettings::maximumAutomaticLocking() const
+{
+    return m_settings->maximumAutomaticLocking;
+}
+
+/*!
+    \property NemoDeviceLockSettings::absoluteMaximumAttempts
+
+    This property holds the maximum possible value of \l maximumAttempts.  If theres is no limit
+    this will be equal to -1.
+*/
+
+int DeviceLockSettings::absoluteMaximumAttempts() const
+{
+    return m_settings->absoluteMaximumAttempts;
+}
+
 void DeviceLockSettings::changeSetting(
         const QVariant &authenticationToken, const QString &key, const QVariant &value)
 {
     if (m_authorization.status() == Authorization::ChallengeIssued) {
-        call(QStringLiteral("ChangeSetting"), m_localPath, authenticationToken, key, value);
+        call(QStringLiteral("ChangeSetting"),
+                    m_localPath,
+                    authenticationToken,
+                    QStringLiteral("/desktop/nemo/devicelock/") + key,
+                    value);
     }
 }
 
