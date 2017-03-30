@@ -52,6 +52,8 @@ class NEMODEVICELOCK_EXPORT DeviceLockSettings : public QObject, private Connect
     Q_PROPERTY(bool inputIsKeyboard READ inputIsKeyboard NOTIFY inputIsKeyboardChanged)
     Q_PROPERTY(bool currentCodeIsDigitOnly READ currentCodeIsDigitOnly NOTIFY currentCodeIsDigitOnlyChanged)
     Q_PROPERTY(bool homeEncrypted READ isHomeEncrypted CONSTANT)
+    Q_PROPERTY(int maximumAutomaticLocking READ maximumAutomaticLocking NOTIFY maximumAutomaticLockingChanged)
+    Q_PROPERTY(int absoluteMaximumAttempts READ absoluteMaximumAttempts NOTIFY absoluteMaximumAttemptsChanged)
 public:
     explicit DeviceLockSettings(QObject *parent = nullptr);
     ~DeviceLockSettings();
@@ -80,6 +82,9 @@ public:
 
     bool isHomeEncrypted() const;
 
+    int maximumAutomaticLocking() const;
+    int absoluteMaximumAttempts() const;
+
 signals:
     void automaticLockingChanged();
     void maximumAttemptsChanged();
@@ -88,6 +93,8 @@ signals:
     void showNotificationsChanged();
     void inputIsKeyboardChanged();
     void currentCodeIsDigitOnlyChanged();
+    void maximumAutomaticLockingChanged();
+    void absoluteMaximumAttemptsChanged();
 
 private:
     inline void changeSetting(

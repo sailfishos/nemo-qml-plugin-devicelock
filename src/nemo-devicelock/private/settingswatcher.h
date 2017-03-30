@@ -34,12 +34,28 @@
 #define NEMODEVICELOCK_SETTINGSWATCHER_H
 
 #include <nemo-devicelock/global.h>
+#include <nemo-devicelock/devicereset.h>
 
+#include <QMetaEnum>
 #include <QSharedData>
 #include <QSocketNotifier>
 
 namespace NemoDeviceLock
 {
+
+QMetaEnum NEMODEVICELOCK_EXPORT resolveMetaEnum(const QMetaObject *metaObject, const char *name);
+template <typename Enum> inline QMetaEnum resolveMetaEnum();
+
+int NEMODEVICELOCK_EXPORT flagsFromString(const QMetaEnum &enumeration, const char *string);
+template <typename Enum> inline QFlags<Enum> flagsFromString(const char *string) {
+    return QFlags<Enum>(flagsFromString(resolveMetaEnum<Enum>(), string)); }
+
+template <typename T> inline T settingsValueFromString(const char *string);
+
+template <> inline QMetaEnum resolveMetaEnum<DeviceReset::Option>()  {
+    return resolveMetaEnum(&DeviceReset::staticMetaObject, "Option"); }
+template <> inline DeviceReset::Options settingsValueFromString<DeviceReset::Options>(const char *string) {
+    return flagsFromString<DeviceReset::Option>(string); }
 
 class NEMODEVICELOCK_EXPORT SettingsWatcher : public QSocketNotifier, public QSharedData
 {
@@ -49,6 +65,7 @@ public:
 
     static SettingsWatcher *instance();
 
+
     int automaticLocking;
     int minimumLength;
     int maximumLength;
@@ -57,9 +74,13 @@ public:
     int peekingAllowed;
     int sideloadingAllowed;
     int showNotifications;
+    int maximumAutomaticLocking;
+    int absoluteMaximumAttempts;
+    DeviceReset::Options supportedDeviceResetOptions;
     bool inputIsKeyboard;
     bool currentCodeIsDigitOnly;
     bool isHomeEncrypted;
+    bool codeIsMandatory;
 
     static const char * const automaticLockingKey;
     static const char * const minimumLengthKey;
@@ -84,8 +105,12 @@ signals:
     void peekingAllowedChanged();
     void sideloadingAllowedChanged();
     void showNotificationsChanged();
+    void absoluteMaximumAttemptsChanged();
+    void maximumAutomaticLockingChanged();
+    void supportedDeviceResetOptionsChanged();
     void inputIsKeyboardChanged();
     void currentCodeIsDigitOnlyChanged();
+    void codeIsMandatoryChanged();
 
 private:
     explicit SettingsWatcher(QObject *parent = nullptr);

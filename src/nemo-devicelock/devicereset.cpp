@@ -31,6 +31,7 @@
  */
 
 #include "devicereset.h"
+#include "private/settingswatcher.h"
 
 namespace NemoDeviceLock
 {
@@ -60,7 +61,11 @@ DeviceReset::DeviceReset(QObject *parent)
           QStringLiteral("org.nemomobile.devicelock.DeviceReset"))
     , m_authorization(m_localPath, path())
     , m_authorizationAdaptor(&m_authorization, this)
+    , m_settings(SettingsWatcher::instance())
 {
+    connect(m_settings.data(), &SettingsWatcher::supportedDeviceResetOptionsChanged,
+            this, &DeviceReset::supportedOptionsChanged);
+
     m_connection->onConnected(this, [this] {
         connected();
     });
@@ -88,6 +93,18 @@ DeviceReset::~DeviceReset()
 Authorization *DeviceReset::authorization()
 {
     return &m_authorization;
+}
+
+/*!
+    \property NemoDeviceLock::DeviceReset::supportedOptions
+
+    This property holds the supported value for the options argument of clear device.
+
+    Values not in this set will be ignored and should not be selectable in the UI.
+*/
+DeviceReset::Options DeviceReset::supportedOptions() const
+{
+    return m_settings->supportedDeviceResetOptions;
 }
 
 /*!

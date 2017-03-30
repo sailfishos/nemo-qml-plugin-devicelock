@@ -41,6 +41,8 @@
 namespace NemoDeviceLock
 {
 
+class SettingsWatcher;
+
 class SecurityCodeSettings;
 class SecurityCodeSettingsAdaptor : public QDBusAbstractAdaptor
 {
@@ -64,11 +66,13 @@ class NEMODEVICELOCK_EXPORT SecurityCodeSettings : public QObject, private Conne
 {
     Q_OBJECT
     Q_PROPERTY(bool set READ isSet NOTIFY setChanged)
+    Q_PROPERTY(bool mandatory READ isMandatory NOTIFY mandatoryChanged)
 public:
     explicit SecurityCodeSettings(QObject *parent = nullptr);
     ~SecurityCodeSettings();
 
     bool isSet() const;
+    bool isMandatory() const;
 
     Q_INVOKABLE void change(const QVariant &challengeCode);
     Q_INVOKABLE void clear();
@@ -76,6 +80,7 @@ public:
 
 signals:
     void setChanged();
+    void mandatoryChanged();
     void changingChanged();
     void clearingChanged();
 
@@ -95,6 +100,7 @@ private:
     inline void handleClearAborted();
 
     SecurityCodeSettingsAdaptor m_adaptor;
+    QExplicitlySharedDataPointer<SettingsWatcher> m_settings;
     bool m_set;
     bool m_changing;
     bool m_clearing;

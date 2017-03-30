@@ -38,16 +38,20 @@
 namespace NemoDeviceLock
 {
 
+class SettingsWatcher;
+
 class NEMODEVICELOCK_EXPORT DeviceReset : public QObject, private ConnectionClient
 {
     Q_OBJECT
     Q_PROPERTY(NemoDeviceLock::Authorization *authorization READ authorization CONSTANT)
+    Q_PROPERTY(Options supportedOptions READ supportedOptions NOTIFY supportedOptionsChanged)
 public:
     enum Option {
         Shutdown        = 0x00,
         Reboot          = 0x01,
         WipePartitions  = 0x02
     };
+    Q_ENUM(Option)
     Q_DECLARE_FLAGS(Options, Option)
     Q_FLAG(Options)
 
@@ -56,9 +60,12 @@ public:
 
     Authorization *authorization();
 
+    Options supportedOptions() const;
+
     Q_INVOKABLE void clearDevice(const QVariant &authenticationToken, Options options = Shutdown);
 
 signals:
+    void supportedOptionsChanged();
     void clearingDevice();
     void clearDeviceError();
 
@@ -67,6 +74,7 @@ private:
 
     ClientAuthorization m_authorization;
     ClientAuthorizationAdaptor m_authorizationAdaptor;
+    QExplicitlySharedDataPointer<SettingsWatcher> m_settings;
 };
 
 }
