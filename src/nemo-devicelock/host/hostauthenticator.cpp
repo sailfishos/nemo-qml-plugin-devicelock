@@ -130,7 +130,8 @@ void HostAuthenticator::authenticate(
     m_state = Authenticating;
     m_challengeCode = challengeCode;
 
-    switch (availability()) {
+    const auto availability = this->availability();
+    switch (availability) {
     case AuthenticationNotRequired:
         qCDebug(daemon, "Authentication requested. Unsecured, authenticating immediately.");
         confirmAuthentication();
@@ -146,20 +147,12 @@ void HostAuthenticator::authenticate(
         m_challengeCode.clear();
         authenticationUnavailable(AuthenticationInput::FunctionUnavailable);
         break;
-    case ManagerLocked:
+    case CodeEntryLockedRecoverable:
+    case CodeEntryLockedPermanent:
+    case ManagerLockedRecoverable:
+    case ManagerLockedPermanent:
         m_challengeCode.clear();
-        authenticationUnavailable(AuthenticationInput::LockedByManager);
-        feedback(AuthenticationInput::ContactSupport, -1);
-        break;
-    case TemporarilyLocked:
-        m_challengeCode.clear();
-        authenticationUnavailable(AuthenticationInput::MaximumAttemptsExceeded);
-        feedback(AuthenticationInput::TemporarilyLocked, -1);
-        break;
-    case PermanentlyLocked:
-        m_challengeCode.clear();
-        authenticationUnavailable(AuthenticationInput::MaximumAttemptsExceeded);
-        feedback(AuthenticationInput::PermanentlyLocked, -1);
+        lockedOut(availability, &HostAuthenticationInput::authenticationUnavailable);
         break;
     }
 }
@@ -188,9 +181,10 @@ void HostAuthenticator::handleChangeSecurityCode(const QString &client, const QV
     case CanAuthenticate:
         authenticationStarted(Authenticator::SecurityCode, AuthenticationInput::EnterSecurityCode);
         break;
-    case ManagerLocked:
-    case TemporarilyLocked:
-    case PermanentlyLocked:
+    case CodeEntryLockedRecoverable:
+    case CodeEntryLockedPermanent:
+    case ManagerLockedRecoverable:
+    case ManagerLockedPermanent:
         m_challengeCode.clear();
         authenticationUnavailable(AuthenticationInput::FunctionUnavailable);
         break;
@@ -220,9 +214,10 @@ void HostAuthenticator::handleClearSecurityCode(const QString &client)
         authenticationStarted(Authenticator::SecurityCode, AuthenticationInput::EnterSecurityCode);
         break;
     case SecurityCodeRequired:
-    case ManagerLocked:
-    case TemporarilyLocked:
-    case PermanentlyLocked:
+    case CodeEntryLockedRecoverable:
+    case CodeEntryLockedPermanent:
+    case ManagerLockedRecoverable:
+    case ManagerLockedPermanent:
         authenticationUnavailable(AuthenticationInput::FunctionUnavailable);
         break;
     }
