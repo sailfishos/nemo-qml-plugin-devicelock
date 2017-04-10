@@ -294,23 +294,34 @@ void HostAuthenticationInput::feedback(
 
 void HostAuthenticationInput::lockedOut()
 {
-    switch (availability()) {
-    case ManagerLocked:
-        abortAuthentication(AuthenticationInput::LockedByManager);
-        feedback(AuthenticationInput::ContactSupport, -1);
-        break;
-    case TemporarilyLocked:
-        abortAuthentication(AuthenticationInput::MaximumAttemptsExceeded);
+    lockedOut(availability(), &HostAuthenticationInput::abortAuthentication);
+}
+
+void HostAuthenticationInput::lockedOut(
+        Availability availability,
+        void (HostAuthenticationInput::*errorFunction)(AuthenticationInput::Error error))
+{
+    switch (availability) {
+    case CodeEntryLockedRecoverable:
+        (this->*errorFunction)(AuthenticationInput::MaximumAttemptsExceeded);
         feedback(AuthenticationInput::TemporarilyLocked, -1);
         break;
-    case PermanentlyLocked:
-        abortAuthentication(AuthenticationInput::MaximumAttemptsExceeded);
+    case CodeEntryLockedPermanent:
+        (this->*errorFunction)(AuthenticationInput::MaximumAttemptsExceeded);
+        feedback(AuthenticationInput::PermanentlyLocked, -1);
+        break;
+    case ManagerLockedRecoverable:
+        (this->*errorFunction)(AuthenticationInput::LockedByManager);
+        feedback(AuthenticationInput::ContactSupport, -1);
+        break;
+    case ManagerLockedPermanent:
+        (this->*errorFunction)(AuthenticationInput::LockedByManager);
         feedback(AuthenticationInput::PermanentlyLocked, -1);
         break;
     default:
         // Locked out but availability doesn't reflect this.  This shouldn't be reachable
         // under normal circumstances.
-        abortAuthentication(AuthenticationInput::SoftwareError);
+        (this->*errorFunction)(AuthenticationInput::SoftwareError);
     }
 }
 

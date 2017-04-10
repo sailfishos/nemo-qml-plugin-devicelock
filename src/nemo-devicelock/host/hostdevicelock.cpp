@@ -111,7 +111,7 @@ void HostDeviceLock::unlock()
 
     m_state = Authenticating;
 
-    switch (availability()) {
+    switch (const auto availability = this->availability()) {
     case AuthenticationNotRequired:
         m_state = Idle;
         setLocked(false);
@@ -128,20 +128,12 @@ void HostDeviceLock::unlock()
         m_state = EnteringNewSecurityCode;
         authenticationStarted(Authenticator::SecurityCode, AuthenticationInput::EnterNewSecurityCode);
         break;
-    case ManagerLocked:
+    case CodeEntryLockedRecoverable:
+    case CodeEntryLockedPermanent:
+    case ManagerLockedRecoverable:
+    case ManagerLockedPermanent:
         m_state = AuthenticationError;
-        authenticationUnavailable(AuthenticationInput::LockedByManager);
-        feedback(AuthenticationInput::ContactSupport, -1);
-        break;
-    case TemporarilyLocked:
-        m_state = AuthenticationError;
-        authenticationUnavailable(AuthenticationInput::MaximumAttemptsExceeded);
-        feedback(AuthenticationInput::TemporarilyLocked, -1);
-        break;
-    case PermanentlyLocked:
-        m_state = AuthenticationError;
-        authenticationUnavailable(AuthenticationInput::MaximumAttemptsExceeded);
-        feedback(AuthenticationInput::PermanentlyLocked, -1);
+        lockedOut(availability, &HostAuthenticationInput::authenticationUnavailable);
         break;
     }
 
@@ -327,9 +319,10 @@ void HostDeviceLock::confirmAuthentication()
 
         authenticationEnded(true);
         break;
-    case ManagerLocked:
-    case TemporarilyLocked:
-    case PermanentlyLocked:
+    case CodeEntryLockedRecoverable:
+    case CodeEntryLockedPermanent:
+    case ManagerLockedRecoverable:
+    case ManagerLockedPermanent:
         authenticationEnded(false);
         break;
     }
@@ -362,14 +355,13 @@ void HostDeviceLock::stateChanged()
     const auto previousState = m_lockState;
 
     switch (availability()) {
-    case ManagerLocked:
+    case CodeEntryLockedRecoverable:
+    case CodeEntryLockedPermanent:
+        m_lockState = DeviceLock::CodeEntryLockout;
+        break;
+    case ManagerLockedRecoverable:
+    case ManagerLockedPermanent:
         m_lockState = DeviceLock::ManagerLockout;
-        break;
-    case TemporarilyLocked:
-        m_lockState = DeviceLock::TemporaryLockout;
-        break;
-    case PermanentlyLocked:
-        m_lockState = DeviceLock::PermanentLockout;
         break;
     case SecurityCodeRequired:
         m_lockState = DeviceLock::Locked;
@@ -395,14 +387,14 @@ void HostDeviceLock::lockedChanged()
 
 void HostDeviceLock::availabilityChanged()
 {
-    const auto available = availability();
+    const auto availability = this->availability();
 
     propertyChanged(
                 QStringLiteral("org.nemomobile.devicelock.DeviceLock"),
                 QStringLiteral("Enabled"),
-                available != AuthenticationNotRequired);
+                availability != AuthenticationNotRequired);
 
-    switch (available) {
+    switch (availability) {
     case AuthenticationNotRequired:
         switch (m_state) {
         case Authenticating:
@@ -451,7 +443,10 @@ void HostDeviceLock::availabilityChanged()
             break;
         }
         break;
-    case ManagerLocked:
+    case CodeEntryLockedRecoverable:
+    case CodeEntryLockedPermanent:
+    case ManagerLockedRecoverable:
+    case ManagerLockedPermanent:
         setLocked(true);
 
         switch (m_state) {
@@ -459,38 +454,7 @@ void HostDeviceLock::availabilityChanged()
         case EnteringNewSecurityCode:
         case RepeatingNewSecurityCode:
         case AuthenticationError:
-            abortAuthentication(AuthenticationInput::LockedByManager);
-            feedback(AuthenticationInput::ContactSupport, -1);
-            break;
-        default:
-            break;
-        }
-        break;
-    case TemporarilyLocked:
-        setLocked(true);
-
-        switch (m_state) {
-        case Authenticating:
-        case EnteringNewSecurityCode:
-        case RepeatingNewSecurityCode:
-        case AuthenticationError:
-            abortAuthentication(AuthenticationInput::MaximumAttemptsExceeded);
-            feedback(AuthenticationInput::TemporarilyLocked, -1);
-            break;
-        default:
-            break;
-        }
-        break;
-    case PermanentlyLocked:
-        setLocked(true);
-
-        switch (m_state) {
-        case Authenticating:
-        case EnteringNewSecurityCode:
-        case RepeatingNewSecurityCode:
-        case AuthenticationError:
-            abortAuthentication(AuthenticationInput::MaximumAttemptsExceeded);
-            feedback(AuthenticationInput::PermanentlyLocked, -1);
+            lockedOut(availability, &HostAuthenticationInput::abortAuthentication);
             break;
         default:
             break;

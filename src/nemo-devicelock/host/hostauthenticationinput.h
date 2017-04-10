@@ -79,9 +79,10 @@ public:
         CanAuthenticate,
         CanAuthenticateSecurityCode,
         SecurityCodeRequired,
-        ManagerLocked,
-        TemporarilyLocked,
-        PermanentlyLocked
+        CodeEntryLockedRecoverable,
+        CodeEntryLockedPermanent,
+        ManagerLockedRecoverable,
+        ManagerLockedPermanent
     };
 
     explicit HostAuthenticationInput(
@@ -132,6 +133,9 @@ public:
 
 protected:
     void lockedOut();
+    void lockedOut(
+            Availability availability,
+            void (HostAuthenticationInput::*errorFunction)(AuthenticationInput::Error error));
 
 private:
     friend class HostAuthenticationInputAdaptor;
