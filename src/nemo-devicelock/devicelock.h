@@ -43,8 +43,7 @@ public:
         Unlocked = 0,           /*!< Unlocked - The lock is unlocked */
         Locked,                 /*!< Locked - The lock is being used */
         ManagerLockout,         /*!< ManagerLockout - Access has been restricted by a device manager. */
-        TemporaryLockout,       /*!< TemporaryLockout - Access has been temporarily restricted because of excessive incorrect unlock attempts. */
-        PermanentLockout,       /*!< PermanentLockout - Access has been permanently restricted because of excessive incorrect unlock attempts. */
+        CodeEntryLockout,       /*!< CodeEntryLockout - Access has been restricted because of excessive incorrect unlock attempts. */
         Undefined               /*!< Undefined - The state of the lock is unknown */
     };
 
