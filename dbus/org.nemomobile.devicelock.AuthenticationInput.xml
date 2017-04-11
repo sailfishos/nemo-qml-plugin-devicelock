@@ -14,6 +14,9 @@
    <arg name="client" type="o" direction="in"/>
    <arg name="code" type="s" direction="in"/>
   </method>
+  <method name="RequestSecurityCode">
+   <arg name="client" type="o" direction="in"/>
+  </method>
   <method name="Cancel">
    <arg name="client" type="o" direction="in"/>
   </method>

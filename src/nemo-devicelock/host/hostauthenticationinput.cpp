@@ -34,6 +34,8 @@
 
 #include "settingswatcher.h"
 
+#include <QFile>
+
 namespace NemoDeviceLock
 {
 
@@ -61,6 +63,11 @@ void HostAuthenticationInputAdaptor::EnterSecurityCode(const QDBusObjectPath &pa
     m_authenticationInput->handleEnterSecurityCode(path.path(), code);
 }
 
+void HostAuthenticationInputAdaptor::RequestSecurityCode(const QDBusObjectPath &path)
+{
+    m_authenticationInput->handleRequestSecurityCode(path.path());
+}
+
 void HostAuthenticationInputAdaptor::Cancel(const QDBusObjectPath &path)
 {
      m_authenticationInput->handleCancel(path.path());
@@ -83,15 +90,27 @@ HostAuthenticationInput::~HostAuthenticationInput()
 
 void HostAuthenticationInput::authenticationStarted(
         Authenticator::Methods methods,
-        AuthenticationInput::Feedback feedback)
+        AuthenticationInput::Feedback)
+{
+    qCDebug(daemon, "Authentication started");
+
+    m_authenticating = true;
+    m_activeMethods = methods & m_supportedMethods;
+}
+
+
+void HostAuthenticationInput::startAuthentication(
+        AuthenticationInput::Feedback feedback,
+        const QVariantMap &data,
+        Authenticator::Methods methods)
 {
     qCDebug(daemon, "Authentication started");
 
     const uint pid = connectionPid(QDBusContext::connection());
 
     if (pid != 0 && !m_inputStack.isEmpty()) {
-        m_authenticating = true;
-        m_activeMethods = methods & m_supportedMethods;
+        authenticationStarted(methods, feedback);
+
         NemoDBus::send(
                     m_inputStack.last().connection,
                     m_inputStack.last().path,
@@ -99,9 +118,11 @@ void HostAuthenticationInput::authenticationStarted(
                     QStringLiteral("AuthenticationStarted"),
                     pid,
                     uint(m_activeMethods),
-                    uint(feedback));
+                    uint(feedback),
+                    data);
     }
 }
+
 
 void HostAuthenticationInput::authenticationUnavailable(AuthenticationInput::Error error)
 {
@@ -122,7 +143,9 @@ void HostAuthenticationInput::authenticationUnavailable(AuthenticationInput::Err
 
 
 void HostAuthenticationInput::authenticationResumed(
-        AuthenticationInput::Feedback feedback, Authenticator::Methods utilizedMethods)
+        AuthenticationInput::Feedback feedback,
+        const QVariantMap &data,
+        Authenticator::Methods utilizedMethods)
 {
     qCDebug(daemon, "Authentication resumed");
 
@@ -139,7 +162,8 @@ void HostAuthenticationInput::authenticationResumed(
                     clientInterface,
                     QStringLiteral("AuthenticationResumed"),
                     uint(m_activeMethods),
-                    uint(feedback));
+                    uint(feedback),
+                    data);
     }
 }
 
@@ -270,9 +294,25 @@ int HostAuthenticationInput::currentAttempts() const
     return m_settings->currentAttempts;
 }
 
+AuthenticationInput::CodeGeneration HostAuthenticationInput::codeGeneration() const
+{
+    return m_settings->codeGeneration;
+}
+
+QString HostAuthenticationInput::generateCode() const
+{
+    quint64 number = 0;
+    QFile file(QStringLiteral("/dev/random"));
+    if (file.open(QIODevice::ReadOnly)) {
+        file.read(reinterpret_cast<char *>(&number), sizeof(number));
+        file.close();
+    }
+    return QString::number(number).right(m_settings->minimumLength).rightJustified(m_settings->minimumLength, QLatin1Char('0'));
+}
+
 void HostAuthenticationInput::feedback(
         AuthenticationInput::Feedback feedback,
-        int attemptsRemaining,
+        const QVariantMap &data,
         Authenticator::Methods utilizedMethods)
 {
     if (!m_inputStack.isEmpty()) {
@@ -287,9 +327,19 @@ void HostAuthenticationInput::feedback(
                     clientInterface,
                     QStringLiteral("Feedback"),
                     uint(feedback),
-                    uint(attemptsRemaining),
+                    data,
                     uint(m_activeMethods));
     }
+}
+
+void HostAuthenticationInput::feedback(
+        AuthenticationInput::Feedback feedback,
+        int attemptsRemaining,
+        Authenticator::Methods utilizedMethods)
+{
+    QVariantMap data;
+    data.insert(QStringLiteral("attemptsRemaining"), attemptsRemaining);
+    HostAuthenticationInput::feedback(feedback, data, utilizedMethods);
 }
 
 void HostAuthenticationInput::lockedOut()
@@ -367,6 +417,16 @@ void HostAuthenticationInput::handleEnterSecurityCode(const QString &path, const
             && m_inputStack.last().connection == connection
             && m_inputStack.last().path == path) {
         enterSecurityCode(code);
+    }
+}
+
+void HostAuthenticationInput::handleRequestSecurityCode(const QString &path)
+{
+    const auto connection = QDBusContext::connection().name();
+    if (!m_inputStack.isEmpty()
+            && m_inputStack.last().connection == connection
+            && m_inputStack.last().path == path) {
+        requestSecurityCode();
     }
 }
 

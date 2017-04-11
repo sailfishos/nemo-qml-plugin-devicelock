@@ -117,16 +117,16 @@ void HostDeviceLock::unlock()
         setLocked(false);
         return;
     case CanAuthenticate:
-        authenticationStarted(
-                    Authenticator::SecurityCode | Authenticator::Fingerprint,
-                    AuthenticationInput::EnterSecurityCode);
+        startAuthentication(
+                    AuthenticationInput::EnterSecurityCode,
+                    QVariantMap(),
+                    Authenticator::SecurityCode | Authenticator::Fingerprint);
         break;
     case CanAuthenticateSecurityCode:
-        authenticationStarted(Authenticator::SecurityCode, AuthenticationInput::EnterSecurityCode);
+        startAuthentication(AuthenticationInput::EnterSecurityCode, QVariantMap(), Authenticator::SecurityCode);
         break;
     case SecurityCodeRequired:
-        m_state = EnteringNewSecurityCode;
-        authenticationStarted(Authenticator::SecurityCode, AuthenticationInput::EnterNewSecurityCode);
+        enterCodeChangeState(&HostAuthenticationInput::startAuthentication);
         break;
     case CodeEntryLockedRecoverable:
     case CodeEntryLockedPermanent:
@@ -154,7 +154,7 @@ void HostDeviceLock::enterSecurityCode(const QString &code)
             m_state = EnteringNewSecurityCode;
             m_currentCode = code;
             feedback(AuthenticationInput::SecurityCodeExpired, -1);
-            feedback(AuthenticationInput::EnterNewSecurityCode, -1);
+            enterCodeChangeState(&HostAuthenticationInput::feedback);
             break;
         case SecurityCodeInHistory:
             break;
@@ -183,6 +183,16 @@ void HostDeviceLock::enterSecurityCode(const QString &code)
         m_state = RepeatingNewSecurityCode;
         feedback(AuthenticationInput::RepeatNewSecurityCode, -1);
         break;
+    case ExpectingGeneratedSecurityCode:
+        if (m_generatedCode == code) {
+            m_newCode = code;
+            m_state = RepeatingNewSecurityCode;
+            feedback(AuthenticationInput::RepeatNewSecurityCode, -1);
+        } else {
+            feedback(AuthenticationInput::SecurityCodesDoNotMatch, QVariantMap());
+            feedback(AuthenticationInput::SuggestSecurityCode, generatedCodeData());
+        }
+        break;
     case RepeatingNewSecurityCode:
         if (m_newCode != code) {
             m_newCode.clear();
@@ -192,8 +202,7 @@ void HostDeviceLock::enterSecurityCode(const QString &code)
             switch (availability()) {
             case AuthenticationNotRequired:
             case SecurityCodeRequired:
-                m_state = EnteringNewSecurityCode;
-                feedback(AuthenticationInput::EnterNewSecurityCode, -1);
+                enterCodeChangeState(&HostAuthenticationInput::feedback);
                 break;
             default:
                 m_state = Authenticating;
@@ -210,6 +219,16 @@ void HostDeviceLock::enterSecurityCode(const QString &code)
     case Canceled:
     case AuthenticationError:
         break;
+    }
+}
+
+void HostDeviceLock::requestSecurityCode()
+{
+    if (m_state == EnteringNewSecurityCode
+            && codeGeneration() != AuthenticationInput::NoCodeGeneration) {
+        feedback(AuthenticationInput::EnterNewSecurityCode, generatedCodeData());
+    } else if (m_state == ExpectingGeneratedSecurityCode) {
+        feedback(AuthenticationInput::SuggestSecurityCode, generatedCodeData());
     }
 }
 
@@ -263,9 +282,8 @@ void HostDeviceLock::setCodeFinished(int result)
         break;
     case SecurityCodeInHistory:
         qCDebug(daemon, "Security code disallowed.");
-        m_state = EnteringNewSecurityCode;
         feedback(AuthenticationInput::SecurityCodeInHistory, -1);
-        feedback(AuthenticationInput::EnterNewSecurityCode, -1);
+        enterCodeChangeState(&HostAuthenticationInput::feedback);
         break;
     case Evaluating:
         if (m_state == RepeatingNewSecurityCode) {
@@ -340,6 +358,7 @@ void HostDeviceLock::abortAuthentication(AuthenticationInput::Error error)
     case Unlocking:
     case EnteringNewSecurityCode:
     case RepeatingNewSecurityCode:
+    case ExpectingGeneratedSecurityCode:
     case ChangingSecurityCode:
         m_state = AuthenticationError;
         break;
@@ -423,7 +442,7 @@ void HostDeviceLock::availabilityChanged()
             break;
         case AuthenticationError:
             m_state = Authenticating;
-            authenticationResumed(AuthenticationInput::EnterSecurityCode, Authenticator::SecurityCode);
+            authenticationResumed(AuthenticationInput::EnterSecurityCode, QVariantMap(), Authenticator::SecurityCode);
             break;
         default:
             break;
@@ -432,12 +451,10 @@ void HostDeviceLock::availabilityChanged()
     case SecurityCodeRequired:
         switch (m_state) {
         case Authenticating:
-            m_state = EnteringNewSecurityCode;
-            feedback(AuthenticationInput::EnterNewSecurityCode, -1, Authenticator::SecurityCode);
+            enterCodeChangeState(&HostAuthenticationInput::feedback, Authenticator::SecurityCode);
             break;
         case AuthenticationError:
-            m_state = EnteringNewSecurityCode;
-            authenticationResumed(AuthenticationInput::EnterNewSecurityCode, Authenticator::SecurityCode);
+            enterCodeChangeState(&HostAuthenticationInput::authenticationResumed, Authenticator::SecurityCode);
             break;
         default:
             break;
@@ -475,6 +492,26 @@ void HostDeviceLock::unlockingChanged()
 
 void HostDeviceLock::automaticLockingChanged()
 {
+}
+
+QVariantMap HostDeviceLock::generatedCodeData()
+{
+    m_generatedCode = generateCode();
+
+    QVariantMap data;
+    data.insert(QStringLiteral("securityCode"), m_generatedCode);
+    return data;
+}
+
+void HostDeviceLock::enterCodeChangeState(FeedbackFunction feedback, Authenticator::Methods methods)
+{
+    if (codeGeneration() == AuthenticationInput::MandatoryCodeGeneration) {
+        m_state = ExpectingGeneratedSecurityCode;
+        (this->*feedback)(AuthenticationInput::SuggestSecurityCode, generatedCodeData(), methods);
+    } else {
+        m_state = EnteringNewSecurityCode;
+        (this->*feedback)(AuthenticationInput::EnterNewSecurityCode, QVariantMap(), methods);
+    }
 }
 
 }
