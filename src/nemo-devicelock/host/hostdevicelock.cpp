@@ -369,6 +369,14 @@ void HostDeviceLock::abortAuthentication(AuthenticationInput::Error error)
     HostAuthenticationInput::abortAuthentication(error);
 }
 
+void HostDeviceLock::notice(DeviceLock::Notice notice, const QVariantMap &data)
+{
+    broadcastSignal(
+                QStringLiteral("org.nemomobile.devicelock.DeviceLock"),
+                QStringLiteral("Notice"),
+                NemoDBus::marshallArguments(uint(notice), data));
+}
+
 void HostDeviceLock::stateChanged()
 {
     const auto previousState = m_lockState;

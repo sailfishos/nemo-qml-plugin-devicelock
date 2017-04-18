@@ -105,6 +105,9 @@ public:
     void unlockFinished(int result);
     void setCodeFinished(int result);
 
+    // Signals
+    void notice(DeviceLock::Notice notice, const QVariantMap &data);
+
 protected:
     virtual void stateChanged();
 

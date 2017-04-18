@@ -134,6 +134,8 @@ void AuthenticationInputAdaptor::Error(uint error)
     repeating their new security code.
     \value SecurityCodeInHistory Inform the user that the code they entered has already been used.
     \value SecurityCodeExpired Inform the user that their current code has expired.
+    \value SecurityCodeDueToExpire Inform the user that their current code is due to expire.  The
+    expiration date is provided as the \c expirationDate member of the feedback data.
     \value PartialPrint Inform the user that the fingerprint reader wasn't able to capture a full
     print.
     \value PrintIsUnclear Inform the user that fingerprint reader wasn't able to capture a clear
@@ -583,7 +585,8 @@ void AuthenticationInput::handleAuthenticationEnded(bool confirmed)
     \signal NemoDeviceLock::AuthenticationInput::feedback(Feedback feedback, object data)
 
     Signals that a \a feedback message should be shown to the user.  Some feedback will also
-    include \a data that should be incorporated into the message.
+    include \a data that should be incorporated into the message, the members of data
+    accompanying a feedback message will be described in the documentation for that feedback.
 */
 
 void AuthenticationInput::handleFeedback(
