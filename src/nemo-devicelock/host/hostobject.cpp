@@ -100,12 +100,17 @@ void HostObject::propertyChanged(const QString &interface, const QString &proper
 
     const QVariantMap properties = { { property, value } };
 
-    QDBusMessage message = QDBusMessage::createSignal(
-                m_path,
+    broadcastSignal(
                 QStringLiteral("org.freedesktop.DBus.Properties"),
-                QStringLiteral("PropertiesChanged"));
+                QStringLiteral("PropertiesChanged"),
+                NemoDBus::marshallArguments(interface, properties, QStringList()));
+}
 
-    message.setArguments(NemoDBus::marshallArguments(interface, properties, QStringList()));
+void HostObject::broadcastSignal(const QString &interface, const QString &name, const QVariantList &arguments)
+{
+    QDBusMessage message = QDBusMessage::createSignal(m_path, interface, name);
+
+    message.setArguments(arguments);
 
     for (const auto connectionName : m_connections) {
         QDBusConnection(connectionName).send(message);

@@ -48,6 +48,17 @@ namespace NemoDeviceLock
 */
 
 /*!
+    \enum NemoDeviceLock::DeviceLock::Notice
+
+    Broadcast notifications decribing events of importance.
+
+    \value SecurityCodeDueToExpire The user's security code is due to due to expire in the near
+    future.  The expiration date is provided as an ISO 8601 formatted string in the
+    \c expirationDate member of the notice data.
+    \value SecurityCodeChanged The user's security code has been changed.
+*/
+
+/*!
     Constructs a device lock interface instance which is a child of \a parent.
 */
 
@@ -217,9 +228,24 @@ void DeviceLock::cancel()
     Signals that there was an error requesting authentication to unlock the device.
 */
 
+
+/*!
+    \signal NemoDeviceLock::DeviceLock::notice(Notice notice, const QVariantMap &map)
+
+    Emits a broadcast \a notice from the device lock.  Some noteices will also
+    include \a data that should be incorporated into the message, the members of data
+    accompanying a notice will be described in the documentation for that notice.
+*/
+void DeviceLock::handleNotice(uint notice, const QVariantMap &data)
+{
+    emit DeviceLock::notice(DeviceLock::Notice(notice), data);
+}
+
 void DeviceLock::connected()
 {
     registerObject();
+
+    connectToSignal(QStringLiteral("Notice"), SLOT(handleNotice(uint,QVariantMap)));
 
     subscribeToProperty<bool>(QStringLiteral("Enabled"), [this](bool enabled) {
         if (m_enabled != enabled) {

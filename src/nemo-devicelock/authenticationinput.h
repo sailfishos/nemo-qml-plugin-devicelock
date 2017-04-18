@@ -83,6 +83,7 @@ public:
         SecurityCodesDoNotMatch,
         SecurityCodeInHistory,
         SecurityCodeExpired,
+        SecurityCodeDueToExpire,
         PartialPrint,
         PrintIsUnclear,
         SensorIsDirty,

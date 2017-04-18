@@ -7,5 +7,9 @@
   <property name="Unlocking" type="b" access="read"/>
   <method name="Unlock"/>
   <method name="Cancel"/>
+  <signal name="Notice">
+   <arg name="notice" type="u" direction="in"/>
+   <arg name="data" type="a{sv}" direction="in"/>
+  </signal>
  </interface>
 </node>

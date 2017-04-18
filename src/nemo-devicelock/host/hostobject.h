@@ -70,6 +70,7 @@ public:
 
 protected:
     void propertyChanged(const QString &interface, const QString &property, const QVariant &value);
+    void broadcastSignal(const QString &interface, const QString &name, const QVariantList &arguments);
 
     template <typename... Arguments> inline bool sendToActiveClient(
                 const QString &interface,
