@@ -73,6 +73,8 @@ DeviceLock::DeviceLock(QObject *parent)
         connected();
     });
     m_connection->onDisconnected(this, [this] {
+        const bool wasUnlocked = m_state == Unlocked;
+
         m_state = Undefined;
 
         if (m_unlocking) {
@@ -81,6 +83,10 @@ DeviceLock::DeviceLock(QObject *parent)
         }
 
         emit stateChanged();
+
+        if (wasUnlocked) {
+            emit locked();
+        }
     });
     if (m_connection->isConnected()) {
         connected();
