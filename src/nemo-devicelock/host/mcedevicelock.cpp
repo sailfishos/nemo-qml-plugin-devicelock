@@ -211,7 +211,7 @@ bool MceDeviceLock::getRequiredLockState()
     if (automaticLocking() < 0) {
         /* Device locking is disabled */
         locked = false;
-    } else if (automaticLocking() == 0 && !m_displayOn) {
+    } else if (automaticLocking() == 0 && !m_displayOn && !m_callActive) {
         /* Display is off in immediate lock mode */
         locked = true;
     }
