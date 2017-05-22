@@ -27,8 +27,8 @@ PRE_TARGETDEPS += \ \
         $$PWD/../nemo-devicelock/host/libnemodevicelock-host.a
 
 LIBS += \
-        -L$$OUT_PWD/../nemo-devicelock -lnemodevicelock\
-        -L$$OUT_PWD/../nemo-devicelock/host -lnemodevicelock-host
+        -L$$OUT_PWD/../nemo-devicelock/host -lnemodevicelock-host\
+        -L$$OUT_PWD/../nemo-devicelock -lnemodevicelock
 
 SOURCES = \
         main.cpp
