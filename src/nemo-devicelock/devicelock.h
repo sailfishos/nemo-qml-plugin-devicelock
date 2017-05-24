@@ -28,7 +28,6 @@ class SettingsWatcher;
 class NEMODEVICELOCK_EXPORT DeviceLock : public QObject, private ConnectionClient
 {
     Q_OBJECT
-    Q_ENUMS(LockState)
     Q_PROPERTY(bool enabled READ isEnabled NOTIFY enabledChanged)
     Q_PROPERTY(bool unlocking READ isUnlocking NOTIFY unlockingChanged)
     Q_PROPERTY(LockState state READ state NOTIFY stateChanged)
@@ -43,10 +42,17 @@ public:
         Unlocked = 0,           /*!< Unlocked - The lock is unlocked */
         Locked,                 /*!< Locked - The lock is being used */
         ManagerLockout,         /*!< ManagerLockout - Access has been restricted by a device manager. */
-        TemporaryLockout,       /*!< TemporaryLockout - Access has been temporarily restricted because of excessive incorrect unlock attempts. */
-        PermanentLockout,       /*!< PermanentLockout - Access has been permanently restricted because of excessive incorrect unlock attempts. */
+        CodeEntryLockout,       /*!< CodeEntryLockout - Access has been restricted because of excessive incorrect unlock attempts. */
         Undefined               /*!< Undefined - The state of the lock is unknown */
     };
+    Q_ENUM(LockState)
+
+    enum Notice
+    {
+        SecurityCodeDueToExpire,
+        SecurityCodeChanged
+    };
+    Q_ENUM(Notice)
 
     bool isEnabled() const;
     bool isUnlocking() const;
@@ -68,6 +74,11 @@ signals:
     void locked();
     void unlocked();
     void unlockError();
+
+    void notice(Notice notice, const QVariantMap &data);
+
+private slots:
+    void handleNotice(uint notice, const QVariantMap &data);
 
 private:
     inline void connected();

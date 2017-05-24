@@ -33,7 +33,7 @@
 #ifndef NEMODEVICELOCK_SETTINGSWATCHER_H
 #define NEMODEVICELOCK_SETTINGSWATCHER_H
 
-#include <nemo-devicelock/global.h>
+#include <nemo-devicelock/authenticationinput.h>
 #include <nemo-devicelock/devicereset.h>
 
 #include <QMetaEnum>
@@ -57,6 +57,11 @@ template <> inline QMetaEnum resolveMetaEnum<DeviceReset::Option>()  {
 template <> inline DeviceReset::Options settingsValueFromString<DeviceReset::Options>(const char *string) {
     return flagsFromString<DeviceReset::Option>(string); }
 
+template <> inline QMetaEnum resolveMetaEnum<AuthenticationInput::CodeGeneration>()  {
+    return resolveMetaEnum(&AuthenticationInput::staticMetaObject, "CodeGeneration"); }
+template <> inline AuthenticationInput::CodeGeneration settingsValueFromString<AuthenticationInput::CodeGeneration>(const char *string) {
+    return AuthenticationInput::CodeGeneration(flagsFromString(resolveMetaEnum<AuthenticationInput::CodeGeneration>(), string)); }
+
 class NEMODEVICELOCK_EXPORT SettingsWatcher : public QSocketNotifier, public QSharedData
 {
     Q_OBJECT
@@ -64,7 +69,6 @@ public:
     ~SettingsWatcher();
 
     static SettingsWatcher *instance();
-
 
     int automaticLocking;
     int minimumLength;
@@ -77,6 +81,7 @@ public:
     int maximumAutomaticLocking;
     int absoluteMaximumAttempts;
     DeviceReset::Options supportedDeviceResetOptions;
+    AuthenticationInput::CodeGeneration codeGeneration;
     bool inputIsKeyboard;
     bool currentCodeIsDigitOnly;
     bool isHomeEncrypted;
@@ -111,6 +116,7 @@ signals:
     void inputIsKeyboardChanged();
     void currentCodeIsDigitOnlyChanged();
     void codeIsMandatoryChanged();
+    void codeGenerationChanged();
 
 private:
     explicit SettingsWatcher(QObject *parent = nullptr);

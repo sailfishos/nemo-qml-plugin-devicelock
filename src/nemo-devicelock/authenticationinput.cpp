@@ -44,12 +44,14 @@ AuthenticationInputAdaptor::AuthenticationInputAdaptor(AuthenticationInput *auth
 {
 }
 
-void AuthenticationInputAdaptor::AuthenticationStarted(uint pid, uint utilizedMethods, uint instruction)
+void AuthenticationInputAdaptor::AuthenticationStarted(
+        uint pid, uint utilizedMethods, uint instruction, const QVariantMap &data)
 {
     m_authenticationInput->handleAuthenticationStarted(
                 pid,
                 Authenticator::Methods(utilizedMethods),
-                AuthenticationInput::Feedback(instruction));
+                AuthenticationInput::Feedback(instruction),
+                data);
 }
 
 void AuthenticationInputAdaptor::AuthenticationUnavailable(uint pid, uint error)
@@ -59,11 +61,13 @@ void AuthenticationInputAdaptor::AuthenticationUnavailable(uint pid, uint error)
                 AuthenticationInput::Error(error));
 }
 
-void AuthenticationInputAdaptor::AuthenticationResumed(uint utilizedMethods, uint instruction)
+void AuthenticationInputAdaptor::AuthenticationResumed(
+        uint utilizedMethods, uint instruction,  const QVariantMap &data)
 {
     m_authenticationInput->handleAuthenticationResumed(
                 Authenticator::Methods(utilizedMethods),
-                AuthenticationInput::Feedback(instruction));
+                AuthenticationInput::Feedback(instruction),
+                data);
 }
 
 void AuthenticationInputAdaptor::AuthenticationEvaluating()
@@ -81,11 +85,11 @@ void AuthenticationInputAdaptor::AuthenticationEnded(bool confirmed)
     m_authenticationInput->handleAuthenticationEnded(confirmed);
 }
 
-void AuthenticationInputAdaptor::Feedback(uint feedback, uint attemptsRemaining, uint utilizedMethods)
+void AuthenticationInputAdaptor::Feedback(uint feedback, const QVariantMap &data, uint utilizedMethods)
 {
     m_authenticationInput->handleFeedback(
                 AuthenticationInput::Feedback(feedback),
-                attemptsRemaining,
+                data,
                 Authenticator::Methods(utilizedMethods));
 }
 
@@ -116,6 +120,92 @@ void AuthenticationInputAdaptor::Error(uint error)
 */
 
 /*!
+    \enum AuthenticationInput::Feedback
+
+    Message codes for primary feedback during authentication or supplementary feedback following
+    a primary message or error.
+
+    \value EnterSecurityCode Instruct the user to enter their current security code.
+    \value EnterNewSecurityCode Instruct the user to enter a new security code.
+    \value RepeatNewSecurityCode Instruct the user to repeat the new security code.
+    \value SuggestSecurityCode Suggest a new security code the user should use.  The code is
+    provided as the \c securityCode member of the feedback data.
+    \value SecurityCodesDoNotMatch Inform the user the user that they entered a different code when
+    repeating their new security code.
+    \value SecurityCodeInHistory Inform the user that the code they entered has already been used.
+    \value SecurityCodeExpired Inform the user that their current code has expired.
+    \value SecurityCodeDueToExpire Inform the user that their current code is due to expire.  The
+    expiration date is provided as the \c expirationDate member of the feedback data.
+    \value PartialPrint Inform the user that the fingerprint reader wasn't able to capture a full
+    print.
+    \value PrintIsUnclear Inform the user that fingerprint reader wasn't able to capture a clear
+    print.
+    \value SensorIsDirty Inform the user that the fingerprint reader sensor is dirty.
+    \value SwipeFaster Ask the user to user a faster motion when swiping the fingerprint reader.
+    \value SwipeSlower Ask the user to user a slower motion when swiping the fingerprint reader.
+    \value UnrecognizedFinger Inform the user that the scanned fingerprint did not match any
+    authorized print.  The number of times the user may attempt another finger is passed as the
+    \c attemptsRemaining member of the feedback data.
+    \value IncorrectSecurityCode Inform the user that the entered security code is incorrect. The
+    number of times the user may attempt to enter another cod is passed as the \c attemptsRemaining
+    member of the feedback data.
+    \value ContactSupport Inform the user to contact support for help with the preceding error.
+    \value TemporarilyLocked Inform the user that the device has been temporarily locked.
+    \value PermanentlyLocked Inform the user that the device has been permanently locked.
+    \value UnlockToPerformOperation.  Inform the user they must unlock the device before they are
+    able to continue.
+*/
+
+/*!
+    \enum AuthenticationInput::Error
+
+    Message codes for feedback when authentication cannot continue.
+
+    \value FunctionUnavailable Authentication could not be performed at this time.
+    \value LockedByManager The device manager has locked down the device and it cannot be unlocked
+    by the user.
+    \value MaximumAttemptsExceeded Too many incorrect security codes have been tried and no more
+    will be accepted.
+    \value Canceled Authentication was canceled.
+    \value SoftwareError The device lock has entered an unexpected state and cannot provide
+    authentication.
+*/
+
+/*!
+    \enum AuthenticationInput::Type
+
+    The type of input.
+
+    \value Authentication Provides authentication for changing settings.
+    \value DeviceLock Provides authentication for unlocking the device.
+*/
+
+/*!
+    \enum AuthenticationInput::Status
+
+    The status of the authentication input.
+
+    \value Idle Nothing is currently trying to authenticate.
+    \value Authenticating Authentication input is currently being accepted.
+    \value Evaluating Authentication is active but not currently accepting input. This may be
+    because a time consuming action is taking place post confirmation, or a forced delay between
+    code entry attempts is being enforced.
+    \value AuthenticationError Authentication is not being accepted following an error.
+*/
+
+/*!
+    \enum AuthenticationInput::CodeGeneration
+
+    The level of support for code generation.
+
+    \value NoCodeGeneration Code generation is supported.
+    \value OptionalCodeGeneration Code generation is available as an alternative to the user
+    choosing their own security code.
+    \value MandatoryCodeGeneration The user is required to use a generated code instead of picking
+    their own.
+*/
+
+/*!
     Constructs an authentication input which handles requests of a given \a type as a child of
     \a parent.
 */
@@ -139,6 +229,8 @@ AuthenticationInput::AuthenticationInput(Type type, QObject *parent)
             this, &AuthenticationInput::maximumAttemptsChanged);
     connect(m_settings.data(), &SettingsWatcher::inputIsKeyboardChanged,
             this, &AuthenticationInput::codeInputIsKeyboardChanged);
+    connect(m_settings.data(), &SettingsWatcher::codeGenerationChanged,
+            this, &AuthenticationInput::codeGenerationChanged);
 
     m_connection->onConnected(this, [this] {
         connected();
@@ -206,6 +298,17 @@ int AuthenticationInput::maximumAttempts() const
 {
     return m_settings->maximumAttempts;
 }
+
+/*!
+    \property NemoDeviceLock::AuthenticationInput::codeGeneration
+
+    This property holds the level of support for generated security codes.
+*/
+AuthenticationInput::CodeGeneration AuthenticationInput::codeGeneration() const
+{
+    return m_settings->codeGeneration;
+}
+
 
 /*!
     \property NemoDeviceLock::AuthenticationInput::codeInputIsKeyboard
@@ -323,6 +426,15 @@ void AuthenticationInput::enterSecurityCode(const QString &code)
 }
 
 /*!
+    Sends a request for the security daemon to suggest a new security code.
+*/
+
+void AuthenticationInput::requestSecurityCode()
+{
+    call(QStringLiteral("RequestSecurityCode"), m_localPath);
+}
+
+/*!
     Sends a request to cancel authentication to the security daemon.
 */
 
@@ -336,14 +448,15 @@ void AuthenticationInput::cancel()
 }
 
 /*!
-    \signal NemoDeviceLock::AuthenticationInput::authenticationStarted(Feedback feedback)
+    \signal NemoDeviceLock::AuthenticationInput::authenticationStarted(Feedback feedback, object data)
 
     Signals that an application has requested authentication and that the input should be displayed
-    with the given initial \a feedback message.
+    with the given initial \a feedback message.  Arguments associated with the feedback message
+    are passed through the \a data object.
 */
 
 void AuthenticationInput::handleAuthenticationStarted(
-        int pid, Authenticator::Methods utilizedMethods, Feedback feedback)
+        int pid, Authenticator::Methods utilizedMethods, Feedback feedback, const QVariantMap &data)
 {
     qCDebug(devicelock, "Authentication started.  Methods: %i, Feedback: %i.",
             int(utilizedMethods), int(feedback));
@@ -368,7 +481,7 @@ void AuthenticationInput::handleAuthenticationStarted(
         emit utilizedMethodsChanged();
     }
 
-    emit authenticationStarted(feedback);
+    emit authenticationStarted(feedback, data);
 
     if (m_status != previousStatus) {
         emit statusChanged();
@@ -411,7 +524,7 @@ void AuthenticationInput::handleAuthenticationUnavailable(int pid, Error error)
 
 
 void AuthenticationInput::handleAuthenticationResumed(
-        Authenticator::Methods utilizedMethods, Feedback feedback)
+        Authenticator::Methods utilizedMethods, Feedback feedback, const QVariantMap &data)
 {
     const auto previousStatus = m_status;
     const auto previousMethods = m_utilizedMethods;
@@ -423,7 +536,7 @@ void AuthenticationInput::handleAuthenticationResumed(
         emit utilizedMethodsChanged();
     }
 
-    emit AuthenticationInput::feedback(feedback, -1);
+    emit AuthenticationInput::feedback(feedback, data);
 
     if (m_status != previousStatus) {
         emit statusChanged();
@@ -469,24 +582,25 @@ void AuthenticationInput::handleAuthenticationEnded(bool confirmed)
 }
 
 /*!
-    \signal NemoDeviceLock::AuthenticationInput::feedback(Feedback feedback, int attemptsRemaining)
+    \signal NemoDeviceLock::AuthenticationInput::feedback(Feedback feedback, object data)
 
-    Signals that a \a feedback message should be shown to the user incorporating
-    \a attemptsRemaining if it is not equal to -1.
+    Signals that a \a feedback message should be shown to the user.  Some feedback will also
+    include \a data that should be incorporated into the message, the members of data
+    accompanying a feedback message will be described in the documentation for that feedback.
 */
 
 void AuthenticationInput::handleFeedback(
-        Feedback feedback, int attemptsRemaining, Authenticator::Methods utilizedMethods)
+        Feedback feedback, const QVariantMap &data, Authenticator::Methods utilizedMethods)
 {
     if (m_status != Idle) {
-        qCDebug(devicelock, "Authentication feedback %i.  Attempts remaining: %i. Methods: %i",
-                    int(feedback), attemptsRemaining, int(utilizedMethods));
+        qCDebug(devicelock, "Authentication feedback %i. Methods: %i",
+                    int(feedback), int(utilizedMethods));
 
         const bool methodsChanged = m_utilizedMethods != utilizedMethods;
 
         m_utilizedMethods = utilizedMethods;
 
-        emit AuthenticationInput::feedback(feedback, attemptsRemaining);
+        emit AuthenticationInput::feedback(feedback, data);
 
         if (methodsChanged) {
             emit utilizedMethodsChanged();

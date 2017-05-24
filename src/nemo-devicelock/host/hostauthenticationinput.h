@@ -55,6 +55,7 @@ public slots:
     void SetRegistered(const QDBusObjectPath &path, bool registered);
     void SetActive(const QDBusObjectPath &path, bool active);
     void EnterSecurityCode(const QDBusObjectPath &path, const QString &code);
+    void RequestSecurityCode(const QDBusObjectPath &path);
     void Cancel(const QDBusObjectPath &path);
 
 private:
@@ -79,10 +80,14 @@ public:
         CanAuthenticate,
         CanAuthenticateSecurityCode,
         SecurityCodeRequired,
-        ManagerLocked,
-        TemporarilyLocked,
-        PermanentlyLocked
+        CodeEntryLockedRecoverable,
+        CodeEntryLockedPermanent,
+        ManagerLockedRecoverable,
+        ManagerLockedPermanent
     };
+
+    typedef void (HostAuthenticationInput::*FeedbackFunction)(
+            AuthenticationInput::Feedback, const QVariantMap &, Authenticator::Methods);
 
     explicit HostAuthenticationInput(
             const QString &path,
@@ -100,16 +105,25 @@ public:
     virtual int maximumAttempts() const;
     virtual int currentAttempts() const;
 
+    virtual AuthenticationInput::CodeGeneration codeGeneration() const;
+    virtual QString generateCode() const;
+
     virtual void enterSecurityCode(const QString &code) = 0;
+    virtual void requestSecurityCode() = 0;
     void cancel() override = 0;
 
     // Client
+    void startAuthentication(
+            AuthenticationInput::Feedback feedback,
+            const QVariantMap &data,
+            Authenticator::Methods methods);
     virtual void authenticationStarted(
             Authenticator::Methods methods,
             AuthenticationInput::Feedback feedback = AuthenticationInput::EnterSecurityCode);
     void authenticationUnavailable(AuthenticationInput::Error error);
     void authenticationResumed(
             AuthenticationInput::Feedback feedback,
+            const QVariantMap &data = QVariantMap(),
             Authenticator::Methods utilizedMethods = Authenticator::Methods());
     void authenticationEvaluating();
     void authenticationProgress(int current, int maximum);
@@ -124,6 +138,10 @@ public:
     // Signals
     void feedback(
             AuthenticationInput::Feedback feedback,
+            const QVariantMap &data,
+            Authenticator::Methods utilizedMethods = Authenticator::Methods());
+    void feedback(
+            AuthenticationInput::Feedback feedback,
             int attemptsRemaining,
             Authenticator::Methods utilizedMethods = Authenticator::Methods());
 
@@ -132,6 +150,9 @@ public:
 
 protected:
     void lockedOut();
+    void lockedOut(
+            Availability availability,
+            void (HostAuthenticationInput::*errorFunction)(AuthenticationInput::Error error));
 
 private:
     friend class HostAuthenticationInputAdaptor;
@@ -146,6 +167,7 @@ private:
     };
 
     inline void handleEnterSecurityCode(const QString &client, const QString &code);
+    inline void handleRequestSecurityCode(const QString &path);
     inline void handleCancel(const QString &client);
 
     inline void setRegistered(const QString &path, bool registered);

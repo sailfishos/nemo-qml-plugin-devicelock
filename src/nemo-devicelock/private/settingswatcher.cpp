@@ -92,6 +92,7 @@ SettingsWatcher::SettingsWatcher(QObject *parent)
     , maximumAutomaticLocking(-1)
     , absoluteMaximumAttempts(-1)
     , supportedDeviceResetOptions(DeviceReset::Reboot)
+    , codeGeneration(AuthenticationInput::NoCodeGeneration)
     , inputIsKeyboard(false)
     , currentCodeIsDigitOnly(true)
     , isHomeEncrypted(false)
@@ -268,6 +269,7 @@ void SettingsWatcher::reloadSettings()
     read(settings, this, "absolute_maximum_attempts", -1, &absoluteMaximumAttempts, &SettingsWatcher::absoluteMaximumAttemptsChanged);
     read(settings, this, "supported_device_reset_options", DeviceReset::Options(DeviceReset::Reboot), &supportedDeviceResetOptions, &SettingsWatcher::supportedDeviceResetOptionsChanged);
     read(settings, this, "code_is_mandatory", false, &codeIsMandatory, &SettingsWatcher::codeIsMandatoryChanged);
+    read(settings, this, "code_generation", AuthenticationInput::NoCodeGeneration, &codeGeneration, &SettingsWatcher::codeGenerationChanged);
 
     g_key_file_free(settings);
 }
