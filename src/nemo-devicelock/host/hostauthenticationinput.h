@@ -56,6 +56,7 @@ public slots:
     void SetActive(const QDBusObjectPath &path, bool active);
     void EnterSecurityCode(const QDBusObjectPath &path, const QString &code);
     void RequestSecurityCode(const QDBusObjectPath &path);
+    void Reset(const QDBusObjectPath &path);
     void Cancel(const QDBusObjectPath &path);
 
 private:
@@ -88,6 +89,7 @@ public:
 
     typedef void (HostAuthenticationInput::*FeedbackFunction)(
             AuthenticationInput::Feedback, const QVariantMap &, Authenticator::Methods);
+    typedef void (HostAuthenticationInput::*ErrorFunction)(AuthenticationInput::Error error);
 
     explicit HostAuthenticationInput(
             const QString &path,
@@ -110,6 +112,7 @@ public:
 
     virtual void enterSecurityCode(const QString &code) = 0;
     virtual void requestSecurityCode() = 0;
+    virtual void reset() = 0;
     void cancel() override = 0;
 
     // Client
@@ -150,9 +153,7 @@ public:
 
 protected:
     void lockedOut();
-    void lockedOut(
-            Availability availability,
-            void (HostAuthenticationInput::*errorFunction)(AuthenticationInput::Error error));
+    void lockedOut(Availability availability, ErrorFunction error);
 
 private:
     friend class HostAuthenticationInputAdaptor;
@@ -168,6 +169,7 @@ private:
 
     inline void handleEnterSecurityCode(const QString &client, const QString &code);
     inline void handleRequestSecurityCode(const QString &path);
+    inline void handleReset(const QString &client);
     inline void handleCancel(const QString &client);
 
     inline void setRegistered(const QString &path, bool registered);

@@ -435,6 +435,19 @@ void AuthenticationInput::requestSecurityCode()
 }
 
 /*!
+    Sends a request to reset authentication to the beginning to the security daemon.
+*/
+
+void AuthenticationInput::reset()
+{
+    if (m_status != Idle) {
+        qCDebug(devicelock, "Reset authentication");
+
+        call(QStringLiteral("Reset"), m_localPath);
+    }
+}
+
+/*!
     Sends a request to cancel authentication to the security daemon.
 */
 

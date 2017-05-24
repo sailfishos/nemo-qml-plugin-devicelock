@@ -116,6 +116,7 @@ public:
 
     void enterSecurityCode(const QString &code) override;
     void requestSecurityCode() override;
+    void reset() override;
     void cancel() override;
 
     void confirmAuthentication() override;
@@ -149,15 +150,24 @@ private:
         Changing,
         ChangeError,
         ChangeCanceled,
+        ChangeReset,
         AuthenticatingForClear,
         ClearError,
     };
 
     inline bool isSecurityCodeSet() const;
     inline void authenticate(
-            const QString &authenticator, const QVariant &challengeCode, Authenticator::Methods methods);
+            const QString &authenticator,
+            const QVariant &challengeCode,
+            Authenticator::Methods methods = Authenticator::Methods());
+    inline void beginAuthentication(
+            FeedbackFunction feedback,
+            ErrorFunction error,
+            Authenticator::Methods methods = Authenticator::Methods());
     inline void handleChangeSecurityCode(const QString &client, const QVariant &challengeCode);
+    inline void beginChangeSecurityCode(FeedbackFunction feedback, ErrorFunction error);
     inline void handleClearSecurityCode(const QString &client);
+    inline void beginClearSecurityCode(FeedbackFunction feedback, ErrorFunction error);
     inline void handleCancel(const QString &client);
     inline QVariantMap generatedCodeData();
     inline void enterCodeChangeState(

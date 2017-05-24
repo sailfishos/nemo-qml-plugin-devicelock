@@ -107,37 +107,42 @@ void HostDeviceLock::unlock()
 {
     if (m_state != Idle || state() == DeviceLock::Unlocked) {
         return;
+    } else if (beginUnlock(
+                &HostAuthenticationInput::startAuthentication,
+                &HostAuthenticationInput::authenticationUnavailable)) {
+        unlockingChanged();
     }
+}
 
+bool HostDeviceLock::beginUnlock(FeedbackFunction feedback, ErrorFunction error)
+{
     m_state = Authenticating;
 
     switch (const auto availability = this->availability()) {
     case AuthenticationNotRequired:
         m_state = Idle;
         setLocked(false);
-        return;
+        return false;
     case CanAuthenticate:
-        startAuthentication(
+        (this->*feedback)(
                     AuthenticationInput::EnterSecurityCode,
                     QVariantMap(),
                     Authenticator::SecurityCode | Authenticator::Fingerprint);
-        break;
+        return true;
     case CanAuthenticateSecurityCode:
-        startAuthentication(AuthenticationInput::EnterSecurityCode, QVariantMap(), Authenticator::SecurityCode);
-        break;
+        (this->*feedback)(AuthenticationInput::EnterSecurityCode, QVariantMap(), Authenticator::SecurityCode);
+        return true;
     case SecurityCodeRequired:
-        enterCodeChangeState(&HostAuthenticationInput::startAuthentication);
-        break;
+        enterCodeChangeState(feedback);
+        return true;
     case CodeEntryLockedRecoverable:
     case CodeEntryLockedPermanent:
     case ManagerLockedRecoverable:
     case ManagerLockedPermanent:
         m_state = AuthenticationError;
-        lockedOut(availability, &HostAuthenticationInput::authenticationUnavailable);
-        break;
+        lockedOut(availability, error);
+        return false;
     }
-
-    unlockingChanged();
 }
 
 void HostDeviceLock::enterSecurityCode(const QString &code)
@@ -217,6 +222,7 @@ void HostDeviceLock::enterSecurityCode(const QString &code)
     case Unlocking:
     case ChangingSecurityCode:
     case Canceled:
+    case Reset:
     case AuthenticationError:
         break;
     }
@@ -249,16 +255,19 @@ void HostDeviceLock::unlockFinished(int result)
         }
         break;
     default:
-        if (m_state == Canceled) {
-            m_state = Idle;
-
-            authenticationEnded(false);
-
-            unlockingChanged();
-        } else {
-            abortAuthentication(AuthenticationInput::SoftwareError);
-        }
+        unexpectedResult();
         break;
+    }
+}
+
+void HostDeviceLock::unexpectedResult()
+{
+    if (m_state == Canceled) {
+        finalizeCancel();
+    } else if (m_state == Reset) {
+        finalizeReset();
+    } else {
+        abortAuthentication(AuthenticationInput::SoftwareError);
     }
 }
 
@@ -268,22 +277,24 @@ void HostDeviceLock::setCodeFinished(int result)
     case Success:
         qCDebug(daemon, "Lock code changed.");
         m_currentCode.clear();
-        if (m_state == ChangingSecurityCode || m_state == RepeatingNewSecurityCode) {
+        if (m_state == ChangingSecurityCode || m_state == RepeatingNewSecurityCode || m_state == Reset) {
             unlockFinished(unlockWithCode(m_newCode));
         } else if (m_state == Canceled) {
-            m_state = Idle;
-
-            authenticationEnded(false);
-
-            unlockingChanged();
+            finalizeCancel();
         } else {
             abortAuthentication(AuthenticationInput::SoftwareError);
         }
         break;
     case SecurityCodeInHistory:
         qCDebug(daemon, "Security code disallowed.");
-        feedback(AuthenticationInput::SecurityCodeInHistory, -1);
-        enterCodeChangeState(&HostAuthenticationInput::feedback);
+        if (m_state == Canceled) {
+            finalizeCancel();
+        } else if (m_state == Reset) {
+            finalizeReset();
+        } else {
+            feedback(AuthenticationInput::SecurityCodeInHistory, -1);
+            enterCodeChangeState(&HostAuthenticationInput::feedback);
+        }
         break;
     case Evaluating:
         if (m_state == RepeatingNewSecurityCode) {
@@ -296,32 +307,61 @@ void HostDeviceLock::setCodeFinished(int result)
     default:
         qCDebug(daemon, "Lock code change failed.");
         m_currentCode.clear();
-        if (m_state == Canceled) {
-            m_state = Idle;
-
-            authenticationEnded(false);
-
-            unlockingChanged();
-        } else {
-            m_state = AuthenticationError;
-            authenticationUnavailable(AuthenticationInput::SoftwareError);
-        }
+        unexpectedResult();
         break;
     }
     m_newCode.clear();
 }
 
-void HostDeviceLock::cancel()
+void HostDeviceLock::reset()
 {
-    if (m_state == Unlocking || m_state == ChangingSecurityCode) {
-        m_state = Canceled;
-    } else if (m_state != Idle && m_state != Canceled) {
-        m_state = Idle;
+    switch (m_state) {
+    case Idle:
+    case Canceled:
+    case Reset:
+        break;
+    case Authenticating:
+    case ExpectingGeneratedSecurityCode:
+    case RepeatingNewSecurityCode:
+        finalizeReset();
+        break;
+    case AuthenticationError:
+        if (!beginUnlock(
+                    &HostAuthenticationInput::authenticationResumed,
+                    &HostAuthenticationInput::abortAuthentication)) {
+            unlockingChanged();
+        }
+        break;
+    case Unlocking:
+    case ChangingSecurityCode:
+        m_state = Reset;
+        break;
+    }
+}
 
-        authenticationEnded(false);
-
+void HostDeviceLock::finalizeReset()
+{
+    if (!beginUnlock(&HostAuthenticationInput::feedback, &HostAuthenticationInput::abortAuthentication)) {
         unlockingChanged();
     }
+}
+
+void HostDeviceLock::cancel()
+{
+    if (m_state == Unlocking || m_state == ChangingSecurityCode || m_state == Reset) {
+        m_state = Canceled;
+    } else if (m_state != Idle && m_state != Canceled) {
+        finalizeCancel();
+    }
+}
+
+void HostDeviceLock::finalizeCancel()
+{
+    m_state = Idle;
+
+    authenticationEnded(false);
+
+    unlockingChanged();
 }
 
 void HostDeviceLock::confirmAuthentication()

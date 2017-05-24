@@ -150,6 +150,7 @@ public:
 
     Q_INVOKABLE void enterSecurityCode(const QString &code);
     Q_INVOKABLE void requestSecurityCode();
+    Q_INVOKABLE void reset();
     Q_INVOKABLE void cancel();
 
 signals:

@@ -68,6 +68,11 @@ void HostAuthenticationInputAdaptor::RequestSecurityCode(const QDBusObjectPath &
     m_authenticationInput->handleRequestSecurityCode(path.path());
 }
 
+void HostAuthenticationInputAdaptor::Reset(const QDBusObjectPath &path)
+{
+     m_authenticationInput->handleReset(path.path());
+}
+
 void HostAuthenticationInputAdaptor::Cancel(const QDBusObjectPath &path)
 {
      m_authenticationInput->handleCancel(path.path());
@@ -347,9 +352,7 @@ void HostAuthenticationInput::lockedOut()
     lockedOut(availability(), &HostAuthenticationInput::abortAuthentication);
 }
 
-void HostAuthenticationInput::lockedOut(
-        Availability availability,
-        void (HostAuthenticationInput::*errorFunction)(AuthenticationInput::Error error))
+void HostAuthenticationInput::lockedOut(Availability availability, ErrorFunction errorFunction)
 {
     switch (availability) {
     case CodeEntryLockedRecoverable:
@@ -427,6 +430,17 @@ void HostAuthenticationInput::handleRequestSecurityCode(const QString &path)
             && m_inputStack.last().connection == connection
             && m_inputStack.last().path == path) {
         requestSecurityCode();
+    }
+}
+
+void HostAuthenticationInput::handleReset(const QString &path)
+{
+    qCDebug(daemon) << "Received reset request";
+    const auto connection = QDBusContext::connection().name();
+    if (!m_inputStack.isEmpty()
+            && m_inputStack.last().connection == connection
+            && m_inputStack.last().path == path) {
+        reset();
     }
 }
 

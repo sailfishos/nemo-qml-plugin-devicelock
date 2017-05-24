@@ -127,8 +127,19 @@ void HostAuthenticator::authenticate(
     cancel();
     setActiveClient(client);
 
-    m_state = Authenticating;
     m_challengeCode = challengeCode;
+
+    beginAuthentication(
+                &HostAuthenticationInput::startAuthentication,
+                &HostAuthenticationInput::authenticationUnavailable,
+                methods);
+
+}
+
+void HostAuthenticator::beginAuthentication(
+        FeedbackFunction feedback, ErrorFunction error, Authenticator::Methods methods)
+{
+    m_state = Authenticating;
 
     const auto availability = this->availability();
     switch (availability) {
@@ -141,18 +152,18 @@ void HostAuthenticator::authenticate(
         // Fall through.
     case CanAuthenticate:
         qCDebug(daemon, "Authentication requested using methods %i.", int(methods));
-        startAuthentication(AuthenticationInput::EnterSecurityCode, QVariantMap(), methods);
+        (this->*feedback)(AuthenticationInput::EnterSecurityCode, QVariantMap(), methods);
         break;
     case SecurityCodeRequired:
         m_challengeCode.clear();
-        authenticationUnavailable(AuthenticationInput::FunctionUnavailable);
+        (this->*error)(AuthenticationInput::FunctionUnavailable);
         break;
     case CodeEntryLockedRecoverable:
     case CodeEntryLockedPermanent:
     case ManagerLockedRecoverable:
     case ManagerLockedPermanent:
         m_challengeCode.clear();
-        lockedOut(availability, &HostAuthenticationInput::authenticationUnavailable);
+        lockedOut(availability, error);
         break;
     }
 }
@@ -168,24 +179,33 @@ void HostAuthenticator::handleChangeSecurityCode(const QString &client, const QV
     cancel();
     setActiveClient(client);
 
-    m_state = AuthenticatingForChange;
     m_challengeCode = challengeCode;
+
+    beginChangeSecurityCode(
+                &HostAuthenticationInput::startAuthentication,
+                &HostAuthenticationInput::authenticationUnavailable);
+}
+
+void HostAuthenticator::beginChangeSecurityCode(FeedbackFunction feedback, ErrorFunction error)
+{
+    m_state = AuthenticatingForChange;
 
     switch (availability()) {
     case AuthenticationNotRequired:
     case SecurityCodeRequired:
-        enterCodeChangeState(&HostAuthenticationInput::startAuthentication, Authenticator::SecurityCode);
+        enterCodeChangeState(feedback, Authenticator::SecurityCode);
         break;
     case CanAuthenticateSecurityCode:
     case CanAuthenticate:
-        startAuthentication(AuthenticationInput::EnterSecurityCode, QVariantMap(), Authenticator::SecurityCode);
+        (this->*feedback)(
+                    AuthenticationInput::EnterSecurityCode, QVariantMap(), Authenticator::SecurityCode);
         break;
     case CodeEntryLockedRecoverable:
     case CodeEntryLockedPermanent:
     case ManagerLockedRecoverable:
     case ManagerLockedPermanent:
         m_challengeCode.clear();
-        authenticationUnavailable(AuthenticationInput::FunctionUnavailable);
+        (this->*error)(AuthenticationInput::FunctionUnavailable);
         break;
     }
 }
@@ -201,16 +221,22 @@ void HostAuthenticator::handleClearSecurityCode(const QString &client)
     cancel();
     setActiveClient(client);
 
+    beginClearSecurityCode(
+                &HostAuthenticator::startAuthentication, &HostAuthenticator::authenticationUnavailable);
+}
+
+void HostAuthenticator::beginClearSecurityCode(FeedbackFunction feedback, ErrorFunction error)
+{
     m_state = AuthenticatingForClear;
 
     switch (availability()) {
     case AuthenticationNotRequired:
         m_state = Idle;
-        QDBusContext::sendErrorReply(QDBusError::InvalidArgs);
+        (this->*error)(AuthenticationInput::SoftwareError);
         break;
     case CanAuthenticateSecurityCode:
     case CanAuthenticate:
-        startAuthentication(
+        (this->*feedback)(
                     AuthenticationInput::EnterSecurityCode, QVariantMap(), Authenticator::SecurityCode);
         break;
     case SecurityCodeRequired:
@@ -218,7 +244,8 @@ void HostAuthenticator::handleClearSecurityCode(const QString &client)
     case CodeEntryLockedPermanent:
     case ManagerLockedRecoverable:
     case ManagerLockedPermanent:
-        authenticationUnavailable(AuthenticationInput::FunctionUnavailable);
+        m_state = Idle;
+        (this->*error)(AuthenticationInput::FunctionUnavailable);
         break;
     }
 }
@@ -229,6 +256,7 @@ void HostAuthenticator::enterSecurityCode(const QString &code)
 
     switch (m_state) {
     case Idle:
+    case ChangeReset:
         return;
     case Authenticating:
         qCDebug(daemon, "Lock code entered for authentication.");
@@ -351,6 +379,10 @@ void HostAuthenticator::setCodeFinished(int result)
     case SecurityCodeInHistory:
         if (m_state == ChangeCanceled) {
             securityCodeChangeAborted();
+        } else if (m_state == ChangeReset) {
+            beginChangeSecurityCode(
+                        &HostAuthenticationInput::feedback,
+                        &HostAuthenticationInput::abortAuthentication);
         } else {
             qCDebug(daemon, "Security code disallowed.");
             feedback(AuthenticationInput::SecurityCodeInHistory, -1);
@@ -368,8 +400,15 @@ void HostAuthenticator::setCodeFinished(int result)
     default:
         m_currentCode.clear();
         qCDebug(daemon, "Lock code change failed.");
-
-        abortAuthentication(AuthenticationInput::SoftwareError);
+        if (m_state == ChangeCanceled) {
+            securityCodeChangeAborted();
+        } else if (m_state == ChangeReset) {
+            beginChangeSecurityCode(
+                        &HostAuthenticationInput::feedback,
+                        &HostAuthenticationInput::abortAuthentication);
+        } else {
+            abortAuthentication(AuthenticationInput::SoftwareError);
+        }
         break;
     }
 }
@@ -394,6 +433,9 @@ void HostAuthenticator::abortAuthentication(AuthenticationInput::Error error)
     case AuthenticatingForClear:
         m_state = ClearError;
         break;
+    case ChangeReset:
+        m_state = ChangeCanceled;
+        break;
     default:
         break;
     }
@@ -411,6 +453,54 @@ void HostAuthenticator::authenticationEnded(bool confirmed)
     m_newCode.clear();
 
     HostAuthenticationInput::authenticationEnded(confirmed);
+}
+
+void HostAuthenticator::reset()
+{
+    switch (m_state) {
+    case Idle:
+        break;
+    case Authenticating:
+        beginAuthentication(
+                    &HostAuthenticationInput::feedback,
+                    &HostAuthenticationInput::abortAuthentication);
+        break;
+    case AuthenticationError:
+        beginAuthentication(
+                    &HostAuthenticationInput::authenticationResumed,
+                    &HostAuthenticationInput::abortAuthentication);
+        break;
+    case AuthenticatingForChange:
+    case EnteringNewSecurityCode:
+    case RepeatingNewSecurityCode:
+    case ExpectingGeneratedSecurityCode:
+        beginChangeSecurityCode(
+                    &HostAuthenticationInput::feedback,
+                    &HostAuthenticationInput::abortAuthentication);
+        break;
+    case Changing:
+        m_state = ChangeReset;
+        break;
+    case ChangeError:
+        beginChangeSecurityCode(
+                    &HostAuthenticationInput::authenticationResumed,
+                    &HostAuthenticationInput::abortAuthentication);
+        break;
+    case ChangeCanceled:
+        break;
+    case ChangeReset:
+        break;
+    case AuthenticatingForClear:
+        beginClearSecurityCode(
+                    &HostAuthenticationInput::feedback,
+                    &HostAuthenticationInput::abortAuthentication);
+        break;
+    case ClearError:
+        beginClearSecurityCode(
+                    &HostAuthenticationInput::authenticationResumed,
+                    &HostAuthenticationInput::abortAuthentication);
+        break;
+    }
 }
 
 void HostAuthenticator::cancel()

@@ -83,6 +83,7 @@ public:
     void unlock();
     void enterSecurityCode(const QString &code) override;
     void requestSecurityCode() override;
+    void reset() override;
     void cancel() override;
 
     Availability availability() const override = 0;
@@ -123,14 +124,19 @@ private:
         RepeatingNewSecurityCode,
         ChangingSecurityCode,
         Canceled,
+        Reset,
         AuthenticationError
     };
 
     inline bool isEnabled() const;
     inline void unlockingChanged();
     inline QVariantMap generatedCodeData();
+    inline bool beginUnlock(FeedbackFunction feedback, ErrorFunction error);
     inline void enterCodeChangeState(
             FeedbackFunction feedback, Authenticator::Methods methods = Authenticator::Methods());
+    inline void unexpectedResult();
+    inline void finalizeCancel();
+    inline void finalizeReset();
 
     HostDeviceLockAdaptor m_adaptor;
     QExplicitlySharedDataPointer<SettingsWatcher> m_settings;
