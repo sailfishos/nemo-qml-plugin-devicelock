@@ -49,7 +49,8 @@ public:
     enum Option {
         Shutdown        = 0x00,
         Reboot          = 0x01,
-        WipePartitions  = 0x02
+        WipePartitions  = 0x02,
+        ClearExternalMedia = 0x04
     };
     Q_ENUM(Option)
     Q_DECLARE_FLAGS(Options, Option)

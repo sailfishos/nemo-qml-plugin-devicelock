@@ -47,6 +47,7 @@ namespace NemoDeviceLock
     \value Shutdown Shutdown the device after reset.
     \value Reboot   Reboot the device after reset.
     \value WipePartitions Zero all bytes not overwritten by the factory image.
+    \value ClearExternalMedia Data on external storage will also be deleted.
 */
 
 /*!
