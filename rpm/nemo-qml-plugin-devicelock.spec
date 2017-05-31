@@ -22,7 +22,7 @@ Requires:       nemo-devicelock-daemon
 %{summary}.
 
 %package -n nemo-devicelock-daemon-cli
-Summary:    The default command line lock code device lock daemon for Nemo Mobile
+Summary:    The default command line security code device lock daemon for Nemo Mobile
 Group:      System/GUI/Other
 Requires:   %{name} = %{version}-%{release}
 Provides:   nemo-devicelock-daemon = %{version}-%{release}

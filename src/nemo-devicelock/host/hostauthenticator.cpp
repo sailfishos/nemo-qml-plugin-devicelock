@@ -231,7 +231,7 @@ void HostAuthenticator::enterSecurityCode(const QString &code)
     case Idle:
         return;
     case Authenticating:
-        qCDebug(daemon, "Lock code entered for authentication.");
+        qCDebug(daemon, "Security code entered for authentication.");
         switch ((attempts = checkCode(code))) {
         case Success:
         case SecurityCodeExpired:
@@ -243,7 +243,7 @@ void HostAuthenticator::enterSecurityCode(const QString &code)
         }
         break;
     case AuthenticatingForChange:
-        qCDebug(daemon, "Lock code entered for code change authentication.");
+        qCDebug(daemon, "Security code entered for code change authentication.");
         switch ((attempts = checkCode(code))) {
         case Success:
         case SecurityCodeExpired:
@@ -257,7 +257,7 @@ void HostAuthenticator::enterSecurityCode(const QString &code)
         }
         break;
     case EnteringNewSecurityCode:
-        qCDebug(daemon, "New lock code entered.");
+        qCDebug(daemon, "New security code entered.");
         m_newCode = code;
         m_state = RepeatingNewSecurityCode;
         feedback(AuthenticationInput::RepeatNewSecurityCode, -1);
@@ -273,7 +273,7 @@ void HostAuthenticator::enterSecurityCode(const QString &code)
         }
         return;
     case RepeatingNewSecurityCode: {
-        qCDebug(daemon, "New lock code confirmation entered.");
+        qCDebug(daemon, "New security code confirmation entered.");
         if (m_newCode != code) {
             qCDebug(daemon, "Lock codes don't match.");
             m_newCode.clear();
@@ -300,7 +300,7 @@ void HostAuthenticator::enterSecurityCode(const QString &code)
         return;
     }
     case AuthenticatingForClear: {
-        qCDebug(daemon, "Lock code entered for clear authentication.");
+        qCDebug(daemon, "Security code entered for clear authentication.");
         if ((attempts = checkCode(code)) == 0) {
             if (clearCode(code)) {
                 securityCodeCleared();
@@ -345,7 +345,7 @@ void HostAuthenticator::setCodeFinished(int result)
     case Success:
         m_currentCode.clear();
 
-        qCDebug(daemon, "Lock code changed.");
+        qCDebug(daemon, "Security code changed.");
         securityCodeChanged(authenticateChallengeCode(m_challengeCode));
         break;
     case SecurityCodeInHistory:
@@ -367,7 +367,7 @@ void HostAuthenticator::setCodeFinished(int result)
         break;
     default:
         m_currentCode.clear();
-        qCDebug(daemon, "Lock code change failed.");
+        qCDebug(daemon, "Security code change failed.");
 
         abortAuthentication(AuthenticationInput::SoftwareError);
         break;

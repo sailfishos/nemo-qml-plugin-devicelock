@@ -266,7 +266,7 @@ void HostDeviceLock::setCodeFinished(int result)
 {
     switch (result) {
     case Success:
-        qCDebug(daemon, "Lock code changed.");
+        qCDebug(daemon, "Security code changed.");
         m_currentCode.clear();
         if (m_state == ChangingSecurityCode || m_state == RepeatingNewSecurityCode) {
             unlockFinished(unlockWithCode(m_newCode));
@@ -294,7 +294,7 @@ void HostDeviceLock::setCodeFinished(int result)
         }
         return;
     default:
-        qCDebug(daemon, "Lock code change failed.");
+        qCDebug(daemon, "Security code change failed.");
         m_currentCode.clear();
         if (m_state == Canceled) {
             m_state = Idle;
