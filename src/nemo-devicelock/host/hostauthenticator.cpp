@@ -98,6 +98,8 @@ HostAuthenticator::HostAuthenticator(Authenticator::Methods supportedMethods, QO
     : HostAuthenticationInput(QStringLiteral("/authenticator"), supportedMethods, parent)
     , m_adaptor(this)
     , m_securityCodeAdaptor(this)
+    , m_repeatsRequired(0)
+    , m_state(Idle)
 {
 }
 
@@ -260,13 +262,15 @@ void HostAuthenticator::enterSecurityCode(const QString &code)
         qCDebug(daemon, "New lock code entered.");
         m_newCode = code;
         m_state = RepeatingNewSecurityCode;
+        m_repeatsRequired = 1;
         feedback(AuthenticationInput::RepeatNewSecurityCode, -1);
         return;
     case ExpectingGeneratedSecurityCode:
         if (m_generatedCode == code) {
             m_newCode = code;
             m_state = RepeatingNewSecurityCode;
-            feedback(AuthenticationInput::RepeatNewSecurityCode, -1);
+            m_repeatsRequired = 2;
+            feedback(AuthenticationInput::EnterNewSecurityCode, -1);
         } else {
             feedback(AuthenticationInput::SecurityCodesDoNotMatch, QVariantMap());
             feedback(AuthenticationInput::SuggestSecurityCode, generatedCodeData());
@@ -289,14 +293,13 @@ void HostAuthenticator::enterSecurityCode(const QString &code)
                 m_state = AuthenticatingForChange;
                 feedback(AuthenticationInput::EnterSecurityCode, -1);
             }
+        } else if (--m_repeatsRequired > 0) {
+            feedback(AuthenticationInput::RepeatNewSecurityCode, -1);
+        } else {
+            m_newCode.clear();
 
-            return;
+            setCodeFinished(setCode(m_currentCode, code));
         }
-
-        m_newCode.clear();
-
-        setCodeFinished(setCode(m_currentCode, code));
-
         return;
     }
     case AuthenticatingForClear: {

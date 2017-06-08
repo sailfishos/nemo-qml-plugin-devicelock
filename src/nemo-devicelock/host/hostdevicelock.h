@@ -137,6 +137,7 @@ private:
     QString m_currentCode;
     QString m_newCode;
     QString m_generatedCode;
+    int m_repeatsRequired;
     State m_state;
     DeviceLock::LockState m_lockState;
 };
