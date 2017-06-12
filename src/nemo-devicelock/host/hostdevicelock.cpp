@@ -72,6 +72,7 @@ HostDeviceLock::HostDeviceLock(Authenticator::Methods supportedMethods, QObject 
     : HostAuthenticationInput(QStringLiteral("/devicelock/lock"), supportedMethods, parent)
     , m_adaptor(this)
     , m_settings(SettingsWatcher::instance())
+    , m_repeatsRequired(0)
     , m_state(Idle)
     , m_lockState(DeviceLock::Undefined)
 {
@@ -181,13 +182,15 @@ void HostDeviceLock::enterSecurityCode(const QString &code)
     case EnteringNewSecurityCode:
         m_newCode = code;
         m_state = RepeatingNewSecurityCode;
+        m_repeatsRequired = 1;
         feedback(AuthenticationInput::RepeatNewSecurityCode, -1);
         break;
     case ExpectingGeneratedSecurityCode:
         if (m_generatedCode == code) {
             m_newCode = code;
             m_state = RepeatingNewSecurityCode;
-            feedback(AuthenticationInput::RepeatNewSecurityCode, -1);
+            m_repeatsRequired = 2;
+            feedback(AuthenticationInput::EnterNewSecurityCode, -1);
         } else {
             feedback(AuthenticationInput::SecurityCodesDoNotMatch, QVariantMap());
             feedback(AuthenticationInput::SuggestSecurityCode, generatedCodeData());
@@ -210,6 +213,8 @@ void HostDeviceLock::enterSecurityCode(const QString &code)
                 break;
             }
             break;
+        } else if (--m_repeatsRequired > 0) {
+            feedback(AuthenticationInput::RepeatNewSecurityCode, -1);
         } else {
             setCodeFinished(setCode(m_currentCode, code));
         }
