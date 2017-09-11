@@ -81,7 +81,7 @@ SettingsWatcher *SettingsWatcher::sharedInstance = nullptr;
 
 SettingsWatcher::SettingsWatcher(QObject *parent)
     : QSocketNotifier(inotify_init(), Read, parent)
-    , automaticLocking(10)
+    , automaticLocking(0)
     , minimumLength(5)
     , maximumLength(42)
     , maximumAttempts(-1)
@@ -253,7 +253,7 @@ void SettingsWatcher::reloadSettings()
     GKeyFile * const settings = g_key_file_new();
     g_key_file_load_from_file(settings, m_settingsPath.toUtf8().constData(), G_KEY_FILE_NONE, 0);
 
-    read(settings, this, automaticLockingKey, 5, &automaticLocking, &SettingsWatcher::automaticLockingChanged);
+    read(settings, this, automaticLockingKey, 0, &automaticLocking, &SettingsWatcher::automaticLockingChanged);
     read(settings, this, minimumLengthKey, 5, &minimumLength, &SettingsWatcher::minimumLengthChanged);
     read(settings, this, maximumLengthKey, 42, &maximumLength, &SettingsWatcher::maximumLengthChanged);
     read(settings, this, maximumAttemptsKey, -1, &maximumAttempts, &SettingsWatcher::maximumAttemptsChanged);
