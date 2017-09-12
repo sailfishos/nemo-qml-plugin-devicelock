@@ -57,7 +57,7 @@ Requires:   pkgconfig(nemodbus)
 
 %build
 %qmake5
-make make %{?_smp_mflags}
+make %{?_smp_mflags}
 
 %install
 rm -rf %{buildroot}
