@@ -16,7 +16,6 @@ BuildRequires:  pkgconfig(libsystemd-daemon)
 BuildRequires:  pkgconfig(mce)
 BuildRequires:  pkgconfig(nemodbus)
 Obsoletes:      nemo-qml-plugin-devicelock-default < 0.2.0
-Requires:       nemo-devicelock-daemon
 
 %description
 %{summary}.
@@ -43,7 +42,6 @@ Requires:   pkgconfig(nemodbus)
 Summary:    Development libraries for device lock daemons
 Group:      Development/Libraries
 Requires:   %{name}-devel = %{version}-%{release}
-Requires:   nemo-devicelock-daemon-cli = %{version}-%{release}
 Requires:   pkgconfig(keepalive)
 Requires:   pkgconfig(libsystemd-daemon)
 Requires:   pkgconfig(mce)

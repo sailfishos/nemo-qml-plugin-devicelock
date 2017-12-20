@@ -34,10 +34,11 @@
 #define NEMODEVICELOCK_HOSTAUTHENTICATOR_H
 
 #include <QDBusAbstractAdaptor>
-#include <QDBusContext>
+#include <QDBusMessage>
 #include <QDBusObjectPath>
 #include <QDBusVariant>
 
+#include <nemo-dbus/interface.h>
 #include <nemo-devicelock/host/hostauthenticationinput.h>
 #include <nemo-devicelock/host/hostobject.h>
 
@@ -61,6 +62,8 @@ public:
 
 public slots:
     void Authenticate(const QDBusObjectPath &client, const QDBusVariant &challengeCode, uint methods);
+    void RequestPermission(
+            const QDBusObjectPath &path, const QString &message, const QVariantMap &properties, uint methods);
     void Cancel(const QDBusObjectPath &client);
 
 private:
@@ -102,7 +105,8 @@ public:
 
     // Authenticator
     virtual Authenticator::Methods availableMethods() const = 0;
-    virtual QVariant authenticateChallengeCode(const QVariant &challengeCode) = 0;
+    virtual QVariant authenticateChallengeCode(
+            const QVariant &challengeCode, Authenticator::Method method, uint authenticatingPid) = 0;
 
     // SecurityCodeSettings
     virtual bool authorizeSecurityCodeSettings(unsigned long pid);
@@ -116,10 +120,13 @@ public:
 
     void enterSecurityCode(const QString &code) override;
     void requestSecurityCode() override;
+    void authorize() override;
     void cancel() override;
 
-    void confirmAuthentication() override;
+    void confirmAuthentication(Authenticator::Method method) override;
     void abortAuthentication(AuthenticationInput::Error error) override;
+    void authenticationStarted(
+            Authenticator::Methods methods, uint authenticatingPid, AuthenticationInput::Feedback feedback) override;
     void authenticationEnded(bool confirmed) override;
 
     void setCodeFinished(int result);
@@ -143,6 +150,7 @@ private:
         Authenticating,
         AuthenticationError,
         AuthenticatingForChange,
+        RequestingPermission,
         EnteringNewSecurityCode,
         RepeatingNewSecurityCode,
         ExpectingGeneratedSecurityCode,
@@ -156,6 +164,11 @@ private:
     inline bool isSecurityCodeSet() const;
     inline void authenticate(
             const QString &authenticator, const QVariant &challengeCode, Authenticator::Methods methods);
+    inline void requestPermission(
+            const QString &client,
+            const QString &message,
+            const QVariantMap &properties,
+            Authenticator::Methods methods);
     inline void handleChangeSecurityCode(const QString &client, const QVariant &challengeCode);
     inline void handleClearSecurityCode(const QString &client);
     inline void handleCancel(const QString &client);
@@ -173,6 +186,7 @@ private:
     QString m_newCode;
     QString m_generatedCode;
     int m_repeatsRequired;
+    int m_authenticatingPid;
     State m_state;
 };
 

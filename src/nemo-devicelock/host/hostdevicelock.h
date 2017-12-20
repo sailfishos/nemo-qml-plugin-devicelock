@@ -94,7 +94,7 @@ public:
     virtual bool isLocked() const = 0;
     virtual void setLocked(bool locked) = 0;
 
-    void confirmAuthentication() override;
+    void confirmAuthentication(Authenticator::Method method) override;
     void abortAuthentication(AuthenticationInput::Error error) override;
 
     void lockedChanged();
@@ -102,7 +102,7 @@ public:
 
     virtual void automaticLockingChanged();
 
-    void unlockFinished(int result);
+    void unlockFinished(int result, Authenticator::Method method);
     void setCodeFinished(int result);
 
     // Signals

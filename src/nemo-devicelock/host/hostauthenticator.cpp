@@ -34,6 +34,12 @@
 
 #include "settingswatcher.h"
 
+#include <QDBusArgument>
+#include <QDBusConnection>
+#include <QDBusMetaType>
+
+#include <unistd.h>
+
 namespace NemoDeviceLock
 {
 
@@ -56,6 +62,12 @@ void HostAuthenticatorAdaptor::Authenticate(
 {
     m_authenticator->authenticate(
                 path.path(), challengeCode.variant(), Authenticator::Methods(methods));
+}
+
+void HostAuthenticatorAdaptor::RequestPermission(
+        const QDBusObjectPath &path, const QString &message, const QVariantMap &properties, uint methods)
+{
+    m_authenticator->requestPermission(path.path(), message, properties, Authenticator::Methods(methods));
 }
 
 void HostAuthenticatorAdaptor::Cancel(const QDBusObjectPath &path)
@@ -99,6 +111,7 @@ HostAuthenticator::HostAuthenticator(Authenticator::Methods supportedMethods, QO
     , m_adaptor(this)
     , m_securityCodeAdaptor(this)
     , m_repeatsRequired(0)
+    , m_authenticatingPid(0)
     , m_state(Idle)
 {
 }
@@ -135,15 +148,24 @@ void HostAuthenticator::authenticate(
     const auto availability = this->availability();
     switch (availability) {
     case AuthenticationNotRequired:
-        qCDebug(daemon, "Authentication requested. Unsecured, authenticating immediately.");
-        confirmAuthentication();
+        if (methods & Authenticator::Confirmation) {
+            qCDebug(daemon, "Authentication requested. Requesting simple confirmation.");
+            startAuthentication(AuthenticationInput::Authorize, QVariantMap(), Authenticator::Confirmation);
+        } else {
+            qCDebug(daemon, "Authentication requested. Unsecured, authenticating immediately.");
+            confirmAuthentication(Authenticator::NoAuthentication);
+        }
         break;
     case CanAuthenticateSecurityCode:
-        methods &= Authenticator::SecurityCode;
+        methods &= Authenticator::SecurityCode | Authenticator::Confirmation;
         // Fall through.
     case CanAuthenticate:
         qCDebug(daemon, "Authentication requested using methods %i.", int(methods));
-        startAuthentication(AuthenticationInput::EnterSecurityCode, QVariantMap(), methods);
+        if (methods == Authenticator::Confirmation) {
+            startAuthentication(AuthenticationInput::Authorize, QVariantMap(), Authenticator::Confirmation);
+        } else {
+            startAuthentication(AuthenticationInput::EnterSecurityCode, QVariantMap(), methods);
+        }
         break;
     case SecurityCodeRequired:
         m_challengeCode.clear();
@@ -155,6 +177,55 @@ void HostAuthenticator::authenticate(
     case ManagerLockedPermanent:
         m_challengeCode.clear();
         lockedOut(availability, &HostAuthenticationInput::authenticationUnavailable);
+        break;
+    }
+}
+
+
+void HostAuthenticator::requestPermission(
+        const QString &client,
+        const QString &message,
+        const QVariantMap &properties,
+        Authenticator::Methods methods)
+{
+    cancel();
+    setActiveClient(client);
+
+    m_state = RequestingPermission;
+
+    const uint authenticatingPid = properties.value(
+                QStringLiteral("authenticatingPid"),
+                QVariant::fromValue(connectionPid(QDBusContext::connection()))).toUInt();
+
+    const QVariantMap data = {
+        { QStringLiteral("message"), message }
+    };
+
+    const auto availability = this->availability();
+    switch (availability) {
+    case AuthenticationNotRequired:
+        qCDebug(daemon, "Authentication requested. Requesting simple confirmation.");
+        startAuthentication(AuthenticationInput::Authorize, authenticatingPid, data, Authenticator::Confirmation);
+        break;
+    case CanAuthenticateSecurityCode:
+        methods &= Authenticator::SecurityCode | Authenticator::Confirmation;
+        // Fall through.
+    case CanAuthenticate:
+        qCDebug(daemon, "Authentication requested using methods %i.", int(methods));
+        if (methods == Authenticator::Confirmation) {
+            startAuthentication(AuthenticationInput::Authorize, authenticatingPid, data, methods);
+        } else {
+            startAuthentication(AuthenticationInput::EnterSecurityCode, authenticatingPid, data, methods);
+        }
+        break;
+    case SecurityCodeRequired:
+        authenticationUnavailable(AuthenticationInput::FunctionUnavailable, authenticatingPid);
+        break;
+    case CodeEntryLockedRecoverable:
+    case CodeEntryLockedPermanent:
+    case ManagerLockedRecoverable:
+    case ManagerLockedPermanent:
+        lockedOut();
         break;
     }
 }
@@ -233,11 +304,12 @@ void HostAuthenticator::enterSecurityCode(const QString &code)
     case Idle:
         return;
     case Authenticating:
+    case RequestingPermission:
         qCDebug(daemon, "Security code entered for authentication.");
         switch ((attempts = checkCode(code))) {
         case Success:
         case SecurityCodeExpired:
-            confirmAuthentication();
+            confirmAuthentication(Authenticator::SecurityCode);
             return;
         case LockedOut:
             lockedOut();
@@ -342,6 +414,23 @@ void HostAuthenticator::requestSecurityCode()
     }
 }
 
+void HostAuthenticator::authorize()
+{
+    switch (m_state) {
+    case Authenticating:
+    case RequestingPermission:
+        if (activeMethods() == Authenticator::Confirmation) {
+            qCDebug(daemon, "Action authorized without authentication.");
+            confirmAuthentication(Authenticator::Confirmation);
+        } else {
+            qCWarning(daemon, "Authorization requires authentication, rejecting.");
+        }
+        break;
+    default:
+        break;
+    }
+}
+
 void HostAuthenticator::setCodeFinished(int result)
 {
     switch (result) {
@@ -349,7 +438,8 @@ void HostAuthenticator::setCodeFinished(int result)
         m_currentCode.clear();
 
         qCDebug(daemon, "Security code changed.");
-        securityCodeChanged(authenticateChallengeCode(m_challengeCode));
+        securityCodeChanged(authenticateChallengeCode(
+                    m_challengeCode, Authenticator::SecurityCode, m_authenticatingPid));
         break;
     case SecurityCodeInHistory:
         if (m_state == ChangeCanceled) {
@@ -377,15 +467,23 @@ void HostAuthenticator::setCodeFinished(int result)
     }
 }
 
-void HostAuthenticator::confirmAuthentication()
+void HostAuthenticator::confirmAuthentication(Authenticator::Method method)
 {
-    authenticated(authenticateChallengeCode(m_challengeCode));
+    if (m_state == RequestingPermission) {
+        sendToActiveClient(authenticatorInterface, QStringLiteral("PermissionGranted"), uint(method));
+        authenticationEnded(true);
+    } else {
+        authenticated(authenticateChallengeCode(m_challengeCode, method, m_authenticatingPid));
+    }
 }
 
 void HostAuthenticator::abortAuthentication(AuthenticationInput::Error error)
 {
     switch (m_state) {
     case Authenticating:
+        m_state = AuthenticationError;
+        break;
+    case RequestingPermission:
         m_state = AuthenticationError;
         break;
     case AuthenticatingForChange:
@@ -404,10 +502,19 @@ void HostAuthenticator::abortAuthentication(AuthenticationInput::Error error)
     HostAuthenticationInput::abortAuthentication(error);
 }
 
+void HostAuthenticator::authenticationStarted(
+        Authenticator::Methods methods, uint authenticatingPid, AuthenticationInput::Feedback feedback)
+{
+    m_authenticatingPid = authenticatingPid;
+
+    HostAuthenticationInput::authenticationStarted(methods, authenticatingPid, feedback);
+}
+
 void HostAuthenticator::authenticationEnded(bool confirmed)
 {
     clearActiveClient();
 
+    m_authenticatingPid = 0;
     m_challengeCode.clear();
     m_state = Idle;
     m_currentCode.clear();
@@ -421,6 +528,7 @@ void HostAuthenticator::cancel()
     switch (m_state) {
     case Authenticating:
     case AuthenticationError:
+    case RequestingPermission:
         aborted();
         break;
     case AuthenticatingForChange:

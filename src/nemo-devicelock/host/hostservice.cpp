@@ -110,15 +110,14 @@ HostService::HostService(
         HostFingerprintSensor *fingerprintSensor,
         HostFingerprintSettings *fingerprintSettings,
         QObject *parent)
-    : HostService(
-        QVector<HostObject *>()
-            << authenticator
-            << deviceLock
-            << deviceLockSettings
-            << deviceReset
-            << encryptionSettings
-            << fingerprintSensor
-            << fingerprintSettings
+    : HostService({
+            authenticator,
+            deviceLock,
+            deviceLockSettings,
+            deviceReset,
+            encryptionSettings,
+            fingerprintSensor,
+            fingerprintSettings }
         , parent)
 {
 }

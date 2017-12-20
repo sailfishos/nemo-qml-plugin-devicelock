@@ -58,7 +58,8 @@ public:
     bool clearCode(const QString &code) override;
 
     void enterSecurityCode(const QString &code);
-    QVariant authenticateChallengeCode(const QVariant &challengeCode);
+    QVariant authenticateChallengeCode(
+            const QVariant &challengeCode, Authenticator::Method method, uint authenticatingPid) override;
 
 private:
     QExplicitlySharedDataPointer<LockCodeWatcher> m_watcher;

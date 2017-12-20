@@ -8,6 +8,11 @@
    <arg name="challenge_code" type="v" direction="in"/>
    <arg name="methods" type="u" direction="in"/>
   </method>
+  <method name="RequestPermission">
+    <arg name="client" type="o" direction="in"/>
+    <arg name="message" type="s" direction="in"/>
+    <arg name="methods" type="u" direction="in"/>
+  </method>
   <method name="Cancel">
    <arg name="client" type="o" direction="in"/>
   </method>

@@ -4,6 +4,8 @@
  <interface name="org.nemomobile.devicelock.Authorization">
   <method name="RequestChallenge">
    <arg name="client" type="o" direction="in"/>
+   <arg name="requested_methods" type="u" direction="in"/>
+   <arg name="authenticating_pid" type="u" direction="in"/>
    <arg name="challenge_code" type="v" direction="out"/>
    <arg name="allowed_methods" type="u" direction="out"/>
   </method>
