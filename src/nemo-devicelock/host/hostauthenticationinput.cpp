@@ -90,8 +90,11 @@ HostAuthenticationInput::~HostAuthenticationInput()
 
 void HostAuthenticationInput::authenticationStarted(
         Authenticator::Methods methods,
+        uint authenticatingPid,
         AuthenticationInput::Feedback)
 {
+    Q_UNUSED(authenticatingPid);
+
     qCDebug(daemon, "Authentication started");
 
     m_authenticating = true;
@@ -109,7 +112,7 @@ void HostAuthenticationInput::startAuthentication(
     const uint pid = connectionPid(QDBusContext::connection());
 
     if (pid != 0 && !m_inputStack.isEmpty()) {
-        authenticationStarted(methods, feedback);
+        authenticationStarted(methods, pid, feedback);
 
         NemoDBus::send(
                     m_inputStack.last().connection,

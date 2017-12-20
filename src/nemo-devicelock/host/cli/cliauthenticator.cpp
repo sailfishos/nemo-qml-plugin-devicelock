@@ -103,7 +103,7 @@ void CliAuthenticator::enterSecurityCode(const QString &code)
     m_securityCode.clear();
 }
 
-QVariant CliAuthenticator::authenticateChallengeCode(const QVariant &)
+QVariant CliAuthenticator::authenticateChallengeCode(const QVariant &, Authenticator::Method, uint)
 {
     return m_securityCode;
 }

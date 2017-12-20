@@ -30,56 +30,31 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#ifndef NEMODEVICELOCK_HOSTAUTHORIZATION_H
-#define NEMODEVICELOCK_HOSTAUTHORIZATION_H
+#include "clivalidator.h"
+#include <hostauthenticationinput.h>
 
-#include <QDBusAbstractAdaptor>
-#include <QDBusObjectPath>
 
-#include <nemo-devicelock/authenticator.h>
-
-#include <nemo-devicelock/host/hostobject.h>
+#include "lockcodewatcher.h"
 
 namespace NemoDeviceLock
 {
 
-class HostAuthorization;
-class HostAuthorizationAdaptor : public QDBusAbstractAdaptor
+CliValidator::CliValidator(QObject *parent)
+    : HostValidator(parent)
+    , m_watcher(LockCodeWatcher::instance())
 {
-    Q_OBJECT
-    Q_CLASSINFO("D-Bus Interface", "org.nemomobile.devicelock.Authorization")
-public:
-    explicit HostAuthorizationAdaptor(HostAuthorization *authorization);
-
-public slots:
-    void RequestChallenge(const QDBusObjectPath &path, uint requestedMethods, uint authenticatingPid);
-    void RelinquishChallenge(const QDBusObjectPath &path);
-
-private:
-    HostAuthorization * const m_authorization;
-};
-
-class HostAuthorization : public HostObject
-{
-    Q_OBJECT
-public:
-    explicit HostAuthorization(
-            const QString &path, Authenticator::Methods allowedMethods, QObject *parent = nullptr);
-    ~HostAuthorization();
-
-protected:
-    virtual void requestChallenge(const QString &client, Authenticator::Methods requestedMethods, uint authenticatingPid);
-    virtual void relinquishChallenge(const QString &client);
-
-    void challengeExpired(const QString &connection, const QString &client);
-
-private:
-    friend class HostAuthorizationAdaptor;
-
-    HostAuthorizationAdaptor m_adaptor;
-    const Authenticator::Methods m_allowedMethods;
-};
-
 }
 
-#endif
+CliValidator::~CliValidator()
+{
+}
+
+void CliValidator::verifyToken(const QString &, const QVariant &authenticationToken)
+{
+
+    if (m_watcher->runPlugin({ QStringLiteral("--check-code"), authenticationToken.toString() }) != HostAuthenticationInput::Success) {
+        QDBusContext::sendErrorReply(QDBusError::InternalError);
+    }
+}
+
+}

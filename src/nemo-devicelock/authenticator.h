@@ -69,7 +69,8 @@ public:
     enum Method {
         NoAuthentication    = 0x00,
         SecurityCode        = 0x01,
-        Fingerprint         = 0x02
+        Fingerprint         = 0x02,
+        AllAvailable = SecurityCode | Fingerprint
     };
 
     Q_DECLARE_FLAGS(Methods, Method)
@@ -81,7 +82,7 @@ public:
     bool isAuthenticating() const;
 
     Q_INVOKABLE void authenticate(
-            const QVariant &challengeCode, Methods methods = Methods(SecurityCode | Fingerprint));
+            const QVariant &challengeCode, Methods methods = AllAvailable);
     Q_INVOKABLE void cancel();
 
 signals:

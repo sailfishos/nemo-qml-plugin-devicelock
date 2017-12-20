@@ -119,6 +119,7 @@ public:
             Authenticator::Methods methods);
     virtual void authenticationStarted(
             Authenticator::Methods methods,
+            uint authenticatingPid,
             AuthenticationInput::Feedback feedback = AuthenticationInput::EnterSecurityCode);
     void authenticationUnavailable(AuthenticationInput::Error error);
     void authenticationResumed(
@@ -132,7 +133,7 @@ public:
     virtual void authenticationActive(Authenticator::Methods methods);
     virtual void authenticationInactive();
 
-    virtual void confirmAuthentication() = 0;
+    virtual void confirmAuthentication(Authenticator::Method method) = 0;
     virtual void abortAuthentication(AuthenticationInput::Error error);
 
     // Signals

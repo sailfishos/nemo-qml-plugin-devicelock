@@ -30,54 +30,52 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#ifndef NEMODEVICELOCK_HOSTAUTHORIZATION_H
-#define NEMODEVICELOCK_HOSTAUTHORIZATION_H
+#ifndef NEMODEVICELOCK_VALIDATOR_H
+#define NEMODEVICELOCK_VALIDATOR_H
 
-#include <QDBusAbstractAdaptor>
-#include <QDBusObjectPath>
-
-#include <nemo-devicelock/authenticator.h>
-
-#include <nemo-devicelock/host/hostobject.h>
+#include <nemo-devicelock/private/clientauthorization.h>
 
 namespace NemoDeviceLock
 {
 
-class HostAuthorization;
-class HostAuthorizationAdaptor : public QDBusAbstractAdaptor
+class SettingsWatcher;
+
+class NEMODEVICELOCK_EXPORT Validator : public QObject, private ConnectionClient
 {
     Q_OBJECT
-    Q_CLASSINFO("D-Bus Interface", "org.nemomobile.devicelock.Authorization")
+    Q_PROPERTY(NemoDeviceLock::Authorization *authorization READ authorization CONSTANT)
+    Q_PROPERTY(Authenticator::Methods allowedMethods READ allowedMethods WRITE setAllowedMethods NOTIFY allowedMethodsChanged)
+    Q_PROPERTY(int authenticatingPid READ authenticatingPid WRITE setAuthenticatingPid NOTIFY authenticatingPidChanged)
+    Q_PROPERTY(bool verifying READ isVerifying NOTIFY verifyingChanged)
 public:
-    explicit HostAuthorizationAdaptor(HostAuthorization *authorization);
+    explicit Validator(QObject *parent = nullptr);
+    ~Validator();
 
-public slots:
-    void RequestChallenge(const QDBusObjectPath &path, uint requestedMethods, uint authenticatingPid);
-    void RelinquishChallenge(const QDBusObjectPath &path);
+    Authorization *authorization();
+
+    Authenticator::Methods allowedMethods() const;
+    void setAllowedMethods(Authenticator::Methods methods);
+
+    int authenticatingPid() const;
+    void setAuthenticatingPid(int pid);
+
+    bool isVerifying() const;
+
+    Q_INVOKABLE void verifyToken(const QVariant &authenticationToken);
+
+signals:
+    void allowedMethodsChanged();
+    void authenticatingPidChanged();
+    void verifyingChanged();
+    void tokenVerified();
+    void tokenRejected();
 
 private:
-    HostAuthorization * const m_authorization;
-};
+    inline void connected();
 
-class HostAuthorization : public HostObject
-{
-    Q_OBJECT
-public:
-    explicit HostAuthorization(
-            const QString &path, Authenticator::Methods allowedMethods, QObject *parent = nullptr);
-    ~HostAuthorization();
-
-protected:
-    virtual void requestChallenge(const QString &client, Authenticator::Methods requestedMethods, uint authenticatingPid);
-    virtual void relinquishChallenge(const QString &client);
-
-    void challengeExpired(const QString &connection, const QString &client);
-
-private:
-    friend class HostAuthorizationAdaptor;
-
-    HostAuthorizationAdaptor m_adaptor;
-    const Authenticator::Methods m_allowedMethods;
+    ClientAuthorization m_authorization;
+    ClientAuthorizationAdaptor m_authorizationAdaptor;
+    NemoDBus::Response *m_verifyResponse;
 };
 
 }

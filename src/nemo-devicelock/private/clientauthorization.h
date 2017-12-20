@@ -64,6 +64,12 @@ public:
 
     Authenticator::Methods allowedMethods() const override;
 
+    Authenticator::Methods requestedMethods() const;
+    void setRequestedMethods(Authenticator::Methods methods);
+
+    int authenticatingPid() const;
+    void setAuthenticatingPid(int pid);
+
     Status status() const override;
     QVariant challengeCode() const override;
 
@@ -77,6 +83,8 @@ private:
 
     QVariant m_challengeCode;
     Authenticator::Methods m_allowedMethods;
+    Authenticator::Methods m_requestedMethods;
+    int m_authenticatingPid;
     Status m_status;
 };
 

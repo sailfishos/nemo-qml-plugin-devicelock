@@ -39,6 +39,7 @@
 #include "hostencryptionsettings.h"
 #include "hostfingerprintsensor.h"
 #include "hostfingerprintsettings.h"
+#include "hostvalidator.h"
 
 #include <QDBusConnection>
 #include <QDBusMetaType>
@@ -109,16 +110,17 @@ HostService::HostService(
         HostEncryptionSettings *encryptionSettings,
         HostFingerprintSensor *fingerprintSensor,
         HostFingerprintSettings *fingerprintSettings,
+        HostValidator *validator,
         QObject *parent)
-    : HostService(
-        QVector<HostObject *>()
-            << authenticator
-            << deviceLock
-            << deviceLockSettings
-            << deviceReset
-            << encryptionSettings
-            << fingerprintSensor
-            << fingerprintSettings
+    : HostService({
+            authenticator,
+            deviceLock,
+            deviceLockSettings,
+            deviceReset,
+            encryptionSettings,
+            fingerprintSensor,
+            fingerprintSettings,
+            validator}
         , parent)
 {
 }

@@ -30,54 +30,28 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#ifndef NEMODEVICELOCK_HOSTAUTHORIZATION_H
-#define NEMODEVICELOCK_HOSTAUTHORIZATION_H
+#ifndef NEMODEVICELOCK_CLIHOSTVALIDATOR_H
+#define NEMODEVICELOCK_CLIHOSTVALIDATOR_H
 
-#include <QDBusAbstractAdaptor>
-#include <QDBusObjectPath>
+#include <nemo-devicelock/host/hostvalidator.h>
 
-#include <nemo-devicelock/authenticator.h>
-
-#include <nemo-devicelock/host/hostobject.h>
+#include <QSharedDataPointer>
 
 namespace NemoDeviceLock
 {
 
-class HostAuthorization;
-class HostAuthorizationAdaptor : public QDBusAbstractAdaptor
-{
-    Q_OBJECT
-    Q_CLASSINFO("D-Bus Interface", "org.nemomobile.devicelock.Authorization")
-public:
-    explicit HostAuthorizationAdaptor(HostAuthorization *authorization);
+class LockCodeWatcher;
 
-public slots:
-    void RequestChallenge(const QDBusObjectPath &path, uint requestedMethods, uint authenticatingPid);
-    void RelinquishChallenge(const QDBusObjectPath &path);
+class CliValidator : public HostValidator
+{
+public:
+    explicit CliValidator(QObject *parent = nullptr);
+    ~CliValidator();
+
+    void verifyToken(const QString &requestor, const QVariant &authenticationToken) override;
 
 private:
-    HostAuthorization * const m_authorization;
-};
-
-class HostAuthorization : public HostObject
-{
-    Q_OBJECT
-public:
-    explicit HostAuthorization(
-            const QString &path, Authenticator::Methods allowedMethods, QObject *parent = nullptr);
-    ~HostAuthorization();
-
-protected:
-    virtual void requestChallenge(const QString &client, Authenticator::Methods requestedMethods, uint authenticatingPid);
-    virtual void relinquishChallenge(const QString &client);
-
-    void challengeExpired(const QString &connection, const QString &client);
-
-private:
-    friend class HostAuthorizationAdaptor;
-
-    HostAuthorizationAdaptor m_adaptor;
-    const Authenticator::Methods m_allowedMethods;
+    QExplicitlySharedDataPointer<LockCodeWatcher> m_watcher;
 };
 
 }

@@ -102,7 +102,8 @@ public:
 
     // Authenticator
     virtual Authenticator::Methods availableMethods() const = 0;
-    virtual QVariant authenticateChallengeCode(const QVariant &challengeCode) = 0;
+    virtual QVariant authenticateChallengeCode(
+            const QVariant &challengeCode, Authenticator::Method method, uint authenticatingPid) = 0;
 
     // SecurityCodeSettings
     virtual bool authorizeSecurityCodeSettings(unsigned long pid);
@@ -118,8 +119,10 @@ public:
     void requestSecurityCode() override;
     void cancel() override;
 
-    void confirmAuthentication() override;
+    void confirmAuthentication(Authenticator::Method method) override;
     void abortAuthentication(AuthenticationInput::Error error) override;
+    void authenticationStarted(
+            Authenticator::Methods methods, uint authenticatingPid, AuthenticationInput::Feedback feedback) override;
     void authenticationEnded(bool confirmed) override;
 
     void setCodeFinished(int result);
@@ -173,6 +176,7 @@ private:
     QString m_newCode;
     QString m_generatedCode;
     int m_repeatsRequired;
+    int m_authenticatingPid;
     State m_state;
 };
 

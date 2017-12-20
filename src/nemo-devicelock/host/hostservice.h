@@ -47,6 +47,7 @@ class HostDeviceReset;
 class HostEncryptionSettings;
 class HostFingerprintSensor;
 class HostFingerprintSettings;
+class HostValidator;
 class HostObject;
 
 class HostService : public QDBusServer
@@ -62,6 +63,7 @@ public:
             HostEncryptionSettings *encryptionSettings,
             HostFingerprintSensor *fingerprintSensor,
             HostFingerprintSettings *fingerprintSettings,
+            HostValidator *validator,
             QObject *parent = nullptr);
     ~HostService();
 

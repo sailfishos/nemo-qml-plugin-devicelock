@@ -30,56 +30,36 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#ifndef NEMODEVICELOCK_HOSTAUTHORIZATION_H
-#define NEMODEVICELOCK_HOSTAUTHORIZATION_H
-
-#include <QDBusAbstractAdaptor>
-#include <QDBusObjectPath>
-
-#include <nemo-devicelock/authenticator.h>
-
-#include <nemo-devicelock/host/hostobject.h>
+#include "hostvalidator.h"
 
 namespace NemoDeviceLock
 {
 
-class HostAuthorization;
-class HostAuthorizationAdaptor : public QDBusAbstractAdaptor
+HostValidatorAdaptor::HostValidatorAdaptor(HostValidator *validator)
+    : QDBusAbstractAdaptor(validator)
+    , m_validator(validator)
 {
-    Q_OBJECT
-    Q_CLASSINFO("D-Bus Interface", "org.nemomobile.devicelock.Authorization")
-public:
-    explicit HostAuthorizationAdaptor(HostAuthorization *authorization);
-
-public slots:
-    void RequestChallenge(const QDBusObjectPath &path, uint requestedMethods, uint authenticatingPid);
-    void RelinquishChallenge(const QDBusObjectPath &path);
-
-private:
-    HostAuthorization * const m_authorization;
-};
-
-class HostAuthorization : public HostObject
-{
-    Q_OBJECT
-public:
-    explicit HostAuthorization(
-            const QString &path, Authenticator::Methods allowedMethods, QObject *parent = nullptr);
-    ~HostAuthorization();
-
-protected:
-    virtual void requestChallenge(const QString &client, Authenticator::Methods requestedMethods, uint authenticatingPid);
-    virtual void relinquishChallenge(const QString &client);
-
-    void challengeExpired(const QString &connection, const QString &client);
-
-private:
-    friend class HostAuthorizationAdaptor;
-
-    HostAuthorizationAdaptor m_adaptor;
-    const Authenticator::Methods m_allowedMethods;
-};
-
 }
 
-#endif
+void HostValidatorAdaptor::VerifyToken(
+        const QDBusObjectPath &path, const QDBusVariant &authenticationToken)
+{
+    m_validator->verifyToken(path.path(), authenticationToken.variant());
+}
+
+HostValidator::HostValidator(QObject *parent)
+    : HostValidator(Authenticator::Methods(), parent)
+{
+}
+
+HostValidator::HostValidator(Authenticator::Methods allowedMethods, QObject *parent)
+    : HostAuthorization(QStringLiteral("/validator"), allowedMethods, parent)
+    , m_adaptor(this)
+{
+}
+
+HostValidator::~HostValidator()
+{
+}
+
+}

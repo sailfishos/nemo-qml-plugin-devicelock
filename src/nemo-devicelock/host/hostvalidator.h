@@ -30,54 +30,47 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE."
  */
 
-#ifndef NEMODEVICELOCK_HOSTAUTHORIZATION_H
-#define NEMODEVICELOCK_HOSTAUTHORIZATION_H
+#ifndef NEMODEVICELOCK_HOSTVALIDATOR_H
+#define NEMODEVICELOCK_HOSTVALIDATOR_H
 
-#include <QDBusAbstractAdaptor>
-#include <QDBusObjectPath>
+#include <nemo-devicelock/validator.h>
+#include <nemo-devicelock/host/hostauthorization.h>
 
-#include <nemo-devicelock/authenticator.h>
-
-#include <nemo-devicelock/host/hostobject.h>
+#include <QDBusVariant>
 
 namespace NemoDeviceLock
 {
 
-class HostAuthorization;
-class HostAuthorizationAdaptor : public QDBusAbstractAdaptor
+class HostValidator;
+class HostValidatorAdaptor : public QDBusAbstractAdaptor
 {
     Q_OBJECT
-    Q_CLASSINFO("D-Bus Interface", "org.nemomobile.devicelock.Authorization")
+    Q_CLASSINFO("D-Bus Interface", "org.nemomobile.devicelock.Validator")
 public:
-    explicit HostAuthorizationAdaptor(HostAuthorization *authorization);
+    explicit HostValidatorAdaptor(HostValidator *validator);
 
 public slots:
-    void RequestChallenge(const QDBusObjectPath &path, uint requestedMethods, uint authenticatingPid);
-    void RelinquishChallenge(const QDBusObjectPath &path);
+    void VerifyToken(const QDBusObjectPath &path, const QDBusVariant &authenticationToken);
 
 private:
-    HostAuthorization * const m_authorization;
+    HostValidator * const m_validator;
 };
 
-class HostAuthorization : public HostObject
+class HostValidator : public HostAuthorization
 {
     Q_OBJECT
 public:
-    explicit HostAuthorization(
-            const QString &path, Authenticator::Methods allowedMethods, QObject *parent = nullptr);
-    ~HostAuthorization();
+    explicit HostValidator(QObject *parent = nullptr);
+    explicit HostValidator(Authenticator::Methods allowedMethods, QObject *parent = nullptr);
+    ~HostValidator();
 
 protected:
-    virtual void requestChallenge(const QString &client, Authenticator::Methods requestedMethods, uint authenticatingPid);
-    virtual void relinquishChallenge(const QString &client);
-
-    void challengeExpired(const QString &connection, const QString &client);
+    virtual void verifyToken(const QString &client, const QVariant &authenticationToken) = 0;
 
 private:
-    friend class HostAuthorizationAdaptor;
+    friend class HostValidatorAdaptor;
 
-    HostAuthorizationAdaptor m_adaptor;
-    const Authenticator::Methods m_allowedMethods;
+    HostValidatorAdaptor m_adaptor;
 };
 
 }

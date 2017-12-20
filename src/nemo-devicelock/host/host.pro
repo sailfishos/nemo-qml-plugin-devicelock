@@ -33,6 +33,7 @@ PUBLIC_HEADERS += \
         $$PWD/hostfingerprintsettings.h \
         $$PWD/hostobject.h \
         $$PWD/hostservice.h \
+        $$PWD/hostvalidator.h \
         $$PWD/mcedevicelock.h
 
 SOURCES += \
@@ -47,6 +48,7 @@ SOURCES += \
         $$PWD/hostfingerprintsettings.cpp \
         $$PWD/hostobject.cpp \
         $$PWD/hostservice.cpp \
+        $$PWD/hostvalidator.cpp \
         $$PWD/mcedevicelock.cpp
 
 include (cli/cli.pri)

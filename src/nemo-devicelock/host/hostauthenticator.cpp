@@ -99,6 +99,7 @@ HostAuthenticator::HostAuthenticator(Authenticator::Methods supportedMethods, QO
     , m_adaptor(this)
     , m_securityCodeAdaptor(this)
     , m_repeatsRequired(0)
+    , m_authenticatingPid(0)
     , m_state(Idle)
 {
 }
@@ -136,7 +137,7 @@ void HostAuthenticator::authenticate(
     switch (availability) {
     case AuthenticationNotRequired:
         qCDebug(daemon, "Authentication requested. Unsecured, authenticating immediately.");
-        confirmAuthentication();
+        confirmAuthentication(Authenticator::SecurityCode);
         break;
     case CanAuthenticateSecurityCode:
         methods &= Authenticator::SecurityCode;
@@ -237,7 +238,7 @@ void HostAuthenticator::enterSecurityCode(const QString &code)
         switch ((attempts = checkCode(code))) {
         case Success:
         case SecurityCodeExpired:
-            confirmAuthentication();
+            confirmAuthentication(Authenticator::SecurityCode);
             return;
         case LockedOut:
             lockedOut();
@@ -349,7 +350,8 @@ void HostAuthenticator::setCodeFinished(int result)
         m_currentCode.clear();
 
         qCDebug(daemon, "Security code changed.");
-        securityCodeChanged(authenticateChallengeCode(m_challengeCode));
+        securityCodeChanged(authenticateChallengeCode(
+                    m_challengeCode, Authenticator::SecurityCode, m_authenticatingPid));
         break;
     case SecurityCodeInHistory:
         if (m_state == ChangeCanceled) {
@@ -377,9 +379,9 @@ void HostAuthenticator::setCodeFinished(int result)
     }
 }
 
-void HostAuthenticator::confirmAuthentication()
+void HostAuthenticator::confirmAuthentication(Authenticator::Method method)
 {
-    authenticated(authenticateChallengeCode(m_challengeCode));
+    authenticated(authenticateChallengeCode(m_challengeCode, method, m_authenticatingPid));
 }
 
 void HostAuthenticator::abortAuthentication(AuthenticationInput::Error error)
@@ -404,10 +406,19 @@ void HostAuthenticator::abortAuthentication(AuthenticationInput::Error error)
     HostAuthenticationInput::abortAuthentication(error);
 }
 
+void HostAuthenticator::authenticationStarted(
+        Authenticator::Methods methods, uint authenticatingPid, AuthenticationInput::Feedback feedback)
+{
+    m_authenticatingPid = authenticatingPid;
+
+    HostAuthenticationInput::authenticationStarted(methods, authenticatingPid, feedback);
+}
+
 void HostAuthenticator::authenticationEnded(bool confirmed)
 {
     clearActiveClient();
 
+    m_authenticatingPid = 0;
     m_challengeCode.clear();
     m_state = Idle;
     m_currentCode.clear();

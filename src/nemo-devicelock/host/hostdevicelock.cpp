@@ -149,7 +149,7 @@ void HostDeviceLock::enterSecurityCode(const QString &code)
     case Authenticating: {
         switch (const int result = checkCode(code)) {
         case Success:
-            unlockFinished(unlockWithCode(code));
+            unlockFinished(unlockWithCode(code), Authenticator::SecurityCode);
             break;
         case SecurityCodeExpired:
             m_state = EnteringNewSecurityCode;
@@ -237,11 +237,11 @@ void HostDeviceLock::requestSecurityCode()
     }
 }
 
-void HostDeviceLock::unlockFinished(int result)
+void HostDeviceLock::unlockFinished(int result, Authenticator::Method method)
 {
     switch (result) {
     case Success:
-        confirmAuthentication();
+        confirmAuthentication(method);
         break;
     case Evaluating:
         if (m_state == Authenticating) {
@@ -274,7 +274,7 @@ void HostDeviceLock::setCodeFinished(int result)
         qCDebug(daemon, "Security code changed.");
         m_currentCode.clear();
         if (m_state == ChangingSecurityCode || m_state == RepeatingNewSecurityCode) {
-            unlockFinished(unlockWithCode(m_newCode));
+            unlockFinished(unlockWithCode(m_newCode), Authenticator::SecurityCode);
         } else if (m_state == Canceled) {
             m_state = Idle;
 
@@ -329,7 +329,7 @@ void HostDeviceLock::cancel()
     }
 }
 
-void HostDeviceLock::confirmAuthentication()
+void HostDeviceLock::confirmAuthentication(Authenticator::Method)
 {
     m_state = Idle;
 
