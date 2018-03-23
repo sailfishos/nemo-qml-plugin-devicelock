@@ -114,7 +114,7 @@ public:
     virtual bool clearCode(const QString &code) = 0;
 
     // AuthenticationInput
-    Availability availability() const override = 0;
+    Availability availability(QVariantMap *feedbackData = nullptr) const override = 0;
     int checkCode(const QString &code) override = 0;
     int setCode(const QString &oldCode, const QString &newCode) override = 0;
 

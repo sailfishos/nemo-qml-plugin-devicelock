@@ -145,7 +145,8 @@ void HostAuthenticator::authenticate(
     m_state = Authenticating;
     m_challengeCode = challengeCode;
 
-    const auto availability = this->availability();
+    QVariantMap feedbackData;
+    const auto availability = this->availability(&feedbackData);
     switch (availability) {
     case AuthenticationNotRequired:
         if (methods & Authenticator::Confirmation) {
@@ -176,7 +177,7 @@ void HostAuthenticator::authenticate(
     case ManagerLockedRecoverable:
     case ManagerLockedPermanent:
         m_challengeCode.clear();
-        lockedOut(availability, &HostAuthenticationInput::authenticationUnavailable);
+        lockedOut(availability, &HostAuthenticationInput::authenticationUnavailable, feedbackData);
         break;
     }
 }
@@ -197,11 +198,11 @@ void HostAuthenticator::requestPermission(
                 QStringLiteral("authenticatingPid"),
                 QVariant::fromValue(connectionPid(QDBusContext::connection()))).toUInt();
 
-    const QVariantMap data = {
+    QVariantMap data = {
         { QStringLiteral("message"), message }
     };
 
-    const auto availability = this->availability();
+    const auto availability = this->availability(&data);
     switch (availability) {
     case AuthenticationNotRequired:
         qCDebug(daemon, "Authentication requested. Requesting simple confirmation.");
@@ -225,7 +226,7 @@ void HostAuthenticator::requestPermission(
     case CodeEntryLockedPermanent:
     case ManagerLockedRecoverable:
     case ManagerLockedPermanent:
-        lockedOut();
+        lockedOut(availability, &HostAuthenticationInput::authenticationUnavailable, data);
         break;
     }
 }

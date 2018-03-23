@@ -49,7 +49,7 @@ public:
     CliDeviceLock(QObject *parent = nullptr);
     ~CliDeviceLock();
 
-    Availability availability() const override;
+    Availability availability(QVariantMap *data) const override;
 
     int checkCode(const QString &code) override;
     int setCode(const QString &oldCode, const QString &newCode) override;

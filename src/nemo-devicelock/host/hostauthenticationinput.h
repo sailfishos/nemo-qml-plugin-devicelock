@@ -96,7 +96,7 @@ public:
             QObject *parent = nullptr);
     virtual ~HostAuthenticationInput();
 
-    virtual Availability availability() const = 0;
+    virtual Availability availability(QVariantMap *feedbackData = nullptr) const = 0;
     virtual int checkCode(const QString &code) = 0;
     virtual int setCode(const QString &oldCode, const QString &newCode) = 0;
 
@@ -164,7 +164,8 @@ protected:
     void lockedOut();
     void lockedOut(
             Availability availability,
-            void (HostAuthenticationInput::*errorFunction)(AuthenticationInput::Error error));
+            void (HostAuthenticationInput::*errorFunction)(AuthenticationInput::Error error),
+            const QVariantMap &data);
 
 private:
     friend class HostAuthenticationInputAdaptor;

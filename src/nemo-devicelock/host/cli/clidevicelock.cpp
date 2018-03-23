@@ -54,7 +54,7 @@ CliDeviceLock::~CliDeviceLock()
 {
 }
 
-HostAuthenticationInput::Availability CliDeviceLock::availability() const
+HostAuthenticationInput::Availability CliDeviceLock::availability(QVariantMap *) const
 {
     if (m_watcher->securityCodeSet()) {
         const int maximum = maximumAttempts();

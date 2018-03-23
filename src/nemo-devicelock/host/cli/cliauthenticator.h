@@ -51,7 +51,7 @@ public:
     ~CliAuthenticator();
 
     Authenticator::Methods availableMethods() const override;
-    Availability availability() const override;
+    Availability availability(QVariantMap *feedbackData) const override;
 
     int checkCode(const QString &code) override;
     int setCode(const QString &oldCode, const QString &newCode) override;

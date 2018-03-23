@@ -371,29 +371,31 @@ void HostAuthenticationInput::feedback(
 
 void HostAuthenticationInput::lockedOut()
 {
-    lockedOut(availability(), &HostAuthenticationInput::abortAuthentication);
+    QVariantMap data;
+    lockedOut(availability(&data), &HostAuthenticationInput::abortAuthentication, data);
 }
 
 void HostAuthenticationInput::lockedOut(
         Availability availability,
-        void (HostAuthenticationInput::*errorFunction)(AuthenticationInput::Error error))
+        void (HostAuthenticationInput::*errorFunction)(AuthenticationInput::Error error),
+        const QVariantMap &data)
 {
     switch (availability) {
     case CodeEntryLockedRecoverable:
         (this->*errorFunction)(AuthenticationInput::MaximumAttemptsExceeded);
-        feedback(AuthenticationInput::TemporarilyLocked, -1);
+        feedback(AuthenticationInput::TemporarilyLocked, data);
         break;
     case CodeEntryLockedPermanent:
         (this->*errorFunction)(AuthenticationInput::MaximumAttemptsExceeded);
-        feedback(AuthenticationInput::PermanentlyLocked, -1);
+        feedback(AuthenticationInput::PermanentlyLocked, data);
         break;
     case ManagerLockedRecoverable:
         (this->*errorFunction)(AuthenticationInput::LockedByManager);
-        feedback(AuthenticationInput::ContactSupport, -1);
+        feedback(AuthenticationInput::ContactSupport, data);
         break;
     case ManagerLockedPermanent:
         (this->*errorFunction)(AuthenticationInput::LockedByManager);
-        feedback(AuthenticationInput::PermanentlyLocked, -1);
+        feedback(AuthenticationInput::PermanentlyLocked, data);
         break;
     default:
         // Locked out but availability doesn't reflect this.  This shouldn't be reachable

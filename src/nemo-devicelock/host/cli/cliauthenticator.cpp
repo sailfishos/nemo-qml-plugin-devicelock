@@ -65,7 +65,7 @@ Authenticator::Methods CliAuthenticator::availableMethods() const
 }
 
 
-HostAuthenticationInput::Availability CliAuthenticator::availability() const
+HostAuthenticationInput::Availability CliAuthenticator::availability(QVariantMap *) const
 {
     if (m_watcher->securityCodeSet()) {
         const int maximum = maximumAttempts();

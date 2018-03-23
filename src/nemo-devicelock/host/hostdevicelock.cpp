@@ -112,7 +112,8 @@ void HostDeviceLock::unlock()
 
     m_state = Authenticating;
 
-    switch (const auto availability = this->availability()) {
+    QVariantMap data;
+    switch (const auto availability = this->availability(&data)) {
     case AuthenticationNotRequired:
         m_state = Idle;
         setLocked(false);
@@ -134,7 +135,7 @@ void HostDeviceLock::unlock()
     case ManagerLockedRecoverable:
     case ManagerLockedPermanent:
         m_state = AuthenticationError;
-        lockedOut(availability, &HostAuthenticationInput::authenticationUnavailable);
+        lockedOut(availability, &HostAuthenticationInput::authenticationUnavailable, data);
         break;
     }
 
@@ -419,7 +420,8 @@ void HostDeviceLock::lockedChanged()
 
 void HostDeviceLock::availabilityChanged()
 {
-    const auto availability = this->availability();
+    QVariantMap data;
+    const auto availability = this->availability(&data);
 
     propertyChanged(
                 QStringLiteral("org.nemomobile.devicelock.DeviceLock"),
@@ -484,7 +486,7 @@ void HostDeviceLock::availabilityChanged()
         case EnteringNewSecurityCode:
         case RepeatingNewSecurityCode:
         case AuthenticationError:
-            lockedOut(availability, &HostAuthenticationInput::abortAuthentication);
+            lockedOut(availability, &HostAuthenticationInput::abortAuthentication, data);
             break;
         default:
             break;
