@@ -51,14 +51,15 @@ public:
     ~CliAuthenticator();
 
     Authenticator::Methods availableMethods() const override;
-    Availability availability() const override;
+    Availability availability(QVariantMap *feedbackData) const override;
 
     int checkCode(const QString &code) override;
     int setCode(const QString &oldCode, const QString &newCode) override;
     bool clearCode(const QString &code) override;
 
     void enterSecurityCode(const QString &code);
-    QVariant authenticateChallengeCode(const QVariant &challengeCode);
+    QVariant authenticateChallengeCode(
+            const QVariant &challengeCode, Authenticator::Method method, uint authenticatingPid) override;
 
 private:
     QExplicitlySharedDataPointer<LockCodeWatcher> m_watcher;

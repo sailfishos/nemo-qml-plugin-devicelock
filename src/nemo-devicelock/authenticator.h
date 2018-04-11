@@ -52,6 +52,7 @@ public:
 
 public slots:
     Q_NOREPLY void Authenticated(const QDBusVariant &authenticationToken);
+    Q_NOREPLY void PermissionGranted(uint method);
     Q_NOREPLY void Aborted();
 
 private:
@@ -67,9 +68,11 @@ class NEMODEVICELOCK_EXPORT Authenticator : public QObject, private ConnectionCl
     Q_FLAGS(Methods)
 public:
     enum Method {
-        NoAuthentication    = 0x00,
-        SecurityCode        = 0x01,
-        Fingerprint         = 0x02
+        NoAuthentication    = 0x000,
+        SecurityCode        = 0x0001,
+        Fingerprint         = 0x0002,
+        Confirmation        = 0x1000,
+        AllAvailable = SecurityCode | Fingerprint | Confirmation
     };
 
     Q_DECLARE_FLAGS(Methods, Method)
@@ -81,7 +84,9 @@ public:
     bool isAuthenticating() const;
 
     Q_INVOKABLE void authenticate(
-            const QVariant &challengeCode, Methods methods = Methods(SecurityCode | Fingerprint));
+            const QVariant &challengeCode, Methods methods = AllAvailable);
+    Q_INVOKABLE void requestPermission(
+            const QString &message, const QVariantMap &properties, Methods methods = AllAvailable);
     Q_INVOKABLE void cancel();
 
 signals:
@@ -89,6 +94,7 @@ signals:
     void authenticatingChanged();
 
     void authenticated(const QVariant &authenticationToken);
+    void permissionGranted(Method method);
     void aborted();
 
 private:
@@ -97,6 +103,7 @@ private:
     inline void connected();
 
     inline void handleAuthentication(const QVariant &authenticationToken);
+    inline void handlePermissionGranted(Method method);
     inline void handleAborted();
 
     AuthenticatorAdaptor m_adaptor;

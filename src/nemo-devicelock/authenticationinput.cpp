@@ -435,6 +435,15 @@ void AuthenticationInput::requestSecurityCode()
 }
 
 /*!
+    Informs the security dialog that an action was authorized without authenticating.
+*/
+
+void AuthenticationInput::authorize()
+{
+    call(QStringLiteral("Authorize"), m_localPath);
+}
+
+/*!
     Sends a request to cancel authentication to the security daemon.
 */
 

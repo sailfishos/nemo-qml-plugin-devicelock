@@ -32,6 +32,9 @@
 
 #include "clientauthorization.h"
 
+
+#include <QCoreApplication>
+
 namespace NemoDeviceLock
 {
 
@@ -56,6 +59,8 @@ ClientAuthorization::ClientAuthorization(
           QStringLiteral("org.nemomobile.devicelock.Authorization"),
           localPath)
     , m_allowedMethods()
+    , m_requestedMethods(Authenticator::AllAvailable)
+    , m_authenticatingPid(QCoreApplication::applicationPid())
     , m_status(NoChallenge)
 {
     m_connection->onDisconnected(this, [this] {
@@ -70,6 +75,26 @@ ClientAuthorization::~ClientAuthorization()
 Authenticator::Methods ClientAuthorization::allowedMethods() const
 {
     return m_allowedMethods;
+}
+
+Authenticator::Methods ClientAuthorization::requestedMethods() const
+{
+    return m_requestedMethods;
+}
+
+void ClientAuthorization::setRequestedMethods(Authenticator::Methods methods)
+{
+    m_requestedMethods = methods;
+}
+
+int ClientAuthorization::authenticatingPid() const
+{
+    return m_authenticatingPid;
+}
+
+void ClientAuthorization::setAuthenticatingPid(int pid)
+{
+    m_authenticatingPid = pid;
 }
 
 Authorization::Status ClientAuthorization::status() const
@@ -87,7 +112,11 @@ void ClientAuthorization::requestChallenge()
     if (m_status != RequestingChallenge) {
         m_status = RequestingChallenge;
 
-        const auto response = call(QStringLiteral("RequestChallenge"), m_localPath);
+        const auto response = call(
+                    QStringLiteral("RequestChallenge"),
+                    m_localPath,
+                    uint(m_requestedMethods),
+                    uint(m_authenticatingPid));
 
         response->onFinished<QVariant, uint>([this](const QVariant &challengeCode, uint allowedMethods) {
             if (m_status == NoChallenge) {

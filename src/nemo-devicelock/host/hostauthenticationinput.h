@@ -56,6 +56,7 @@ public slots:
     void SetActive(const QDBusObjectPath &path, bool active);
     void EnterSecurityCode(const QDBusObjectPath &path, const QString &code);
     void RequestSecurityCode(const QDBusObjectPath &path);
+    void Authorize(const QDBusObjectPath &path);
     void Cancel(const QDBusObjectPath &path);
 
 private:
@@ -95,7 +96,7 @@ public:
             QObject *parent = nullptr);
     virtual ~HostAuthenticationInput();
 
-    virtual Availability availability() const = 0;
+    virtual Availability availability(QVariantMap *feedbackData = nullptr) const = 0;
     virtual int checkCode(const QString &code) = 0;
     virtual int setCode(const QString &oldCode, const QString &newCode) = 0;
 
@@ -110,17 +111,28 @@ public:
 
     virtual void enterSecurityCode(const QString &code) = 0;
     virtual void requestSecurityCode() = 0;
+    virtual void authorize();
     void cancel() override = 0;
 
     // Client
+    Authenticator::Methods activeMethods() const { return m_activeMethods; }
+
     void startAuthentication(
             AuthenticationInput::Feedback feedback,
             const QVariantMap &data,
             Authenticator::Methods methods);
+    void startAuthentication(
+            AuthenticationInput::Feedback feedback,
+            uint authenticatingPid,
+            const QVariantMap &data,
+            Authenticator::Methods methods);
+
     virtual void authenticationStarted(
             Authenticator::Methods methods,
+            uint authenticatingPid,
             AuthenticationInput::Feedback feedback = AuthenticationInput::EnterSecurityCode);
     void authenticationUnavailable(AuthenticationInput::Error error);
+    void authenticationUnavailable(AuthenticationInput::Error error, uint authenticatingPid);
     void authenticationResumed(
             AuthenticationInput::Feedback feedback,
             const QVariantMap &data = QVariantMap(),
@@ -132,9 +144,9 @@ public:
     virtual void authenticationActive(Authenticator::Methods methods);
     virtual void authenticationInactive();
 
-    virtual void confirmAuthentication() = 0;
+    virtual void confirmAuthentication(Authenticator::Method method) = 0;
     virtual void abortAuthentication(AuthenticationInput::Error error);
-
+\
     // Signals
     void feedback(
             AuthenticationInput::Feedback feedback,
@@ -152,14 +164,15 @@ protected:
     void lockedOut();
     void lockedOut(
             Availability availability,
-            void (HostAuthenticationInput::*errorFunction)(AuthenticationInput::Error error));
+            void (HostAuthenticationInput::*errorFunction)(AuthenticationInput::Error error),
+            const QVariantMap &data);
 
 private:
     friend class HostAuthenticationInputAdaptor;
 
     struct Input
     {
-        Input() {}
+        Input() = default;
         Input(const QString &connection, const QString &path) : connection(connection), path(path) {}
 
         QString connection;
@@ -169,6 +182,7 @@ private:
     inline void handleEnterSecurityCode(const QString &client, const QString &code);
     inline void handleRequestSecurityCode(const QString &path);
     inline void handleCancel(const QString &client);
+    inline void handleAuthorize(const QString &client);
 
     inline void setRegistered(const QString &path, bool registered);
     inline void setActive(const QString &path, bool active);

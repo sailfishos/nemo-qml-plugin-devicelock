@@ -52,7 +52,7 @@ public:
     explicit HostAuthorizationAdaptor(HostAuthorization *authorization);
 
 public slots:
-    void RequestChallenge(const QDBusObjectPath &path);
+    void RequestChallenge(const QDBusObjectPath &path, uint requestedMethods, uint authenticatingPid);
     void RelinquishChallenge(const QDBusObjectPath &path);
 
 private:
@@ -68,7 +68,7 @@ public:
     ~HostAuthorization();
 
 protected:
-    virtual void requestChallenge(const QString &client);
+    virtual void requestChallenge(const QString &client, Authenticator::Methods requestedMethods, uint authenticatingPid);
     virtual void relinquishChallenge(const QString &client);
 
     void challengeExpired(const QString &connection, const QString &client);

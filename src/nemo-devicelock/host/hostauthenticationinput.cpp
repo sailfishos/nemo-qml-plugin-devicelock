@@ -73,12 +73,17 @@ void HostAuthenticationInputAdaptor::Cancel(const QDBusObjectPath &path)
      m_authenticationInput->handleCancel(path.path());
 }
 
+void HostAuthenticationInputAdaptor::Authorize(const QDBusObjectPath &path)
+{
+     m_authenticationInput->handleAuthorize(path.path());
+}
+
 HostAuthenticationInput::HostAuthenticationInput(
         const QString &path, Authenticator::Methods supportedMethods, QObject *parent)
     : HostObject(path, parent)
     , m_adaptor(this)
     , m_settings(SettingsWatcher::instance())
-    , m_supportedMethods(supportedMethods)
+    , m_supportedMethods(supportedMethods | Authenticator::Confirmation) // Basic yes/no confirmation is always supported.
     , m_activeMethods()
     , m_authenticating(false)
 {
@@ -88,59 +93,80 @@ HostAuthenticationInput::~HostAuthenticationInput()
 {
 }
 
+void HostAuthenticationInput::authorize()
+{
+}
+
 void HostAuthenticationInput::authenticationStarted(
         Authenticator::Methods methods,
+        uint authenticatingPid,
         AuthenticationInput::Feedback)
 {
+    Q_UNUSED(authenticatingPid);
+
     qCDebug(daemon, "Authentication started");
 
     m_authenticating = true;
     m_activeMethods = methods & m_supportedMethods;
 }
 
-
 void HostAuthenticationInput::startAuthentication(
         AuthenticationInput::Feedback feedback,
         const QVariantMap &data,
         Authenticator::Methods methods)
 {
+    const uint pid = connectionPid(QDBusContext::connection());
+    if (pid != 0) {
+        startAuthentication(feedback, pid, data, methods);
+    }
+}
+
+void HostAuthenticationInput::startAuthentication(
+        AuthenticationInput::Feedback feedback,
+        uint authenticatingPid,
+        const QVariantMap &data,
+        Authenticator::Methods methods)
+{
     qCDebug(daemon, "Authentication started");
 
-    const uint pid = connectionPid(QDBusContext::connection());
-
-    if (pid != 0 && !m_inputStack.isEmpty()) {
-        authenticationStarted(methods, feedback);
+    if (!m_inputStack.isEmpty()) {
+        authenticationStarted(methods, authenticatingPid, feedback);
 
         NemoDBus::send(
                     m_inputStack.last().connection,
                     m_inputStack.last().path,
                     clientInterface,
                     QStringLiteral("AuthenticationStarted"),
-                    pid,
+                    authenticatingPid,
                     uint(m_activeMethods),
                     uint(feedback),
                     data);
     }
 }
 
-
 void HostAuthenticationInput::authenticationUnavailable(AuthenticationInput::Error error)
+{
+    const uint pid = connectionPid(QDBusContext::connection());
+    if (pid != 0) {
+        authenticationUnavailable(error, pid);
+    }
+}
+
+void HostAuthenticationInput::authenticationUnavailable(
+        AuthenticationInput::Error error, uint authenticatingPid)
 {
     qCDebug(daemon, "Authentication unavailable");
 
-    const uint pid = connectionPid(QDBusContext::connection());
-
-    if (pid != 0 && !m_inputStack.isEmpty()) {
+    if (!m_inputStack.isEmpty()) {
         NemoDBus::send(
                     m_inputStack.last().connection,
                     m_inputStack.last().path,
                     clientInterface,
                     QStringLiteral("AuthenticationUnavailable"),
-                    pid,
+                    authenticatingPid,
                     uint(error));
     }
 }
-
 
 void HostAuthenticationInput::authenticationResumed(
         AuthenticationInput::Feedback feedback,
@@ -213,6 +239,7 @@ void HostAuthenticationInput::authenticationEnded(bool confirmed)
 void HostAuthenticationInput::setRegistered(const QString &path, bool registered)
 {
     const auto pid = connectionPid(QDBusContext::connection());
+
     if (pid == 0 || !authorizeInput(pid)) {
         QDBusContext::sendErrorReply(QDBusError::AccessDenied);
         return;
@@ -344,29 +371,31 @@ void HostAuthenticationInput::feedback(
 
 void HostAuthenticationInput::lockedOut()
 {
-    lockedOut(availability(), &HostAuthenticationInput::abortAuthentication);
+    QVariantMap data;
+    lockedOut(availability(&data), &HostAuthenticationInput::abortAuthentication, data);
 }
 
 void HostAuthenticationInput::lockedOut(
         Availability availability,
-        void (HostAuthenticationInput::*errorFunction)(AuthenticationInput::Error error))
+        void (HostAuthenticationInput::*errorFunction)(AuthenticationInput::Error error),
+        const QVariantMap &data)
 {
     switch (availability) {
     case CodeEntryLockedRecoverable:
         (this->*errorFunction)(AuthenticationInput::MaximumAttemptsExceeded);
-        feedback(AuthenticationInput::TemporarilyLocked, -1);
+        feedback(AuthenticationInput::TemporarilyLocked, data);
         break;
     case CodeEntryLockedPermanent:
         (this->*errorFunction)(AuthenticationInput::MaximumAttemptsExceeded);
-        feedback(AuthenticationInput::PermanentlyLocked, -1);
+        feedback(AuthenticationInput::PermanentlyLocked, data);
         break;
     case ManagerLockedRecoverable:
         (this->*errorFunction)(AuthenticationInput::LockedByManager);
-        feedback(AuthenticationInput::ContactSupport, -1);
+        feedback(AuthenticationInput::ContactSupport, data);
         break;
     case ManagerLockedPermanent:
         (this->*errorFunction)(AuthenticationInput::LockedByManager);
-        feedback(AuthenticationInput::PermanentlyLocked, -1);
+        feedback(AuthenticationInput::PermanentlyLocked, data);
         break;
     default:
         // Locked out but availability doesn't reflect this.  This shouldn't be reachable
@@ -437,6 +466,16 @@ void HostAuthenticationInput::handleCancel(const QString &path)
             && m_inputStack.last().connection == connection
             && m_inputStack.last().path == path) {
         cancel();
+    }
+}
+
+void HostAuthenticationInput::handleAuthorize(const QString &path)
+{
+    const auto connection = QDBusContext::connection().name();
+    if (!m_inputStack.isEmpty()
+            && m_inputStack.last().connection == connection
+            && m_inputStack.last().path == path) {
+        authorize();
     }
 }
 

@@ -66,7 +66,7 @@ class NEMODEVICELOCK_EXPORT AuthenticationInput : public QObject, private Connec
     Q_OBJECT
     Q_PROPERTY(Authenticator::Methods utilizedMethods READ utilizedMethods NOTIFY utilizedMethodsChanged)
     Q_PROPERTY(Status status READ status NOTIFY statusChanged)
-    Q_PROPERTY(bool authenticatingProcess READ authenticatingPid NOTIFY authenticatingPidChanged)
+    Q_PROPERTY(int authenticatingProcess READ authenticatingPid NOTIFY authenticatingPidChanged)
     Q_PROPERTY(bool active READ isActive WRITE setActive NOTIFY activeChanged)
     Q_PROPERTY(bool registered READ isRegistered WRITE setRegistered NOTIFY registeredChanged)
     Q_PROPERTY(int minimumCodeLength READ minimumCodeLength CONSTANT)
@@ -76,6 +76,7 @@ class NEMODEVICELOCK_EXPORT AuthenticationInput : public QObject, private Connec
     Q_PROPERTY(CodeGeneration codeGeneration READ codeGeneration NOTIFY codeGenerationChanged)
 public:
     enum Feedback {
+        Authorize,
         EnterSecurityCode,
         EnterNewSecurityCode,
         RepeatNewSecurityCode,
@@ -150,6 +151,7 @@ public:
 
     Q_INVOKABLE void enterSecurityCode(const QString &code);
     Q_INVOKABLE void requestSecurityCode();
+    Q_INVOKABLE void authorize();
     Q_INVOKABLE void cancel();
 
 signals:
@@ -164,7 +166,7 @@ signals:
     void codeGenerationChanged();
     void codeInputIsKeyboardChanged();
 
-    void authenticationStarted(Feedback feedback, const QVariant &data);
+    void authenticationStarted(Feedback feedback, const QVariantMap &data);
     void authenticationUnavailable(Error error);
     void authenticationEvaluating();
     void authenticationProgress(int current, int maximum);

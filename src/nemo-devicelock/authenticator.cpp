@@ -49,6 +49,11 @@ void AuthenticatorAdaptor::Authenticated(const QDBusVariant &authenticationToken
     m_authenticator->handleAuthentication(authenticationToken.variant());
 }
 
+void AuthenticatorAdaptor::PermissionGranted(uint method)
+{
+    m_authenticator->handlePermissionGranted(Authenticator::Method(method));
+}
+
 void AuthenticatorAdaptor::Aborted()
 {
     m_authenticator->handleAborted();
@@ -143,6 +148,40 @@ void Authenticator::authenticate(const QVariant &challengeCode, Methods methods)
 }
 
 /*!
+    Requests the user grant permission for an action described by \a message and \a properties
+    using one of the given authentication \a methods.
+
+    The properties map may contain one of the following values:
+
+    \table
+    \header
+    \li Key
+    \li Value
+    \row
+    \li authenticatingPid
+    \li The PID of the application permissions are being requested for.
+    \endtable
+*/
+
+void Authenticator::requestPermission(
+        const QString &message, const QVariantMap &properties, Methods methods)
+{
+    const auto response = call(
+                QStringLiteral("RequestPermission"), m_localPath, message, properties, uint(methods));
+
+    m_authenticating = true;
+
+    response->onError([this](const QDBusError &) {
+        m_authenticating = false;
+
+        emit aborted();
+        emit authenticatingChanged();
+    });
+
+    emit authenticatingChanged();
+}
+
+/*!
     Cancels an active authentication request.
 */
 
@@ -170,6 +209,23 @@ void Authenticator::handleAuthentication(const QVariant &authenticationToken)
         m_authenticating = false;
 
         emit authenticated(authenticationToken);
+        emit authenticatingChanged();
+    }
+}
+
+/*!
+    \signal NemoDeviceLock::Authenticator::permissionGranted(Method method)
+
+    Signals that the user has successfully granted permission for the requested
+    action using the given authentication \a method.
+*/
+
+void Authenticator::handlePermissionGranted(Method method)
+{
+    if (m_authenticating) {
+        m_authenticating = false;
+
+        emit permissionGranted(method);
         emit authenticatingChanged();
     }
 }

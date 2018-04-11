@@ -45,9 +45,10 @@ HostAuthorizationAdaptor::HostAuthorizationAdaptor(HostAuthorization *authorizat
 {
 }
 
-void HostAuthorizationAdaptor::RequestChallenge(const QDBusObjectPath &path)
+void HostAuthorizationAdaptor::RequestChallenge(
+        const QDBusObjectPath &path, uint requestedMethods, uint authenticatingPid)
 {
-    m_authorization->requestChallenge(path.path());
+    m_authorization->requestChallenge(path.path(), Authenticator::Methods(requestedMethods), authenticatingPid);
 }
 
 void HostAuthorizationAdaptor::RelinquishChallenge(const QDBusObjectPath &path)
@@ -67,13 +68,14 @@ HostAuthorization::~HostAuthorization()
 {
 }
 
-void HostAuthorization::requestChallenge(const QString &)
+void HostAuthorization::requestChallenge(const QString &, Authenticator::Methods requestedMethods, uint)
 {
-    if (m_allowedMethods) {
+    const auto methods = m_allowedMethods & requestedMethods;
+    if (methods) {
         QDBusContext::setDelayedReply(true);
 
         QDBusContext::connection().send(QDBusContext::message().createReply(NemoDBus::marshallArguments(
-                    QVariant(0), uint(m_allowedMethods))));
+                    QVariant(0), uint(methods))));
     } else {
         QDBusContext::sendErrorReply(QDBusError::NotSupported);
     }

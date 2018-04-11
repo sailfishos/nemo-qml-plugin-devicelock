@@ -112,7 +112,8 @@ void HostDeviceLock::unlock()
 
     m_state = Authenticating;
 
-    switch (const auto availability = this->availability()) {
+    QVariantMap data;
+    switch (const auto availability = this->availability(&data)) {
     case AuthenticationNotRequired:
         m_state = Idle;
         setLocked(false);
@@ -134,7 +135,7 @@ void HostDeviceLock::unlock()
     case ManagerLockedRecoverable:
     case ManagerLockedPermanent:
         m_state = AuthenticationError;
-        lockedOut(availability, &HostAuthenticationInput::authenticationUnavailable);
+        lockedOut(availability, &HostAuthenticationInput::authenticationUnavailable, data);
         break;
     }
 
@@ -149,7 +150,7 @@ void HostDeviceLock::enterSecurityCode(const QString &code)
     case Authenticating: {
         switch (const int result = checkCode(code)) {
         case Success:
-            unlockFinished(unlockWithCode(code));
+            unlockFinished(unlockWithCode(code), Authenticator::SecurityCode);
             break;
         case SecurityCodeExpired:
             m_state = EnteringNewSecurityCode;
@@ -237,11 +238,11 @@ void HostDeviceLock::requestSecurityCode()
     }
 }
 
-void HostDeviceLock::unlockFinished(int result)
+void HostDeviceLock::unlockFinished(int result, Authenticator::Method method)
 {
     switch (result) {
     case Success:
-        confirmAuthentication();
+        confirmAuthentication(method);
         break;
     case Evaluating:
         if (m_state == Authenticating) {
@@ -274,7 +275,7 @@ void HostDeviceLock::setCodeFinished(int result)
         qCDebug(daemon, "Security code changed.");
         m_currentCode.clear();
         if (m_state == ChangingSecurityCode || m_state == RepeatingNewSecurityCode) {
-            unlockFinished(unlockWithCode(m_newCode));
+            unlockFinished(unlockWithCode(m_newCode), Authenticator::SecurityCode);
         } else if (m_state == Canceled) {
             m_state = Idle;
 
@@ -329,7 +330,7 @@ void HostDeviceLock::cancel()
     }
 }
 
-void HostDeviceLock::confirmAuthentication()
+void HostDeviceLock::confirmAuthentication(Authenticator::Method)
 {
     m_state = Idle;
 
@@ -419,7 +420,8 @@ void HostDeviceLock::lockedChanged()
 
 void HostDeviceLock::availabilityChanged()
 {
-    const auto availability = this->availability();
+    QVariantMap data;
+    const auto availability = this->availability(&data);
 
     propertyChanged(
                 QStringLiteral("org.nemomobile.devicelock.DeviceLock"),
@@ -484,7 +486,7 @@ void HostDeviceLock::availabilityChanged()
         case EnteringNewSecurityCode:
         case RepeatingNewSecurityCode:
         case AuthenticationError:
-            lockedOut(availability, &HostAuthenticationInput::abortAuthentication);
+            lockedOut(availability, &HostAuthenticationInput::abortAuthentication, data);
             break;
         default:
             break;
