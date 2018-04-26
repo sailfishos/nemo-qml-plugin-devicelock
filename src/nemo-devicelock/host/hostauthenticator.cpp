@@ -154,7 +154,10 @@ void HostAuthenticator::authenticate(
             startAuthentication(AuthenticationInput::Authorize, QVariantMap(), Authenticator::Confirmation);
         } else {
             qCDebug(daemon, "Authentication requested. Unsecured, authenticating immediately.");
-            confirmAuthentication(Authenticator::NoAuthentication);
+            authenticated(authenticateChallengeCode(
+                              challengeCode,
+                              Authenticator::NoAuthentication,
+                              connectionPid(QDBusContext::connection())));
         }
         break;
     case CanAuthenticateSecurityCode:
