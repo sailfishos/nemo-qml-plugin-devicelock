@@ -4,7 +4,7 @@ Version:    0.2.1
 Release:    1
 Group:      System/Libraries
 License:    LGPLv2.1
-URL:        https://git.merproject.org/mer-core/nemo-qml-plugin-dbus
+URL:        https://git.merproject.org/mer-core/nemo-qml-plugin-devicelock
 Source0:    %{name}-%{version}.tar.bz2
 BuildRequires:  pkgconfig(Qt5DBus)
 BuildRequires:  pkgconfig(Qt5Core)
