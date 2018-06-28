@@ -4,7 +4,7 @@ Version:    0.2.1
 Release:    1
 Group:      System/Libraries
 License:    LGPLv2.1
-URL:        https://git.merproject.org/mer-core/nemo-qml-plugin-dbus
+URL:        https://git.merproject.org/mer-core/nemo-qml-plugin-devicelock
 Source0:    %{name}-%{version}.tar.bz2
 BuildRequires:  pkgconfig(Qt5DBus)
 BuildRequires:  pkgconfig(Qt5Core)
@@ -74,6 +74,7 @@ ln -sf ../nemo-devicelock.socket %{buildroot}/lib/systemd/system/multi-user.targ
 %{_libdir}/libnemodevicelock.so.*
 %dir %{_libdir}/qt5/qml/org/nemomobile/devicelock
 %{_libdir}/qt5/qml/org/nemomobile/devicelock/libnemodevicelockplugin.so
+%{_libdir}/qt5/qml/org/nemomobile/devicelock/plugins.qmltypes
 %{_libdir}/qt5/qml/org/nemomobile/devicelock/qmldir
 /lib/systemd/system/nemo-devicelock.socket
 /lib/systemd/system/multi-user.target.wants/nemo-devicelock.socket
