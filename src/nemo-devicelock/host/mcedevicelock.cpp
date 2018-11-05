@@ -68,6 +68,7 @@ MceDeviceLock::MceDeviceLock(Authenticator::Methods allowedMethods, QObject *par
     , m_displayOn(true)
     , m_tklockActive(true)
     , m_userActivity(true)
+    , m_lpmMode(false)
 {
     connect(&m_hbTimer, &BackgroundActivity::running, this, &MceDeviceLock::lock);
 
@@ -102,6 +103,15 @@ MceDeviceLock::MceDeviceLock(Authenticator::Methods allowedMethods, QObject *par
         handleInactivityStateChanged(state);
     });
 
+    /* Note: LPM mode can't be queried at the time of writing */
+    systemBus().connectToSignal(
+                QString(),
+                QStringLiteral(MCE_SIGNAL_PATH),
+                QStringLiteral(MCE_SIGNAL_IF),
+                QStringLiteral(MCE_LPM_UI_MODE_SIG),
+                this,
+                SLOT(handleLpmModeChanged(const QString &)));
+
     systemBus().registerObject(QStringLiteral("/devicelock"), this);
 }
 
@@ -128,7 +138,6 @@ void MceDeviceLock::trackMceProperty(
         (this->*replySlot)(state);
     });
 }
-
 
 /** Handle tklock state signal/reply from mce
  */
@@ -186,6 +195,20 @@ void MceDeviceLock::handleInactivityStateChanged(const bool state)
     }
 }
 
+/** Handle LPM UI Mode signal from mce
+ */
+void MceDeviceLock::handleLpmModeChanged(const QString &state)
+{
+    bool lpmMode = (state == MCE_LPM_UI_ENABLED);
+
+    if (m_lpmMode != lpmMode) {
+        qCDebug(daemon, "MCE LPM mode is now %s", lpmMode ? "true" : "false");
+
+        m_lpmMode = lpmMode;
+        setStateAndSetupLockTimer();
+    }
+}
+
 /** Helper for producing human readable devicelock state logging
  */
 static const char *reprLockState(bool locked)
@@ -211,7 +234,7 @@ bool MceDeviceLock::getRequiredLockState()
     if (automaticLocking() < 0) {
         /* Device locking is disabled */
         locked = false;
-    } else if (automaticLocking() == 0 && !m_displayOn && !m_callActive) {
+    } else if (automaticLocking() == 0 && !m_displayOn && !m_lpmMode && !m_callActive) {
         /* Display is off in immediate lock mode */
         locked = true;
     }

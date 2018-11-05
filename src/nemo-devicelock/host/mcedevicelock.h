@@ -100,6 +100,7 @@ protected slots:
     void handleCallStateChanged(const QString &state);
     void handleDisplayStateChanged(const QString &state);
     void handleInactivityStateChanged(const bool state);
+    void handleLpmModeChanged(const QString &state);
 
 private:
     void trackMceProperty(
@@ -122,6 +123,7 @@ private:
     bool m_displayOn;
     bool m_tklockActive;
     bool m_userActivity;
+    bool m_lpmMode;
 
     friend class MceDeviceLockAdaptor;
 
