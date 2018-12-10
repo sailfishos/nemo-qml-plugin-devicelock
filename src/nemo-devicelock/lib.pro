@@ -63,6 +63,7 @@ QMAKE_PKGCONFIG_DESCRIPTION = Library for Nemo device lock.
 QMAKE_PKGCONFIG_LIBDIR = $$target.path
 QMAKE_PKGCONFIG_INCDIR = /usr/include
 QMAKE_PKGCONFIG_DESTDIR = pkgconfig
+QMAKE_PKGCONFIG_VERSION = $$VERSION
 
 INSTALLS += \
         private_headers \
