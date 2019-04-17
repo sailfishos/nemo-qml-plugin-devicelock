@@ -148,9 +148,10 @@ void HostDeviceLock::enterSecurityCode(const QString &code)
     case Idle:
         break;
     case Authenticating: {
-        switch (const int result = checkCode(code)) {
+        switch (const int result = unlockWithCode(code)) {
+        case Evaluating:
         case Success:
-            unlockFinished(unlockWithCode(code), Authenticator::SecurityCode);
+            unlockFinished(result, Authenticator::SecurityCode);
             break;
         case SecurityCodeExpired:
             m_state = EnteringNewSecurityCode;
