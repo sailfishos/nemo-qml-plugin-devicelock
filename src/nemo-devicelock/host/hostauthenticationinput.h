@@ -146,7 +146,7 @@ public:
 
     virtual void confirmAuthentication(Authenticator::Method method) = 0;
     virtual void abortAuthentication(AuthenticationInput::Error error);
-\
+
     // Signals
     void feedback(
             AuthenticationInput::Feedback feedback,

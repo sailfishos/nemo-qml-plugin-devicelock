@@ -149,10 +149,6 @@ void HostDeviceLock::enterSecurityCode(const QString &code)
         break;
     case Authenticating: {
         switch (const int result = unlockWithCode(code)) {
-        case Evaluating:
-        case Success:
-            unlockFinished(result, Authenticator::SecurityCode);
-            break;
         case SecurityCodeExpired:
             m_state = EnteringNewSecurityCode;
             m_currentCode = code;
@@ -164,20 +160,9 @@ void HostDeviceLock::enterSecurityCode(const QString &code)
         case LockedOut:
             lockedOut();
             break;
-        default: {
-            const int maximum = maximumAttempts();
-
-            if (maximum > 0) {
-                feedback(AuthenticationInput::IncorrectSecurityCode, qMax(0, maximum - result));
-
-                if (result >= maximum) {
-                    lockedOut();
-                }
-            } else {
-                feedback(AuthenticationInput::IncorrectSecurityCode, -1);
-            }
+	default:
+            unlockFinished(result, Authenticator::SecurityCode);
             break;
-        }
         }
         break;
     }
@@ -255,7 +240,9 @@ void HostDeviceLock::unlockFinished(int result, Authenticator::Method method)
             abortAuthentication(AuthenticationInput::SoftwareError);
         }
         break;
-    default:
+    case SecurityCodeExpired:
+    case SecurityCodeInHistory:
+    case LockedOut:
         if (m_state == Canceled) {
             m_state = Idle;
 
@@ -266,6 +253,28 @@ void HostDeviceLock::unlockFinished(int result, Authenticator::Method method)
             abortAuthentication(AuthenticationInput::SoftwareError);
         }
         break;
+    default: {
+        int attemptsRemaining = -1;
+        const int maximum = maximumAttempts();
+
+        if (maximum > 0) {
+            if (result >= maximum) {
+                feedback(AuthenticationInput::IncorrectSecurityCode, 0);
+                lockedOut();
+                break;
+            } else {
+                attemptsRemaining = maximum - result;
+            }
+        }
+
+        if (m_state == Unlocking) {
+            m_state = Authenticating;
+            authenticationResumed(AuthenticationInput::IncorrectSecurityCode, {{ QStringLiteral("attemptsRemaining"), attemptsRemaining }});
+        } else {
+            feedback(AuthenticationInput::IncorrectSecurityCode, attemptsRemaining);
+        }
+        break;
+    }
     }
 }
 
