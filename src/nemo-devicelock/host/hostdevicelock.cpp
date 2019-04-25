@@ -149,6 +149,7 @@ void HostDeviceLock::enterSecurityCode(const QString &code)
         break;
     case Authenticating: {
         switch (const int result = unlockWithCode(code)) {
+        case Failure:
         case Evaluating:
         case Success:
             unlockFinished(result, Authenticator::SecurityCode);
@@ -164,20 +165,6 @@ void HostDeviceLock::enterSecurityCode(const QString &code)
         case LockedOut:
             lockedOut();
             break;
-        default: {
-            const int maximum = maximumAttempts();
-
-            if (maximum > 0) {
-                feedback(AuthenticationInput::IncorrectSecurityCode, qMax(0, maximum - result));
-
-                if (result >= maximum) {
-                    lockedOut();
-                }
-            } else {
-                feedback(AuthenticationInput::IncorrectSecurityCode, -1);
-            }
-            break;
-        }
         }
         break;
     }
@@ -255,6 +242,28 @@ void HostDeviceLock::unlockFinished(int result, Authenticator::Method method)
             abortAuthentication(AuthenticationInput::SoftwareError);
         }
         break;
+    case Failure: {
+        int attemptsRemaining = -1;
+        const int maximum = maximumAttempts();
+
+        if (maximum > 0) {
+            if (result >= maximum) {
+                feedback(AuthenticationInput::IncorrectSecurityCode, 0);
+                lockedOut();
+                break;
+            } else {
+                attemptsRemaining = maximum - result;
+            }
+        }
+
+        if (m_state == Unlocking) {
+            m_state = Authenticating;
+            authenticationResumed(AuthenticationInput::IncorrectSecurityCode, {{ QStringLiteral("attemptsRemaining"), attemptsRemaining }});
+        } else {
+            feedback(AuthenticationInput::IncorrectSecurityCode, attemptsRemaining);
+        }
+        break;
+    }
     default:
         if (m_state == Canceled) {
             m_state = Idle;
