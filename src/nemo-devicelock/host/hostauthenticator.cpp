@@ -302,38 +302,27 @@ void HostAuthenticator::handleClearSecurityCode(const QString &client)
 
 void HostAuthenticator::enterSecurityCode(const QString &code)
 {
-    int attempts = 0;
-
     switch (m_state) {
     case Idle:
         return;
     case Authenticating:
     case RequestingPermission:
         qCDebug(daemon, "Security code entered for authentication.");
-        switch ((attempts = checkCode(code))) {
-        case Success:
-        case SecurityCodeExpired:
-            confirmAuthentication(Authenticator::SecurityCode);
-            return;
-        case LockedOut:
-            lockedOut();
-            return;
-        }
-        break;
-    case AuthenticatingForChange:
+        checkCodeFinished(checkCode(code));
+        return;
+    case AuthenticatingForChange: {
         qCDebug(daemon, "Security code entered for code change authentication.");
-        switch ((attempts = checkCode(code))) {
+        int result = checkCode(code);
+        switch (result) {
+        case Evaluating:
         case Success:
         case SecurityCodeExpired:
             m_currentCode = code;
-            enterCodeChangeState(&HostAuthenticationInput::feedback, Authenticator::SecurityCode);
-
-            return;
-        case LockedOut:
-            lockedOut();
-            return;
+            break;
         }
-        break;
+        checkCodeFinished(result);
+        return;
+    }
     case EnteringNewSecurityCode:
         qCDebug(daemon, "New security code entered.");
         m_newCode = code;
@@ -380,31 +369,18 @@ void HostAuthenticator::enterSecurityCode(const QString &code)
     }
     case AuthenticatingForClear: {
         qCDebug(daemon, "Security code entered for clear authentication.");
-        if ((attempts = checkCode(code)) == 0) {
-            if (clearCode(code)) {
-                securityCodeCleared();
-            } else {
-                abortAuthentication(AuthenticationInput::SoftwareError);
-            }
-            return;
+        int result = checkCode(code);
+        switch (result) {
+            case Evaluating:
+            case Success:
+                m_currentCode = code;
+                break;
         }
-        break;
+        checkCodeFinished(result);
+        return;
     }
     default:
         return;
-    }
-
-    const int maximum = maximumAttempts();
-
-    if (maximum > 0 && attempts > 0) {
-        feedback(AuthenticationInput::IncorrectSecurityCode, qMax(0, maximum - attempts));
-
-        if (attempts >= maximum) {
-            lockedOut();
-            return;
-        }
-    } else {
-        feedback(AuthenticationInput::IncorrectSecurityCode, -1);
     }
 }
 
@@ -432,6 +408,70 @@ void HostAuthenticator::authorize()
         break;
     default:
         break;
+    }
+}
+
+void HostAuthenticator::checkCodeFinished(int result)
+{
+    switch (m_state) {
+    case Authenticating:
+    case RequestingPermission:
+        switch (result) {
+        case Evaluating:
+            return;
+        case Success:
+        case SecurityCodeExpired:
+            confirmAuthentication(Authenticator::SecurityCode);
+            return;
+        case LockedOut:
+            lockedOut();
+            return;
+        }
+        break;
+    case AuthenticatingForChange:
+        switch (result) {
+        case Evaluating:
+            return;
+        case Success:
+        case SecurityCodeExpired:
+            enterCodeChangeState(&HostAuthenticationInput::feedback, Authenticator::SecurityCode);
+            return;
+        case LockedOut:
+            lockedOut();
+            return;
+        }
+        break;
+    case AuthenticatingForClear: {
+        switch (result) {
+        case Evaluating:
+            return;
+        case Success:
+            if (clearCode(m_currentCode)) {
+                securityCodeCleared();
+            } else {
+                abortAuthentication(AuthenticationInput::SoftwareError);
+            }
+            m_currentCode.clear();
+            return;
+        break;
+        }
+    }
+    default:
+        return;
+    }
+
+    const int attempts = result;
+    const int maximum = maximumAttempts();
+
+    if (maximum > 0 && attempts > 0) {
+        feedback(AuthenticationInput::IncorrectSecurityCode, qMax(0, maximum - attempts));
+
+        if (attempts >= maximum) {
+            lockedOut();
+            return;
+        }
+    } else {
+        feedback(AuthenticationInput::IncorrectSecurityCode, -1);
     }
 }
 
@@ -588,6 +628,7 @@ void HostAuthenticator::securityCodeCleared()
 
 void HostAuthenticator::securityCodeClearAborted()
 {
+    m_currentCode.clear();
     sendToActiveClient(securityCodeInterface, QStringLiteral("ClearAborted"));
     authenticationEnded(false);
 }
