@@ -129,6 +129,7 @@ public:
             Authenticator::Methods methods, uint authenticatingPid, AuthenticationInput::Feedback feedback) override;
     void authenticationEnded(bool confirmed) override;
 
+    void checkCodeFinished(int result);
     void setCodeFinished(int result);
 
     // Signals
