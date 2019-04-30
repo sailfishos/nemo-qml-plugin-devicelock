@@ -160,6 +160,10 @@ private:
         ChangeCanceled,
         AuthenticatingForClear,
         ClearError,
+        WaitingAuthentication,
+        WaitingPermission,
+        WaitingAuthenticationForChange,
+        WaitingAuthenticationForClear,
     };
 
     inline bool isSecurityCodeSet() const;

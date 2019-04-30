@@ -306,12 +306,17 @@ void HostAuthenticator::enterSecurityCode(const QString &code)
     case Idle:
         return;
     case Authenticating:
+        qCDebug(daemon, "Security code entered for authentication.");
+        m_state = WaitingAuthentication;
+        checkCodeFinished(checkCode(code));
     case RequestingPermission:
         qCDebug(daemon, "Security code entered for authentication.");
+        m_state = WaitingPermission;
         checkCodeFinished(checkCode(code));
         return;
     case AuthenticatingForChange: {
         qCDebug(daemon, "Security code entered for code change authentication.");
+        m_state = WaitingAuthenticationForChange;
         int result = checkCode(code);
         switch (result) {
         case Evaluating:
@@ -369,6 +374,7 @@ void HostAuthenticator::enterSecurityCode(const QString &code)
     }
     case AuthenticatingForClear: {
         qCDebug(daemon, "Security code entered for clear authentication.");
+        m_state = WaitingAuthenticationForClear;
         int result = checkCode(code);
         switch (result) {
             case Evaluating:
@@ -398,7 +404,9 @@ void HostAuthenticator::authorize()
 {
     switch (m_state) {
     case Authenticating:
+    case WaitingAuthentication:
     case RequestingPermission:
+    case WaitingPermission:
         if (activeMethods() == Authenticator::Confirmation) {
             qCDebug(daemon, "Action authorized without authentication.");
             confirmAuthentication(Authenticator::Confirmation);
@@ -415,7 +423,9 @@ void HostAuthenticator::checkCodeFinished(int result)
 {
     switch (m_state) {
     case Authenticating:
+    case WaitingAuthentication:
     case RequestingPermission:
+    case WaitingPermission:
         switch (result) {
         case Evaluating:
             return;
@@ -429,6 +439,7 @@ void HostAuthenticator::checkCodeFinished(int result)
         }
         break;
     case AuthenticatingForChange:
+    case WaitingAuthenticationForChange:
         switch (result) {
         case Evaluating:
             return;
@@ -441,7 +452,8 @@ void HostAuthenticator::checkCodeFinished(int result)
             return;
         }
         break;
-    case AuthenticatingForClear: {
+    case AuthenticatingForClear:
+    case WaitingAuthenticationForClear: {
         switch (result) {
         case Evaluating:
             return;
@@ -513,7 +525,7 @@ void HostAuthenticator::setCodeFinished(int result)
 
 void HostAuthenticator::confirmAuthentication(Authenticator::Method method)
 {
-    if (m_state == RequestingPermission) {
+    if (m_state == RequestingPermission || m_state == WaitingPermission) {
         sendToActiveClient(authenticatorInterface, QStringLiteral("PermissionGranted"), uint(method));
         authenticationEnded(true);
     } else {
@@ -525,18 +537,20 @@ void HostAuthenticator::abortAuthentication(AuthenticationInput::Error error)
 {
     switch (m_state) {
     case Authenticating:
-        m_state = AuthenticationError;
-        break;
+    case WaitingAuthentication:
     case RequestingPermission:
+    case WaitingPermission:
         m_state = AuthenticationError;
         break;
     case AuthenticatingForChange:
+    case WaitingAuthenticationForChange:
     case EnteringNewSecurityCode:
     case RepeatingNewSecurityCode:
     case ExpectingGeneratedSecurityCode:
         m_state = ChangeError;
         break;
     case AuthenticatingForClear:
+    case WaitingAuthenticationForClear:
         m_state = ClearError;
         break;
     default:
@@ -573,9 +587,12 @@ void HostAuthenticator::cancel()
     case Authenticating:
     case AuthenticationError:
     case RequestingPermission:
+    case WaitingAuthentication:
+    case WaitingPermission:
         aborted();
         break;
     case AuthenticatingForChange:
+    case WaitingAuthenticationForChange:
     case EnteringNewSecurityCode:
     case RepeatingNewSecurityCode:
     case ExpectingGeneratedSecurityCode:
@@ -588,6 +605,7 @@ void HostAuthenticator::cancel()
     case ChangeCanceled:
         break;
     case AuthenticatingForClear:
+    case WaitingAuthenticationForClear:
     case ClearError:
         securityCodeClearAborted();
         break;
