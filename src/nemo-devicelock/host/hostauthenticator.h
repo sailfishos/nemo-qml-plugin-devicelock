@@ -146,33 +146,70 @@ public:
     void availabilityChanged();
 
 private:
+    enum StateFlag {
+        ErrorFlag       = 0x1000,
+        EvaluatingFlag  = 0x2000,
+        CanceledFlag    = 0x4000,
+        CompletedFlag   = 0x8000
+    };
+
     enum State {
         Idle,
         Authenticating,
-        AuthenticationError,
         AuthenticatingForChange,
         RequestingPermission,
         EnteringNewSecurityCode,
         RepeatingNewSecurityCode,
         ExpectingGeneratedSecurityCode,
         Changing,
-        ChangeError,
         ChangeCanceled,
         AuthenticatingForClear,
-        ClearError,
+
+        AuthenticationError         = Authenticating | ErrorFlag,
+        AuthenticationEvaluating    = Authenticating | EvaluatingFlag,
+        AuthenticationCanceled      = Authenticating | CanceledFlag,
+        AuthenticationCompleted     = Authenticating | CompletedFlag,
+
+        PermissionEvaluating = RequestingPermission | EvaluatingFlag, // The error and cancel states are shared with authenticating.
+
+        ChangeError                         = AuthenticatingForChange | ErrorFlag,
+        AuthenticationForChangeEvaluating   = AuthenticatingForChange | EvaluatingFlag,
+        AuthenticationForChangeCanceled     = AuthenticatingForChange | CanceledFlag,
+
+        ClearError                          = AuthenticatingForClear | ErrorFlag,
+        AuthenticationForClearEvaluating    = AuthenticatingForClear | EvaluatingFlag,
+        AuthenticationForClearCanceled      = AuthenticatingForClear | CanceledFlag,
+    };
+
+    enum Request {
+        NoRequest,
+        AuthenticateRequest,
+        PermissionRequest,
+        ChangeRequest,
+        ClearRequest
     };
 
     inline bool isSecurityCodeSet() const;
     inline void authenticate(
             const QString &authenticator, const QVariant &challengeCode, Authenticator::Methods methods);
+    inline void beginAuthenticate(uint pid, const QVariant &challengeCode, Authenticator::Methods methods);
     inline void requestPermission(
             const QString &client,
             const QString &message,
             const QVariantMap &properties,
             Authenticator::Methods methods);
+    inline void beginRequestPermission(
+            uint pid,
+            const QString &message,
+            const QVariantMap &properties,
+            Authenticator::Methods methods);
     inline void handleChangeSecurityCode(const QString &client, const QVariant &challengeCode);
+    inline void beginChangeSecurityCode(uint pid, const QVariant &challengeCode);
     inline void handleClearSecurityCode(const QString &client);
+    inline void beginClearSecurityCode(uint pid);
     inline void handleCancel(const QString &client);
+    inline void cancelPending();
+    inline void beginPending();
     inline QVariantMap generatedCodeData();
     inline void enterCodeChangeState(
             FeedbackFunction feedback, Authenticator::Methods methods = Authenticator::Methods());
@@ -182,6 +219,19 @@ private:
 
     HostAuthenticatorAdaptor m_adaptor;
     HostSecurityCodeSettingsAdaptor m_securityCodeAdaptor;
+    struct Pending {
+        QVariant challengeCode;
+        QVariantMap properties;
+        QString connection;
+        QString client;
+        QString message;
+        uint pid = 0;
+        Authenticator::Methods methods;
+        Request request = NoRequest;
+
+        void clear();
+    } m_pending;
+
     QVariant m_challengeCode;
     QString m_currentCode;
     QString m_newCode;

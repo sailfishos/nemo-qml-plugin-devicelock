@@ -146,15 +146,25 @@ bool HostObject::authorizeConnection(const QDBusConnection &connection)
     return true;
 }
 
+bool HostObject::isActiveClient(const QString &connection, const QString &client) const
+{
+    return m_activeConnection == connection && m_activeClient == client;
+}
+
 bool HostObject::isActiveClient(const QString &client) const
 {
-    return m_activeConnection == QDBusContext::connection().name() && m_activeClient == client;
+    return isActiveClient(QDBusContext::connection().name(), client);
+}
+
+void HostObject::setActiveClient(const QString &connection, const QString &client)
+{
+    m_activeConnection = connection;
+    m_activeClient = client;
 }
 
 void HostObject::setActiveClient(const QString &client)
 {
-    m_activeConnection = QDBusContext::connection().name();
-    m_activeClient = client;
+    setActiveClient(QDBusContext::connection().name(), client);
 }
 
 void HostObject::clearActiveClient()
