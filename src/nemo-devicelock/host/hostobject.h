@@ -64,8 +64,10 @@ public:
 
     virtual bool authorizeConnection(const QDBusConnection &connection);
 
+    bool isActiveClient(const QString &connection, const QString &client) const;
     bool isActiveClient(const QString &client) const;
     void setActiveClient(const QString &client);
+    void setActiveClient(const QString &connection, const QString &client);
     void clearActiveClient();
 
 protected:
