@@ -595,7 +595,11 @@ void HostAuthenticator::setCodeFinished(int result)
         } else {
             qCDebug(daemon, "Security code disallowed.");
             feedback(AuthenticationInput::SecurityCodeInHistory, -1);
-            enterCodeChangeState(&HostAuthenticationInput::feedback, Authenticator::SecurityCode);
+            if (m_state == Changing) {
+                enterCodeChangeState(&HostAuthenticationInput::authenticationResumed, Authenticator::SecurityCode);
+            } else {
+                enterCodeChangeState(&HostAuthenticationInput::feedback, Authenticator::SecurityCode);
+            }
         }
         break;
     case Evaluating:
