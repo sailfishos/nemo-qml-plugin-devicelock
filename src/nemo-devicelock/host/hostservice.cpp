@@ -70,6 +70,8 @@ public slots:
         for (const auto object : m_service->m_objects) {
             object->clientDisconnected(m_connectionName);
         }
+
+        QDBusConnection::disconnectFromPeer(m_connectionName);
     }
 
 private:
