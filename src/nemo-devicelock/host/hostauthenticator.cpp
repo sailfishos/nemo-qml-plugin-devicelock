@@ -45,6 +45,7 @@ namespace NemoDeviceLock
 
 static const auto authenticatorInterface = QStringLiteral("org.nemomobile.devicelock.client.Authenticator");
 static const auto securityCodeInterface = QStringLiteral("org.nemomobile.devicelock.client.SecurityCodeSettings");
+static const auto attemptsRemaining = QStringLiteral("attemptsRemaining");
 
 HostAuthenticatorAdaptor::HostAuthenticatorAdaptor(HostAuthenticator *authenticator)
     : QDBusAbstractAdaptor(authenticator)
@@ -493,6 +494,10 @@ void HostAuthenticator::authorize()
 
 void HostAuthenticator::checkCodeFinished(int result)
 {
+    const FeedbackFunction feebackFunction = (m_state & EvaluatingFlag)
+        ? &HostAuthenticationInput::authenticationResumed
+        : static_cast<void (HostAuthenticationInput::*)(AuthenticationInput::Feedback, const QVariantMap &, Authenticator::Methods)>(&HostAuthenticationInput::feedback);
+
     m_state = State(m_state & ~EvaluatingFlag);
 
     switch (m_state) {
@@ -500,6 +505,8 @@ void HostAuthenticator::checkCodeFinished(int result)
     case RequestingPermission:
         switch (result) {
         case Evaluating:
+            authenticationEvaluating();
+            m_state = State(m_state | EvaluatingFlag);
             return;
         case Success:
         case SecurityCodeExpired:
@@ -528,10 +535,12 @@ void HostAuthenticator::checkCodeFinished(int result)
     case AuthenticatingForChange:
         switch (result) {
         case Evaluating:
+            authenticationEvaluating();
+            m_state = State(m_state | EvaluatingFlag);
             return;
         case Success:
         case SecurityCodeExpired:
-            enterCodeChangeState(&HostAuthenticationInput::feedback, Authenticator::SecurityCode);
+            enterCodeChangeState(feebackFunction, Authenticator::SecurityCode);
             return;
         case LockedOut:
             lockedOut();
@@ -544,6 +553,8 @@ void HostAuthenticator::checkCodeFinished(int result)
     case AuthenticatingForClear: {
         switch (result) {
         case Evaluating:
+            authenticationEvaluating();
+            m_state = State(m_state | EvaluatingFlag);
             return;
         case Success:
             if (clearCode(m_currentCode)) {
@@ -563,19 +574,21 @@ void HostAuthenticator::checkCodeFinished(int result)
         return;
     }
 
-
     const int attempts = result;
     const int maximum = maximumAttempts();
 
+    QVariantMap data;
     if (maximum > 0 && attempts > 0) {
-        feedback(AuthenticationInput::IncorrectSecurityCode, qMax(0, maximum - attempts));
+        data.insert(attemptsRemaining, qMax(0, maximum - attempts));
+        (this->*feebackFunction)(AuthenticationInput::IncorrectSecurityCode, data, Authenticator::Methods());
 
         if (attempts >= maximum) {
             lockedOut();
             return;
         }
     } else {
-        feedback(AuthenticationInput::IncorrectSecurityCode, -1);
+        data.insert(attemptsRemaining, -1);
+        (this->*feebackFunction)(AuthenticationInput::IncorrectSecurityCode, data, Authenticator::Methods());
     }
 }
 
