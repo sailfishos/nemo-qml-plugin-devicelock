@@ -1,6 +1,6 @@
 Name:       nemo-qml-plugin-devicelock
 Summary:    Device lock plugin for Nemo Mobile
-Version:    0.2.21
+Version:    0.2.22
 Release:    1
 Group:      System/Libraries
 License:    LGPLv2.1
