@@ -71,6 +71,7 @@ public:
     static SettingsWatcher *instance();
 
     int automaticLocking;
+    int currentLength;
     int minimumLength;
     int maximumLength;
     int maximumAttempts;
@@ -88,6 +89,7 @@ public:
     bool codeIsMandatory;
 
     static const char * const automaticLockingKey;
+    static const char * const currentLengthKey;
     static const char * const minimumLengthKey;
     static const char * const maximumLengthKey;
     static const char * const maximumAttemptsKey;
@@ -105,6 +107,7 @@ signals:
     void automaticLockingChanged();
     void maximumAttemptsChanged();
     void currentAttemptsChanged();
+    void currentLengthChanged();
     void minimumLengthChanged();
     void maximumLengthChanged();
     void peekingAllowedChanged();

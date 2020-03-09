@@ -70,6 +70,12 @@ DeviceLockSettings::DeviceLockSettings(QObject *parent)
             this, &DeviceLockSettings::inputIsKeyboardChanged);
     connect(m_settings.data(), &SettingsWatcher::currentCodeIsDigitOnlyChanged,
             this, &DeviceLockSettings::currentCodeIsDigitOnlyChanged);
+    connect(m_settings.data(), &SettingsWatcher::currentLengthChanged,
+            this, &DeviceLockSettings::currentCodeLengthChanged);
+    connect(m_settings.data(), &SettingsWatcher::minimumLengthChanged,
+            this, &DeviceLockSettings::minimumCodeLengthChanged);
+    connect(m_settings.data(), &SettingsWatcher::maximumLengthChanged,
+            this, &DeviceLockSettings::maximumCodeLengthChanged);
     connect(m_settings.data(), &SettingsWatcher::maximumAutomaticLockingChanged,
             this, &DeviceLockSettings::maximumAutomaticLockingChanged);
     connect(m_settings.data(), &SettingsWatcher::absoluteMaximumAttemptsChanged,
@@ -250,6 +256,36 @@ void DeviceLockSettings::setInputIsKeyboard(const QVariant &authenticationToken,
 bool DeviceLockSettings::currentCodeIsDigitOnly() const
 {
     return m_settings->currentCodeIsDigitOnly;
+}
+
+/*!
+    \property NemoDeviceLock::DeviceLockSettings::currentCodeLength
+
+    This property holds the length of the current security code.
+*/
+int DeviceLockSettings::currentCodeLength() const
+{
+    return m_settings->currentLength;
+}
+
+/*!
+    \property NemoDeviceLock::DeviceLockSettings::minimumCodeLength
+
+    This property holds the minimum allowed length of a security code.
+*/
+int DeviceLockSettings::minimumCodeLength() const
+{
+    return m_settings->minimumLength;
+}
+
+/*!
+    \property NemoDeviceLock::DeviceLockSettings::maximumCodeLength
+
+    This property holds the maximum allowed length of a security code.
+*/
+int DeviceLockSettings::maximumCodeLength() const
+{
+    return m_settings->maximumLength;
 }
 
 /*!
