@@ -66,6 +66,7 @@ int flagsFromString(const QMetaEnum &enumeration, const char *string)
 }
 
 const char * const SettingsWatcher::automaticLockingKey = "automatic_locking";
+const char * const SettingsWatcher::currentLengthKey = "code_current_length";
 const char * const SettingsWatcher::minimumLengthKey = "code_min_length";
 const char * const SettingsWatcher::maximumLengthKey = "code_max_length";
 const char * const SettingsWatcher::maximumAttemptsKey = "maximum_attempts";
@@ -82,6 +83,7 @@ SettingsWatcher *SettingsWatcher::sharedInstance = nullptr;
 SettingsWatcher::SettingsWatcher(QObject *parent)
     : QSocketNotifier(inotify_init(), Read, parent)
     , automaticLocking(0)
+    , currentLength(0)
     , minimumLength(5)
     , maximumLength(42)
     , maximumAttempts(-1)
@@ -254,6 +256,7 @@ void SettingsWatcher::reloadSettings()
     g_key_file_load_from_file(settings, m_settingsPath.toUtf8().constData(), G_KEY_FILE_NONE, 0);
 
     read(settings, this, automaticLockingKey, 0, &automaticLocking, &SettingsWatcher::automaticLockingChanged);
+    read(settings, this, currentLengthKey, 0, &currentLength, &SettingsWatcher::currentLengthChanged);
     read(settings, this, minimumLengthKey, 5, &minimumLength, &SettingsWatcher::minimumLengthChanged);
     read(settings, this, maximumLengthKey, 42, &maximumLength, &SettingsWatcher::maximumLengthChanged);
     read(settings, this, maximumAttemptsKey, -1, &maximumAttempts, &SettingsWatcher::maximumAttemptsChanged);
