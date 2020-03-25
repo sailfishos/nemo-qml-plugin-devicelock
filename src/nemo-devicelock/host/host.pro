@@ -12,7 +12,7 @@ QT += dbus
 PKGCONFIG += \
         dbus-1 \
         keepalive \
-        libsystemd-daemon
+        libsystemd
 
 INCLUDEPATH += \
         $$PWD/.. \

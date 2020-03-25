@@ -12,7 +12,7 @@ PKGCONFIG += \
         dbus-1 \
         keepalive \
         nemodbus \
-        libsystemd-daemon
+        libsystemd
 
 INCLUDEPATH += \
         $$PWD/../ \
