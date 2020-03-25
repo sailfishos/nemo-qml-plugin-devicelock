@@ -50,7 +50,7 @@ namespace NemoDeviceLock
 /*!
     \enum NemoDeviceLock::DeviceLock::Notice
 
-    Broadcast notifications decribing events of importance.
+    Broadcast notifications describing events of importance.
 
     \value SecurityCodeDueToExpire The user's security code is due to due to expire in the near
     future.  The expiration date is provided as an ISO 8601 formatted string in the
