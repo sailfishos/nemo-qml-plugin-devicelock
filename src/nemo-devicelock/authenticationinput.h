@@ -95,7 +95,9 @@ public:
         ContactSupport,
         TemporarilyLocked,
         PermanentlyLocked,
-        UnlockToPerformOperation
+        UnlockToPerformOperation,
+        SecurityCodeRequiredAfterReboot,
+        UnrecognizedFingerLimitExceeded
     };
     Q_ENUM(Feedback)
 
