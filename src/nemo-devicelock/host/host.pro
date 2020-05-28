@@ -62,7 +62,7 @@ headers.path = /usr/include/nemo-devicelock/host
 prf.files = nemo-devicelock-host.prf
 prf.path = $$[QT_INSTALL_DATA]/mkspecs/features
 
-target.path = /usr/lib
+target.path = $$[QT_INSTALL_LIBS]
 
 INSTALLS += \
         headers \
