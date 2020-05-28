@@ -56,7 +56,7 @@ public_headers.path = /usr/include/nemo-devicelock
 private_headers.files = $$PRIVATE_HEADERS
 private_headers.path = /usr/include/nemo-devicelock/private
 
-target.path = /usr/lib
+target.path = $$[QT_INSTALL_LIBS]
 
 QMAKE_PKGCONFIG_NAME = nemodevicelock
 QMAKE_PKGCONFIG_DESCRIPTION = Library for Nemo device lock.
