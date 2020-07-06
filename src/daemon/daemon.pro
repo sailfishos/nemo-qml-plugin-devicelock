@@ -37,7 +37,7 @@ target.path = /usr/libexec
 
 systemd.files = \
         systemd/nemo-devicelock.service
-systemd.path= /lib/systemd/system
+systemd.path= /usr/lib/systemd/system
 
 INSTALLS += \
         systemd \

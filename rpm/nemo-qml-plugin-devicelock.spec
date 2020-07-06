@@ -61,8 +61,8 @@ make %{?_smp_mflags}
 rm -rf %{buildroot}
 %qmake5_install
 
-mkdir -p %{buildroot}/lib/systemd/system/multi-user.target.wants
-ln -sf ../nemo-devicelock.socket %{buildroot}/lib/systemd/system/multi-user.target.wants/
+mkdir -p %{buildroot}%{_unitdir}/multi-user.target.wants
+ln -sf ../nemo-devicelock.socket %{buildroot}%{_unitdir}/multi-user.target.wants/
 
 %post -p /sbin/ldconfig
 
@@ -75,14 +75,14 @@ ln -sf ../nemo-devicelock.socket %{buildroot}/lib/systemd/system/multi-user.targ
 %{_libdir}/qt5/qml/org/nemomobile/devicelock/libnemodevicelockplugin.so
 %{_libdir}/qt5/qml/org/nemomobile/devicelock/plugins.qmltypes
 %{_libdir}/qt5/qml/org/nemomobile/devicelock/qmldir
-/lib/systemd/system/nemo-devicelock.socket
-/lib/systemd/system/multi-user.target.wants/nemo-devicelock.socket
+%{_unitdir}/nemo-devicelock.socket
+%{_unitdir}/multi-user.target.wants/nemo-devicelock.socket
 %config %{_sysconfdir}/dbus-1/system.d/org.nemomobile.devicelock.conf
 
 %files -n nemo-devicelock-daemon-cli
 %defattr(-,root,root,-)
 %{_libexecdir}/nemo-devicelock
-/lib/systemd/system/nemo-devicelock.service
+%{_unitdir}/nemo-devicelock.service
 
 %files devel
 %defattr(-,root,root,-)
