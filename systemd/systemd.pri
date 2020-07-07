@@ -1,7 +1,7 @@
 
 systemd.files = \
         $$PWD/nemo-devicelock.socket
-systemd.path= /lib/systemd/system
+systemd.path= /usr/lib/systemd/system
 
 policy.files = \
         $$PWD/org.nemomobile.devicelock.conf
