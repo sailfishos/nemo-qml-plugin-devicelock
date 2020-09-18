@@ -8,3 +8,6 @@ Conflicts=shutdown.target
 [Socket]
 ListenStream=/run/nemo-devicelock/socket
 Accept=false
+SocketUser=root
+SocketGroup=privileged
+SocketMode=0660
