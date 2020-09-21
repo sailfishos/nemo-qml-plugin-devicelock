@@ -69,6 +69,7 @@ private:
     friend class ConnectionMonitor;
 
     void connectionReady(const QDBusConnection &connection);
+    static QString socketAddress();
 
     const QVector<HostObject *> m_objects;
 };

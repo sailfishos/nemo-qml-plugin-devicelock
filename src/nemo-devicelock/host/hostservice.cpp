@@ -80,7 +80,7 @@ private:
 };
 
 HostService::HostService(const QVector<HostObject *> objects, QObject *parent)
-    : QDBusServer(QStringLiteral("unix:path=/run/nemo-devicelock/socket"), parent)
+    : QDBusServer(HostService::socketAddress(), parent)
     , m_objects(objects)
 {
     setAnonymousAuthenticationAllowed(true);
@@ -173,6 +173,15 @@ void HostService::connectionReady(const QDBusConnection &newConnection)
             object->clientConnected(connectionName);
         }
     }
+}
+
+QString HostService::socketAddress()
+{
+    // Check if socket-based activation logic is enabled and at least one fd is provided
+    if (sd_listen_fds(0) > 0)
+        return QStringLiteral("systemd:");
+
+    return QStringLiteral("unix:path=/run/nemo-devicelock/socket");
 }
 
 }
