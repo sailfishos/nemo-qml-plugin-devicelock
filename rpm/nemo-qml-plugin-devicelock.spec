@@ -2,7 +2,7 @@ Name:       nemo-qml-plugin-devicelock
 Summary:    Device lock plugin for Nemo Mobile
 Version:    0.2.22
 Release:    1
-License:    LGPLv2.1
+License:    BSD and LGPLv2
 URL:        https://git.sailfishos.org/mer-core/nemo-qml-plugin-devicelock
 Source0:    %{name}-%{version}.tar.bz2
 BuildRequires:  pkgconfig(Qt5DBus)
@@ -22,7 +22,6 @@ Requires:       nemo-devicelock-daemon
 
 %package -n nemo-devicelock-daemon-cli
 Summary:    The default command line security code device lock daemon for Nemo Mobile
-Group:      System/GUI/Other
 Requires:   %{name} = %{version}-%{release}
 Provides:   nemo-devicelock-daemon = %{version}-%{release}
 
@@ -31,7 +30,6 @@ Provides:   nemo-devicelock-daemon = %{version}-%{release}
 
 %package devel
 Summary:    Development libraries for device lock
-Group:      Development/Libraries
 Requires:   %{name} = %{version}-%{release}
 Requires:   pkgconfig(nemodbus)
 
@@ -40,7 +38,6 @@ Requires:   pkgconfig(nemodbus)
 
 %package host-devel
 Summary:    Development libraries for device lock daemons
-Group:      Development/Libraries
 Requires:   %{name}-devel = %{version}-%{release}
 Requires:   pkgconfig(keepalive)
 Requires:   pkgconfig(libsystemd)
@@ -78,6 +75,7 @@ ln -sf ../nemo-devicelock.socket %{buildroot}%{_unitdir}/multi-user.target.wants
 %{_unitdir}/nemo-devicelock.socket
 %{_unitdir}/multi-user.target.wants/nemo-devicelock.socket
 %config %{_sysconfdir}/dbus-1/system.d/org.nemomobile.devicelock.conf
+%license LICENSE.LGPL
 
 %files -n nemo-devicelock-daemon-cli
 %defattr(-,root,root,-)
