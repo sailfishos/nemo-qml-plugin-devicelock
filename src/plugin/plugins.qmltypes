@@ -43,7 +43,9 @@ Module {
                 "ContactSupport": 16,
                 "TemporarilyLocked": 17,
                 "PermanentlyLocked": 18,
-                "UnlockToPerformOperation": 19
+                "UnlockToPerformOperation": 19,
+                "SecurityCodeRequiredAfterReboot": 20,
+                "UnrecognizedFingerLimitExceeded": 21
             }
         }
         Enum {
@@ -269,6 +271,9 @@ Module {
         Property { name: "showNotifications"; type: "bool"; isReadonly: true }
         Property { name: "inputIsKeyboard"; type: "bool"; isReadonly: true }
         Property { name: "currentCodeIsDigitOnly"; type: "bool"; isReadonly: true }
+        Property { name: "currentCodeLength"; type: "int"; isReadonly: true }
+        Property { name: "minimumCodeLength"; type: "int"; isReadonly: true }
+        Property { name: "maximumCodeLength"; type: "int"; isReadonly: true }
         Property { name: "homeEncrypted"; type: "bool"; isReadonly: true }
         Property { name: "maximumAutomaticLocking"; type: "int"; isReadonly: true }
         Property { name: "absoluteMaximumAttempts"; type: "int"; isReadonly: true }
