@@ -39,6 +39,8 @@ systemd.files = \
         systemd/nemo-devicelock.service
 systemd.path= /usr/lib/systemd/system
 
-INSTALLS += \
-        systemd \
-        target
+!no_systemd{
+	INSTALLS += systemd
+}
+
+INSTALLS += target
