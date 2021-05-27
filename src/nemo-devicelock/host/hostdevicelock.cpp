@@ -160,7 +160,13 @@ void HostDeviceLock::enterSecurityCode(const QString &code)
         case LockedOut:
             lockedOut();
             break;
-	default:
+        case Evaluating:
+            // Set currentCode to use it as oldCode in case evaluation
+            // reveals it is expired and must be changed with a newCode
+            m_currentCode = code;
+            unlockFinished(result, Authenticator::SecurityCode);
+            break;
+        default:
             unlockFinished(result, Authenticator::SecurityCode);
             break;
         }
@@ -241,6 +247,9 @@ void HostDeviceLock::unlockFinished(int result, Authenticator::Method method)
         }
         break;
     case SecurityCodeExpired:
+        enterCodeChangeState(&HostAuthenticationInput::feedback);
+        authenticationResumed(AuthenticationInput::SecurityCodeExpired, QVariantMap(), Authenticator::SecurityCode);
+        break;
     case SecurityCodeInHistory:
     case LockedOut:
         if (m_state == Canceled) {
