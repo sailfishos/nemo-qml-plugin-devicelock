@@ -1,6 +1,6 @@
 Name:       nemo-qml-plugin-devicelock
 Summary:    Device lock plugin for Nemo Mobile
-Version:    0.2.22
+Version:    0.3.8
 Release:    1
 License:    BSD and LGPLv2
 URL:        https://git.sailfishos.org/mer-core/nemo-qml-plugin-devicelock
@@ -14,6 +14,7 @@ BuildRequires:  pkgconfig(keepalive)
 BuildRequires:  pkgconfig(libsystemd)
 BuildRequires:  pkgconfig(mce)
 BuildRequires:  pkgconfig(nemodbus)
+BuildRequires:  sailfish-minui-devel >= 0.0.25
 Obsoletes:      nemo-qml-plugin-devicelock-default < 0.2.0
 Requires:       nemo-devicelock-daemon
 

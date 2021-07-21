@@ -33,19 +33,25 @@ Module {
                 "SecurityCodeInHistory": 6,
                 "SecurityCodeExpired": 7,
                 "SecurityCodeDueToExpire": 8,
-                "PartialPrint": 9,
-                "PrintIsUnclear": 10,
-                "SensorIsDirty": 11,
-                "SwipeFaster": 12,
-                "SwipeSlower": 13,
-                "UnrecognizedFinger": 14,
-                "IncorrectSecurityCode": 15,
-                "ContactSupport": 16,
-                "TemporarilyLocked": 17,
-                "PermanentlyLocked": 18,
-                "UnlockToPerformOperation": 19,
-                "SecurityCodeRequiredAfterReboot": 20,
-                "UnrecognizedFingerLimitExceeded": 21
+                "EnterEncryptionCode" : 9,
+                "EnterNewEncryptionCode" : 10,
+                "RepeatNewEncryptionCode" : 11,
+                "EncryptionCodesDoNotMatch" : 12,
+                "EncryptionCodeBad" : 13,
+                "PartialPrint": 14,
+                "PrintIsUnclear": 15,
+                "SensorIsDirty": 16,
+                "SwipeFaster": 17,
+                "SwipeSlower": 18,
+                "UnrecognizedFinger": 19,
+                "IncorrectSecurityCode": 20,
+                "ContactSupport": 21,
+                "TemporarilyLocked": 22,
+                "PermanentlyLocked": 23,
+                "UnlockToPerformOperation": 24,
+                "SecurityCodeRequiredAfterReboot": 25,
+                "UnrecognizedFingerLimitExceeded": 26,
+                "IncorrectSecurityCode": 27
             }
         }
         Enum {
@@ -135,6 +141,7 @@ Module {
                 "NoAuthentication": 0,
                 "SecurityCode": 1,
                 "Fingerprint": 2,
+                "EncryptionCode": 4,
                 "Confirmation": 4096,
                 "AllAvailable": 4099
             }
@@ -145,6 +152,7 @@ Module {
                 "NoAuthentication": 0,
                 "SecurityCode": 1,
                 "Fingerprint": 2,
+                "EncryptionCode": 4,
                 "Confirmation": 4096,
                 "AllAvailable": 4099
             }
@@ -453,11 +461,17 @@ Module {
         exports: ["org.nemomobile.devicelock/SecurityCodeSettings 1.0"]
         exportMetaObjectRevisions: [0]
         Property { name: "set"; type: "bool"; isReadonly: true }
+        Property { name: "encryptionSet"; type: "bool"; isReadonly: true }
+        Property { name: "alphanumericEncryptionSet"; type: "bool"; isReadonly: true }
         Property { name: "mandatory"; type: "bool"; isReadonly: true }
         Signal { name: "changingChanged" }
         Signal { name: "clearingChanged" }
         Signal {
             name: "changed"
+            Parameter { name: "authenticationToken"; type: "QVariant" }
+        }
+        Signal {
+            name: "encryptionChanged"
             Parameter { name: "authenticationToken"; type: "QVariant" }
         }
         Signal { name: "changeAborted" }

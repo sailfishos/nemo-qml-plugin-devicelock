@@ -71,11 +71,13 @@ public:
         NoAuthentication    = 0x000,
         SecurityCode        = 0x0001,
         Fingerprint         = 0x0002,
+        EncryptionCode      = 0x0004,
         Confirmation        = 0x1000,
-        AllAvailable = SecurityCode | Fingerprint | Confirmation
+        AllAvailable = SecurityCode | EncryptionCode | Fingerprint | Confirmation
     };
 
     Q_DECLARE_FLAGS(Methods, Method)
+    Q_FLAG(Methods)
 
     explicit Authenticator(QObject *parent = nullptr);
     ~Authenticator();

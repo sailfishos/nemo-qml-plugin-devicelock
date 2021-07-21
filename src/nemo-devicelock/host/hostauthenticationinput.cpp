@@ -35,6 +35,7 @@
 #include "settingswatcher.h"
 
 #include <QFile>
+#include <sailfish-minui/alphanumtool.h>
 
 namespace NemoDeviceLock
 {
@@ -404,6 +405,10 @@ void HostAuthenticationInput::lockedOut(
     }
 }
 
+bool HostAuthenticationInput::checkEncryptionCodeValidity(const QString &code)
+{
+    return Sailfish::MinUi::checkCodeValidity(code.toLocal8Bit().data());
+}
 
 void HostAuthenticationInput::abortAuthentication(AuthenticationInput::Error error)
 {

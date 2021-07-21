@@ -81,14 +81,40 @@ HostAuthenticationInput::Availability CliAuthenticator::availability(QVariantMap
     }
 }
 
+HostAuthenticationInput::Availability CliAuthenticator::encAvailability(QVariantMap *) const
+{
+    if (m_watcher->encryptionCodeSet()) {
+        const int maximum = maximumAttempts();
+        const int attempts = currentAttempts();
+
+        if (maximum > 0 && attempts >= maximum) {
+            return CodeEntryLockedPermanent;
+        } else {
+            return CanAuthenticate;
+        }
+    } else {
+        return AuthenticationNotRequired;
+    }
+}
+
 int CliAuthenticator::checkCode(const QString &code)
 {
     return m_watcher->runPlugin(QStringList() << QStringLiteral("--check-code") << code);
 }
 
+int CliAuthenticator::checkEncryptionCode(const QString &code)
+{
+    return m_watcher->runPlugin(QStringList() << QStringLiteral("--check-encryption-code") << code);
+}
+
 int CliAuthenticator::setCode(const QString &oldCode, const QString &newCode)
 {
     return m_watcher->runPlugin(QStringList() << QStringLiteral("--set-code") << oldCode << newCode);
+}
+
+int CliAuthenticator::setEncryptionCode(const QString &oldCode, const QString &newCode)
+{
+    return m_watcher->runPlugin(QStringList() << QStringLiteral("--set-encryption-code") << oldCode << newCode);
 }
 
 bool CliAuthenticator::clearCode(const QString &code)

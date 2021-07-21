@@ -37,8 +37,10 @@
 #include <QDBusArgument>
 #include <QDBusConnection>
 #include <QDBusMetaType>
+#include <QFile>
 
 #include <unistd.h>
+#include <systemd/sd-login.h>
 
 namespace NemoDeviceLock
 {
@@ -87,6 +89,11 @@ bool HostSecurityCodeSettingsAdaptor::isSet() const
     return m_authenticator->isSecurityCodeSet();
 }
 
+bool HostSecurityCodeSettingsAdaptor::isEncryptionSet() const
+{
+    return m_authenticator->isEncryptionCodeSet();
+}
+
 void HostSecurityCodeSettingsAdaptor::Change(const QDBusObjectPath &path, const QDBusVariant &challengeCode)
 {
     m_authenticator->handleChangeSecurityCode(path.path(), challengeCode.variant());
@@ -97,9 +104,19 @@ void HostSecurityCodeSettingsAdaptor::CancelChange(const QDBusObjectPath &path)
     m_authenticator->handleCancel(path.path());
 }
 
+void HostSecurityCodeSettingsAdaptor::ChangeEncryption(const QDBusObjectPath &path, const QDBusVariant &challengeCode)
+{
+    m_authenticator->handleChangeEncryptionCode(path.path(), challengeCode.variant());
+}
+
+void HostSecurityCodeSettingsAdaptor::CancelChangeEncryption(const QDBusObjectPath &path)
+{
+    m_authenticator->handleCancel(path.path());
+}
+
 void HostSecurityCodeSettingsAdaptor::Clear(const QDBusObjectPath &path)
 {
-    m_authenticator->handleClearSecurityCode(path.path());
+    m_authenticator->handleClearCodes(path.path());
 }
 
 void HostSecurityCodeSettingsAdaptor::CancelClear(const QDBusObjectPath &path)
@@ -138,6 +155,41 @@ bool HostAuthenticator::isSecurityCodeSet() const
     }
 }
 
+bool HostAuthenticator::isEncryptionCodeSet() const
+{
+    switch (encAvailability()) {
+    case HostAuthenticationInput::AuthenticationNotRequired:
+    case HostAuthenticationInput::SecurityCodeRequired:
+        return false;
+    default:
+        return true;
+    }
+}
+
+void HostAuthenticator::writeAlphanumericSetInfo()
+{
+    // Get the current UI user
+    uid_t uid;
+    if (sd_seat_get_active("seat0", nullptr, &uid) >= 0) {
+        QFile encryptionCodeInfo(alphanumEncryptionCodeSetFile.arg(uid));
+        if (!encryptionCodeInfo.open(QIODevice::WriteOnly)) {
+            qWarning() << "Unable to create file" << encryptionCodeInfo.fileName();
+        }
+        encryptionCodeInfo.close();
+    }
+}
+
+void HostAuthenticator::clearAlphanumericSetInfo()
+{
+    uid_t uid;
+    if (sd_seat_get_active("seat0", nullptr, &uid) >= 0) {
+        QFile encryptionCodeInfo(alphanumEncryptionCodeSetFile.arg(uid));
+        if (encryptionCodeInfo.exists() && !encryptionCodeInfo.remove()) {
+            qWarning() << "Unable to remove file" << encryptionCodeInfo.fileName();
+        }
+    }
+}
+
 void HostAuthenticator::authenticate(
         const QString &client, const QVariant &challengeCode, Authenticator::Methods methods)
 {
@@ -163,11 +215,14 @@ void HostAuthenticator::authenticate(
 void HostAuthenticator::beginAuthenticate(
             uint pid, const QVariant &challengeCode, Authenticator::Methods methods)
 {
-    m_state = Authenticating;
     m_challengeCode = challengeCode;
 
     QVariantMap feedbackData;
-    const auto availability = this->availability(&feedbackData);
+    bool encOnly = (methods & Authenticator::EncryptionCode);
+    m_state = encOnly ? AuthenticatingEncryption : Authenticating;
+
+    const auto availability = (encOnly) ? this->encAvailability(&feedbackData) : this->availability(&feedbackData);
+
     switch (availability) {
     case AuthenticationNotRequired:
         if (methods & Authenticator::Confirmation) {
@@ -182,12 +237,14 @@ void HostAuthenticator::beginAuthenticate(
         }
         break;
     case CanAuthenticateSecurityCode:
-        methods &= Authenticator::SecurityCode | Authenticator::Confirmation;
+        methods &= Authenticator::SecurityCode | Authenticator::EncryptionCode | Authenticator::Confirmation;
         // Fall through.
     case CanAuthenticate:
         qCDebug(daemon, "Authentication requested using methods %i.", int(methods));
         if (methods == Authenticator::Confirmation) {
             startAuthentication(AuthenticationInput::Authorize, pid, QVariantMap(), Authenticator::Confirmation);
+        } else if (methods == Authenticator::EncryptionCode) {
+            startAuthentication(AuthenticationInput::EnterEncryptionCode, pid, QVariantMap(), Authenticator::EncryptionCode);
         } else {
             startAuthentication(AuthenticationInput::EnterSecurityCode, pid, QVariantMap(), methods);
         }
@@ -205,7 +262,6 @@ void HostAuthenticator::beginAuthenticate(
         break;
     }
 }
-
 
 void HostAuthenticator::requestPermission(
         const QString &client,
@@ -273,7 +329,7 @@ void HostAuthenticator::beginRequestPermission(
     }
 }
 
-void HostAuthenticator::handleChangeSecurityCode(const QString &client, const QVariant &challengeCode)
+void HostAuthenticator::handleChangeCode(const QString &client, const QVariant &challengeCode, bool encryption)
 {
     const auto pid = connectionPid(QDBusContext::connection());
     if (pid == 0 || !authorizeSecurityCodeSettings(pid)) {
@@ -285,7 +341,11 @@ void HostAuthenticator::handleChangeSecurityCode(const QString &client, const QV
 
     if (m_state == Idle) {
         setActiveClient(client);
-        beginChangeSecurityCode(pid, challengeCode);
+        if (encryption) {
+            beginChangeEncryptionCode(pid, challengeCode);
+        } else {
+            beginChangeSecurityCode(pid, challengeCode);
+        }
     } else {
         m_pending.connection = QDBusContext::connection().name();
         m_pending.client = client;
@@ -296,27 +356,48 @@ void HostAuthenticator::handleChangeSecurityCode(const QString &client, const QV
     }
 }
 
-void HostAuthenticator::beginChangeSecurityCode(uint pid, const QVariant &challengeCode)
+void HostAuthenticator::handleChangeSecurityCode(const QString &client, const QVariant &challengeCode)
 {
-    m_state = AuthenticatingForChange;
+    handleChangeCode(client, challengeCode, false);
+}
+
+void HostAuthenticator::handleChangeEncryptionCode(const QString &client, const QVariant &challengeCode)
+{
+    handleChangeCode(client, challengeCode, true);
+}
+
+void HostAuthenticator::beginChangeCode(uint pid, const QVariant &challengeCode, bool encryption)
+{
+    m_state = encryption ? AuthenticatingForEncryptionChange : AuthenticatingForChange;
     m_challengeCode = challengeCode;
 
-    switch (availability()) {
+    auto m_availability = encryption ? encAvailability() : availability();
+
+    switch (m_availability) {
     case AuthenticationNotRequired:
     case SecurityCodeRequired:
         // The logic here should match enterCodeChangeState(). We can't call that directly though
         // because we need to pass the extra pid argument to startAuthentication().
-        if (codeGeneration() == AuthenticationInput::MandatoryCodeGeneration) {
-            m_state = ExpectingGeneratedSecurityCode;
-            startAuthentication(AuthenticationInput::SuggestSecurityCode, pid, generatedCodeData(), Authenticator::SecurityCode);
+        if (encryption) {
+            m_state = EnteringNewEncryptionCode;
+            startAuthentication(AuthenticationInput::EnterNewEncryptionCode, pid, QVariantMap(), Authenticator::EncryptionCode);
         } else {
-            m_state = EnteringNewSecurityCode;
-            startAuthentication(AuthenticationInput::EnterNewSecurityCode, pid, QVariantMap(), Authenticator::SecurityCode);
+            if (codeGeneration() == AuthenticationInput::MandatoryCodeGeneration) {
+                m_state = ExpectingGeneratedSecurityCode;
+                startAuthentication(AuthenticationInput::SuggestSecurityCode, pid, generatedCodeData(), Authenticator::SecurityCode);
+            } else {
+                m_state = EnteringNewSecurityCode;
+                startAuthentication(AuthenticationInput::EnterNewSecurityCode, pid, QVariantMap(), Authenticator::SecurityCode);
+            }
         }
         break;
     case CanAuthenticateSecurityCode:
     case CanAuthenticate:
-        startAuthentication(AuthenticationInput::EnterSecurityCode, pid, QVariantMap(), Authenticator::SecurityCode);
+        if (encryption) {
+            startAuthentication(AuthenticationInput::EnterEncryptionCode, pid, QVariantMap(), Authenticator::EncryptionCode);
+        } else {
+            startAuthentication(AuthenticationInput::EnterSecurityCode, pid, QVariantMap(), Authenticator::SecurityCode);
+        }
         break;
     case CodeEntryLockedRecoverable:
     case CodeEntryLockedPermanent:
@@ -328,7 +409,17 @@ void HostAuthenticator::beginChangeSecurityCode(uint pid, const QVariant &challe
     }
 }
 
-void HostAuthenticator::handleClearSecurityCode(const QString &client)
+void HostAuthenticator::beginChangeSecurityCode(uint pid, const QVariant &challengeCode)
+{
+    beginChangeCode(pid, challengeCode, false);
+}
+
+void HostAuthenticator::beginChangeEncryptionCode(uint pid, const QVariant &challengeCode)
+{
+    beginChangeCode(pid, challengeCode, true);
+}
+
+void HostAuthenticator::handleClearCodes(const QString &client)
 {
     const auto pid = connectionPid(QDBusContext::connection());
     if (pid == 0 || !authorizeSecurityCodeSettings(pid)) {
@@ -340,7 +431,7 @@ void HostAuthenticator::handleClearSecurityCode(const QString &client)
 
     if (m_state == Idle) {
         setActiveClient(client);
-        beginClearSecurityCode(pid);
+        beginClearCodes(pid);
     } else {
         m_pending.connection = QDBusContext::connection().name();
         m_pending.client = client;
@@ -350,7 +441,7 @@ void HostAuthenticator::handleClearSecurityCode(const QString &client)
     }
 }
 
-void HostAuthenticator::beginClearSecurityCode(uint pid)
+void HostAuthenticator::beginClearCodes(uint pid)
 {
     m_state = AuthenticatingForClear;
 
@@ -384,6 +475,11 @@ void HostAuthenticator::enterSecurityCode(const QString &code)
         m_state = AuthenticationEvaluating;
         checkCodeFinished(checkCode(code));
         return;
+    case AuthenticatingEncryption:
+        qCDebug(daemon, "Encryption code entered for authentication.");
+        m_state = EncryptionAuthenticationEvaluating;
+        checkCodeFinished(checkEncryptionCode(code));
+        return;
     case RequestingPermission:
         qCDebug(daemon, "Security code entered for authentication.");
         m_state = PermissionEvaluating;
@@ -393,6 +489,20 @@ void HostAuthenticator::enterSecurityCode(const QString &code)
         qCDebug(daemon, "Security code entered for code change authentication.");
         m_state = AuthenticationForChangeEvaluating;
         int result = checkCode(code);
+        switch (result) {
+        case Evaluating:
+        case Success:
+        case SecurityCodeExpired:
+            m_currentCode = code;
+            break;
+        }
+        checkCodeFinished(result);
+        return;
+    }
+    case AuthenticatingForEncryptionChange: {
+        qCDebug(daemon, "Encryption code entered for encryption change authentication.");
+        m_state = AuthenticationForEnryptionChangeEvaluating;
+        int result = checkEncryptionCode(code);
         switch (result) {
         case Evaluating:
         case Success:
@@ -442,8 +552,42 @@ void HostAuthenticator::enterSecurityCode(const QString &code)
             feedback(AuthenticationInput::RepeatNewSecurityCode, -1);
         } else {
             m_newCode.clear();
-
             setCodeFinished(setCode(m_currentCode, code));
+        }
+        return;
+    }
+    case EnteringNewEncryptionCode:
+        if (!checkEncryptionCodeValidity(code)) {
+            feedback(AuthenticationInput::EncryptionCodeBad, -1);
+            return;
+        }
+
+        m_newCode = code;
+        m_state = RepeatingNewEncryptionCode;
+        m_repeatsRequired = 1;
+        feedback(AuthenticationInput::RepeatNewEncryptionCode, -1);
+        return;
+    case RepeatingNewEncryptionCode: {
+        if (m_newCode != code) {
+            qCDebug(daemon, "Encryption codes don't match.");
+            m_newCode.clear();
+
+            feedback(AuthenticationInput::EncryptionCodesDoNotMatch, -1);
+
+            switch (encAvailability()) {
+            case AuthenticationNotRequired:
+            case SecurityCodeRequired:
+                enterCodeChangeState(&HostAuthenticationInput::feedback, Authenticator::EncryptionCode);
+                break;
+            default:
+                m_state = AuthenticatingForEncryptionChange;
+                feedback(AuthenticationInput::EnterEncryptionCode, -1);
+            }
+        } else if (--m_repeatsRequired > 0) {
+            feedback(AuthenticationInput::RepeatNewEncryptionCode, -1);
+        } else {
+            m_newCode.clear();
+            setEncryptionFinished(setEncryptionCode(m_currentCode, code));
         }
         return;
     }
@@ -479,6 +623,7 @@ void HostAuthenticator::authorize()
 {
     switch (m_state) {
     case Authenticating:
+    case AuthenticatingEncryption:
     case AuthenticationEvaluating:
     case RequestingPermission:
     case PermissionEvaluating:
@@ -501,8 +646,12 @@ void HostAuthenticator::checkCodeFinished(int result)
         : static_cast<void (HostAuthenticationInput::*)(AuthenticationInput::Feedback, const QVariantMap &, Authenticator::Methods)>(&HostAuthenticationInput::feedback);
 
     m_state = State(m_state & ~EvaluatingFlag);
+    auto feedbackMsg = AuthenticationInput::IncorrectSecurityCode;
 
     switch (m_state) {
+    case AuthenticatingEncryption:
+        feedbackMsg = AuthenticationInput::IncorrectEncryptionCode;
+        [[fallthrough]];
     case Authenticating:
     case RequestingPermission:
         switch (result) {
@@ -549,6 +698,22 @@ void HostAuthenticator::checkCodeFinished(int result)
             return;
         }
         break;
+    case AuthenticatingForEncryptionChange:
+        switch (result) {
+        case Evaluating:
+            authenticationEvaluating();
+            m_state = State(m_state | EvaluatingFlag);
+            return;
+        case Success:
+        case SecurityCodeExpired:
+            enterCodeChangeState(feebackFunction, Authenticator::EncryptionCode);
+            return;
+        case LockedOut:
+            lockedOut();
+            return;
+        }
+        feedbackMsg = AuthenticationInput::IncorrectEncryptionCode;
+        break;
     case AuthenticationForChangeCanceled:
         securityCodeChangeAborted();
         return;
@@ -560,6 +725,7 @@ void HostAuthenticator::checkCodeFinished(int result)
             return;
         case Success:
             if (clearCode(m_currentCode)) {
+                clearAlphanumericSetInfo();
                 securityCodeCleared();
             } else {
                 abortAuthentication(AuthenticationInput::SoftwareError);
@@ -582,7 +748,7 @@ void HostAuthenticator::checkCodeFinished(int result)
     QVariantMap data;
     if (maximum > 0 && attempts > 0) {
         data.insert(attemptsRemaining, qMax(0, maximum - attempts));
-        (this->*feebackFunction)(AuthenticationInput::IncorrectSecurityCode, data, Authenticator::Methods());
+        (this->*feebackFunction)(feedbackMsg, data, Authenticator::Methods());
 
         if (attempts >= maximum) {
             lockedOut();
@@ -590,28 +756,34 @@ void HostAuthenticator::checkCodeFinished(int result)
         }
     } else {
         data.insert(attemptsRemaining, -1);
-        (this->*feebackFunction)(AuthenticationInput::IncorrectSecurityCode, data, Authenticator::Methods());
+        (this->*feebackFunction)(feedbackMsg, data, Authenticator::Methods());
     }
 }
 
-void HostAuthenticator::setCodeFinished(int result)
+void HostAuthenticator::setFinished(int result, bool encryption)
 {
     switch (result) {
     case Success:
         m_currentCode.clear();
 
-        qCDebug(daemon, "Security code changed.");
-        securityCodeChanged(authenticateChallengeCode(
-                    m_challengeCode, Authenticator::SecurityCode, m_authenticatingPid));
+        if (!encryption) {
+            securityCodeChanged(authenticateChallengeCode(
+                        m_challengeCode, Authenticator::SecurityCode, m_authenticatingPid));
+        } else {
+            encryptionCodeChanged(authenticateChallengeCode(
+                        m_challengeCode, Authenticator::SecurityCode, m_authenticatingPid));
+        }
         break;
     case SecurityCodeInHistory:
         if (m_state == ChangeCanceled) {
             securityCodeChangeAborted();
         } else {
-            qCDebug(daemon, "Security code disallowed.");
+            qCDebug(daemon, "Code disallowed.");
             feedback(AuthenticationInput::SecurityCodeInHistory, -1);
             if (m_state == Changing) {
                 enterCodeChangeState(&HostAuthenticationInput::authenticationResumed, Authenticator::SecurityCode);
+            } else if (m_state == ChangingEncryption) {
+                enterCodeChangeState(&HostAuthenticationInput::authenticationResumed, Authenticator::EncryptionCode);
             } else {
                 enterCodeChangeState(&HostAuthenticationInput::feedback, Authenticator::SecurityCode);
             }
@@ -621,23 +793,37 @@ void HostAuthenticator::setCodeFinished(int result)
         if (m_state == RepeatingNewSecurityCode) {
             m_state = Changing;
             authenticationEvaluating();
+        } else if (m_state == RepeatingNewEncryptionCode) {
+            m_state = ChangingEncryption;
+            authenticationEvaluating();
         } else {
             abortAuthentication(AuthenticationInput::SoftwareError);
         }
         break;
     default:
         m_currentCode.clear();
-        qCDebug(daemon, "Security code change failed.");
+        qCDebug(daemon, "Code change failed.");
 
         abortAuthentication(AuthenticationInput::SoftwareError);
         break;
     }
 }
 
+void HostAuthenticator::setCodeFinished(int result)
+{
+    setFinished(result, false);
+}
+
+void HostAuthenticator::setEncryptionFinished(int result)
+{
+    setFinished(result, true);
+}
+
 void HostAuthenticator::confirmAuthentication(Authenticator::Method method)
 {
     switch (m_state) {
     case Authenticating:
+    case AuthenticatingEncryption:
         authenticated(authenticateChallengeCode(m_challengeCode, method, m_authenticatingPid));
         break;
     case AuthenticationEvaluating:
@@ -663,13 +849,17 @@ void HostAuthenticator::abortAuthentication(AuthenticationInput::Error error)
 {
     switch (m_state) {
     case Authenticating:
+    case AuthenticatingEncryption:
     case RequestingPermission:
         m_state = AuthenticationError;
         break;
     case AuthenticatingForChange:
+    case AuthenticatingForEncryptionChange:
     case EnteringNewSecurityCode:
     case RepeatingNewSecurityCode:
     case ExpectingGeneratedSecurityCode:
+    case EnteringNewEncryptionCode:
+    case RepeatingNewEncryptionCode:
         m_state = ChangeError;
         break;
     case AuthenticatingForClear:
@@ -713,6 +903,7 @@ void HostAuthenticator::cancel()
         return;
     // We're waiting for the user to provide some authentication credentials.
     case Authenticating:
+    case AuthenticatingEncryption:
     case RequestingPermission:
     // Something went wrong and we're waiting for the user to acknowledge the error and dismiss the
     // dialog.
@@ -721,9 +912,12 @@ void HostAuthenticator::cancel()
         return;
     // We're waiting for the user to enter their current or new security code as part of changing it.
     case AuthenticatingForChange:
+    case AuthenticatingForEncryptionChange:
     case EnteringNewSecurityCode:
     case RepeatingNewSecurityCode:
     case ExpectingGeneratedSecurityCode:
+    case EnteringNewEncryptionCode:
+    case RepeatingNewEncryptionCode:
     case ChangeError:
         securityCodeChangeAborted();
         return;
@@ -735,14 +929,17 @@ void HostAuthenticator::cancel()
     // We're waiting for the implementation to perform a time consuming and uninterruptable operation.
     // We can't interrupt so we make note of that so we can abort when that completes.
     case Changing:
+    case ChangingEncryption:
         m_state = ChangeCanceled;
         return;
     case AuthenticationEvaluating:
+    case EncryptionAuthenticationEvaluating:
     case PermissionEvaluating:
         m_state = AuthenticationCanceled;
         authenticationInactive();
         return;
     case AuthenticationForChangeEvaluating:
+    case AuthenticationForEnryptionChangeEvaluating:
         m_state = AuthenticationForClearCanceled;
         authenticationInactive();
         return;
@@ -755,6 +952,7 @@ void HostAuthenticator::cancel()
     case AuthenticationCanceled:
     case AuthenticationCompleted:
     case AuthenticationForChangeCanceled:
+    case AuthenticationForEncryptionChangeCanceled:
     case AuthenticationForClearCanceled:
         return;
     }
@@ -775,6 +973,13 @@ void HostAuthenticator::aborted()
 void HostAuthenticator::securityCodeChanged(const QVariant &authenticationToken)
 {
     sendToActiveClient(securityCodeInterface, QStringLiteral("Changed"), authenticationToken);
+    authenticationEnded(true);
+}
+
+void HostAuthenticator::encryptionCodeChanged(const QVariant &authenticationToken)
+{
+    writeAlphanumericSetInfo();
+    sendToActiveClient(securityCodeInterface, QStringLiteral("EncryptionChanged"), authenticationToken);
     authenticationEnded(true);
 }
 
@@ -811,6 +1016,14 @@ void HostAuthenticator::availabilityChanged()
                 QStringLiteral("org.nemomobile.devicelock.SecurityCodeSettings"),
                 QStringLiteral("SecurityCodeSet"),
                 QVariant::fromValue(isSecurityCodeSet()));
+}
+
+void HostAuthenticator::encAvailabilityChanged()
+{
+    propertyChanged(
+                QStringLiteral("org.nemomobile.devicelock.SecurityCodeSettings"),
+                QStringLiteral("EncryptionCodeSet"),
+                QVariant::fromValue(isEncryptionCodeSet()));
 }
 
 void HostAuthenticator::handleCancel(const QString &client)
@@ -885,6 +1098,11 @@ QVariantMap HostAuthenticator::generatedCodeData()
 
 void HostAuthenticator::enterCodeChangeState(FeedbackFunction feedback, Authenticator::Methods methods)
 {
+    if (methods == Authenticator::EncryptionCode) {
+        m_state = EnteringNewEncryptionCode;
+        (this->*feedback)(AuthenticationInput::EnterNewEncryptionCode, QVariantMap(), methods);
+        return;
+    }
     if (codeGeneration() == AuthenticationInput::MandatoryCodeGeneration) {
         m_state = ExpectingGeneratedSecurityCode;
         (this->*feedback)(AuthenticationInput::SuggestSecurityCode, generatedCodeData(), methods);

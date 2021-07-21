@@ -14,7 +14,9 @@ QT += dbus
 
 PKGCONFIG += \
         glib-2.0 \
-        nemodbus
+        nemodbus \
+        sailfish-minui
+
 
 INCLUDEPATH += ..
 

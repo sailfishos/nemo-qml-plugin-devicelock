@@ -97,7 +97,9 @@ public:
     virtual ~HostAuthenticationInput();
 
     virtual Availability availability(QVariantMap *feedbackData = nullptr) const = 0;
+    virtual Availability encAvailability(QVariantMap *feedbackData = nullptr) const = 0;
     virtual int checkCode(const QString &code) = 0;
+    virtual int checkEncryptionCode(const QString &code) = 0;
     virtual int setCode(const QString &oldCode, const QString &newCode) = 0;
 
     // AuthenticationInput
@@ -166,6 +168,8 @@ protected:
             Availability availability,
             void (HostAuthenticationInput::*errorFunction)(AuthenticationInput::Error error),
             const QVariantMap &data);
+
+    bool checkEncryptionCodeValidity(const QString &code);
 
 private:
     friend class HostAuthenticationInputAdaptor;

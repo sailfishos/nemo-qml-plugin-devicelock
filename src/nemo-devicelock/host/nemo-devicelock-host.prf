@@ -11,6 +11,7 @@ PKGCONFIG += \
         keepalive \
         nemodbus \
         nemodevicelock \
+        sailfish-minui \
 
 LIBS += \
         -lnemodevicelock-host

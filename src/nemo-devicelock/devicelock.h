@@ -50,7 +50,8 @@ public:
     enum Notice
     {
         SecurityCodeDueToExpire,
-        SecurityCodeChanged
+        SecurityCodeChanged,
+        EncryptionCodeChanged
     };
     Q_ENUM(Notice)
 

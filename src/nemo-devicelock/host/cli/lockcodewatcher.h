@@ -52,12 +52,14 @@ public:
     static LockCodeWatcher *instance();
 
     bool securityCodeSet() const;
+    bool encryptionCodeSet() const;
     void invalidateSecurityCodeSet();
 
     int runPlugin(const QStringList &arguments) const;
 
 signals:
     void securityCodeSetChanged();
+    void encryptionCodeSetChanged();
 
 private slots:
     void securityCodeSetInvalidated();

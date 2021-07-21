@@ -12,6 +12,7 @@ PKGCONFIG += \
         dbus-1 \
         keepalive \
         nemodbus \
+        sailfish-minui \
         libsystemd
 
 INCLUDEPATH += \

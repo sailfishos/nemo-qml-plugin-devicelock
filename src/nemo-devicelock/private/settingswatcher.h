@@ -43,6 +43,8 @@
 namespace NemoDeviceLock
 {
 
+const QString alphanumEncryptionCodeSetFile("/usr/share/lipstick/devicelock/.alphanumeric-encryption-set_%1.enc");
+
 QMetaEnum NEMODEVICELOCK_EXPORT resolveMetaEnum(const QMetaObject *metaObject, const char *name);
 template <typename Enum> inline QMetaEnum resolveMetaEnum();
 
@@ -87,6 +89,7 @@ public:
     bool currentCodeIsDigitOnly;
     bool isHomeEncrypted;
     bool codeIsMandatory;
+    bool alphanumericEncryptionSet;
 
     static const char * const automaticLockingKey;
     static const char * const currentLengthKey;
@@ -120,13 +123,17 @@ signals:
     void currentCodeIsDigitOnlyChanged();
     void codeIsMandatoryChanged();
     void codeGenerationChanged();
+    void alphanumericEncryptionSetChanged();
 
 private:
     explicit SettingsWatcher(QObject *parent = nullptr);
 
     void reloadSettings();
+    void readAlphanumericEncryptionSet();
+    QString getAlphanumEncryptionSetFile();
 
     QString m_settingsPath;
+    QString m_alphanumEncryptionCodeSetFile;
     int m_watch;
 
     static SettingsWatcher *sharedInstance;

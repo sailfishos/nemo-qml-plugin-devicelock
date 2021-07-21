@@ -47,6 +47,9 @@ CliDeviceLock::CliDeviceLock(QObject *parent)
     connect(m_watcher.data(), &LockCodeWatcher::securityCodeSetChanged,
             this, &CliDeviceLock::availabilityChanged);
 
+    connect(m_watcher.data(), &LockCodeWatcher::encryptionCodeSetChanged,
+            this, &CliDeviceLock::encAvailabilityChanged);
+
     init();
 }
 
@@ -70,9 +73,30 @@ HostAuthenticationInput::Availability CliDeviceLock::availability(QVariantMap *)
     }
 }
 
+HostAuthenticationInput::Availability CliDeviceLock::encAvailability(QVariantMap *) const
+{
+    if (m_watcher->encryptionCodeSet()) {
+        const int maximum = maximumAttempts();
+        const int attempts = currentAttempts();
+
+        if (maximum > 0 && attempts >= maximum) {
+            return CodeEntryLockedPermanent;
+        } else {
+            return CanAuthenticate;
+        }
+    } else {
+        return AuthenticationNotRequired;
+    }
+}
+
 int CliDeviceLock::checkCode(const QString &code)
 {
     return m_watcher->runPlugin(QStringList() << QStringLiteral("--check-code") << code);
+}
+
+int CliDeviceLock::checkEncryptionCode(const QString &code)
+{
+    return m_watcher->runPlugin(QStringList() << QStringLiteral("--check-encryption-code") << code);
 }
 
 int CliDeviceLock::setCode(const QString &oldCode, const QString &newCode)

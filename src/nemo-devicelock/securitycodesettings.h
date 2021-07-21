@@ -53,6 +53,7 @@ public:
 
 public slots:
     Q_NOREPLY void Changed(const QDBusVariant &authenticationToken);
+    Q_NOREPLY void EncryptionChanged(const QDBusVariant &authenticationToken);
     Q_NOREPLY void ChangeAborted();
 
     Q_NOREPLY void Cleared();
@@ -66,25 +67,33 @@ class NEMODEVICELOCK_EXPORT SecurityCodeSettings : public QObject, private Conne
 {
     Q_OBJECT
     Q_PROPERTY(bool set READ isSet NOTIFY setChanged)
+    Q_PROPERTY(bool encryptionSet READ isEncryptionSet NOTIFY encryptionSetChanged)
+    Q_PROPERTY(bool alphanumericEncryptionSet READ isAlphanumericEncryptionSet NOTIFY alphanumericEncryptionSetChanged)
     Q_PROPERTY(bool mandatory READ isMandatory NOTIFY mandatoryChanged)
 public:
     explicit SecurityCodeSettings(QObject *parent = nullptr);
     ~SecurityCodeSettings();
 
     bool isSet() const;
+    bool isEncryptionSet() const;
+    bool isAlphanumericEncryptionSet() const;
     bool isMandatory() const;
 
     Q_INVOKABLE void change(const QVariant &challengeCode);
+    Q_INVOKABLE void changeEncryption(const QVariant &challengeCode);
     Q_INVOKABLE void clear();
     Q_INVOKABLE void cancel();
 
 signals:
     void setChanged();
+    void encryptionSetChanged();
+    void alphanumericEncryptionSetChanged();
     void mandatoryChanged();
     void changingChanged();
     void clearingChanged();
 
     void changed(const QVariant &authenticationToken);
+    void encryptionChanged(const QVariant &authenticationToken);
     void changeAborted();
 
     void cleared();
@@ -95,13 +104,16 @@ private:
 
     inline void connected();
     inline void handleChanged(const QVariant &authenticationToken);
+    inline void handleEncryptionChanged(const QVariant &authenticationToken);
     inline void handleChangeAborted();
     inline void handleCleared();
     inline void handleClearAborted();
+    inline void handleChange(const QVariant &challengeCode, bool encryption);
 
     SecurityCodeSettingsAdaptor m_adaptor;
     QExplicitlySharedDataPointer<SettingsWatcher> m_settings;
     bool m_set;
+    bool m_encryptionSet;
     bool m_changing;
     bool m_clearing;
 };
