@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2016 Jolla Ltd
- * Contact: Andrew den Exter <andrew.den.exter@jolla.com>
+ * Copyright (c) 2016 - 2021 Jolla Ltd
+ * Copyright (c) 2021 Open Mobile Platform LLC
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -115,6 +115,7 @@ HostAuthenticator::HostAuthenticator(Authenticator::Methods supportedMethods, QO
     , m_authenticatingPid(0)
     , m_state(Idle)
 {
+    systemBus().registerObject(path(), this);
 }
 
 HostAuthenticator::~HostAuthenticator()
@@ -150,6 +151,7 @@ void HostAuthenticator::authenticate(
     } else {
         m_pending.connection = QDBusContext::connection().name();
         m_pending.client = client;
+        m_pending.address = QDBusContext::message().service();
         m_pending.pid = pid;
         m_pending.request = AuthenticateRequest;
         m_pending.challengeCode = challengeCode;
@@ -814,12 +816,13 @@ void HostAuthenticator::availabilityChanged()
 void HostAuthenticator::handleCancel(const QString &client)
 {
     const QString connection = QDBusContext::connection().name();
+    const QString address = QDBusContext::message().service();
 
     if (m_pending.request != NoRequest) {
-        if (m_pending.connection == connection && m_pending.client == client) {
+        if (m_pending.connection == connection && m_pending.address == address && m_pending.client == client) {
             cancelPending();
         }
-    } else if (isActiveClient(connection, client)) {
+    } else if (isActiveClient(connection, address, client)) {
         cancel();
     }
 }
@@ -853,19 +856,19 @@ void HostAuthenticator::beginPending()
     case NoRequest:
         break;
     case AuthenticateRequest:
-        setActiveClient(pending.connection, pending.client);
+        setActiveClient(pending.connection, pending.address, pending.client);
         beginAuthenticate(pending.pid, pending.challengeCode, pending.methods);
         break;
     case PermissionRequest:
-        setActiveClient(pending.connection, pending.client);
+        setActiveClient(pending.connection, pending.address, pending.client);
         beginAuthenticate(pending.pid, pending.challengeCode, pending.methods);
         break;
     case ChangeRequest:
-        setActiveClient(pending.connection, pending.client);
+        setActiveClient(pending.connection, pending.address, pending.client);
         beginAuthenticate(pending.pid, pending.challengeCode, pending.methods);
         break;
     case ClearRequest:
-        setActiveClient(pending.connection, pending.client);
+        setActiveClient(pending.connection, pending.address, pending.client);
         beginAuthenticate(pending.pid, pending.challengeCode, pending.methods);
         break;
     }

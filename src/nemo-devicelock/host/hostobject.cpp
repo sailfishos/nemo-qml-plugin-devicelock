@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2016 Jolla Ltd
- * Contact: Andrew den Exter <andrew.den.exter@jolla.com>
+ * Copyright (c) 2016 - 2021 Jolla Ltd
+ * Copyright (c) 2021 Open Mobile Platform LLC
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -88,6 +88,17 @@ void HostObject::clientDisconnected(const QString &connectionName)
 
     if (m_activeConnection == connectionName) {
         m_activeConnection.clear();
+        m_activeAddress.clear();
+        m_activeClient.clear();
+        cancel();
+    }
+}
+
+void HostObject::nameLost(const QString &name)
+{
+    if (m_activeAddress == name && m_activeConnection == systemBus().connection().name()) {
+        m_activeConnection.clear();
+        m_activeAddress.clear();
         m_activeClient.clear();
         cancel();
     }
@@ -146,30 +157,32 @@ bool HostObject::authorizeConnection(const QDBusConnection &connection)
     return true;
 }
 
-bool HostObject::isActiveClient(const QString &connection, const QString &client) const
+bool HostObject::isActiveClient(const QString &connection, const QString &address, const QString &client) const
 {
-    return m_activeConnection == connection && m_activeClient == client;
+    return m_activeConnection == connection && m_activeAddress == address && m_activeClient == client;
 }
 
 bool HostObject::isActiveClient(const QString &client) const
 {
-    return isActiveClient(QDBusContext::connection().name(), client);
+    return isActiveClient(QDBusContext::connection().name(), QDBusContext::message().service(), client);
 }
 
-void HostObject::setActiveClient(const QString &connection, const QString &client)
+void HostObject::setActiveClient(const QString &connection, const QString &address, const QString &client)
 {
     m_activeConnection = connection;
+    m_activeAddress = address;
     m_activeClient = client;
 }
 
 void HostObject::setActiveClient(const QString &client)
 {
-    setActiveClient(QDBusContext::connection().name(), client);
+    setActiveClient(QDBusContext::connection().name(), QDBusContext::message().service(), client);
 }
 
 void HostObject::clearActiveClient()
 {
     m_activeConnection.clear();
+    m_activeAddress.clear();
     m_activeClient.clear();
 }
 

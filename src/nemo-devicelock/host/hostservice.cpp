@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2016 Jolla Ltd
- * Contact: Andrew den Exter <andrew.den.exter@jolla.com>
+ * Copyright (c) 2016 - 2021 Jolla Ltd
+ * Copyright (c) 2021 Open Mobile Platform LLC
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -89,6 +89,14 @@ HostService::HostService(const QVector<HostObject *> objects, QObject *parent)
 
     qDBusRegisterMetaType<NemoDeviceLock::Fingerprint>();
     qDBusRegisterMetaType<QVector<NemoDeviceLock::Fingerprint>>();
+
+    systemBus().connectToSignal(
+                QStringLiteral("org.freedesktop.DBus"),
+                QStringLiteral("/org/freedesktop/DBus"),
+                QStringLiteral("org.freedesktop.DBus"),
+                QStringLiteral("NameLost"),
+                this,
+                SLOT(nameLost(QString)));
 
     if (!QDBusConnection::systemBus().registerService(QStringLiteral("org.nemomobile.devicelock"))) {
         qCWarning(daemon, "Failed to register service org.nemomobile.devicelock. %s",
@@ -182,6 +190,13 @@ QString HostService::socketAddress()
         return QStringLiteral("systemd:");
 
     return QStringLiteral("unix:path=/run/nemo-devicelock/socket");
+}
+
+void HostService::nameLost(const QString &name)
+{
+    for (const auto object : m_objects) {
+        object->nameLost(name);
+    }
 }
 
 }
