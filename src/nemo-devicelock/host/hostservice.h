@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2016 Jolla Ltd
- * Contact: Andrew den Exter <andrew.den.exter@jolla.com>
+ * Copyright (c) 2016 - 2021 Jolla Ltd
+ * Copyright (c) 2021 Open Mobile Platform LLC
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -70,6 +70,7 @@ private:
 
     void connectionReady(const QDBusConnection &connection);
     static QString socketAddress();
+    void nameLost(const QString &name);
 
     const QVector<HostObject *> m_objects;
 };

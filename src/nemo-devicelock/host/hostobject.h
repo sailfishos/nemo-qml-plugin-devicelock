@@ -1,6 +1,6 @@
 /*
- * Copyright (C) 2016 Jolla Ltd
- * Contact: Andrew den Exter <andrew.den.exter@jolla.com>
+ * Copyright (c) 2016 - 2021 Jolla Ltd
+ * Copyright (c) 2021 Open Mobile Platform LLC
  *
  * You may use this file under the terms of the BSD license as follows:
  *
@@ -57,6 +57,8 @@ public:
     virtual void clientConnected(const QString &connectionName);
     virtual void clientDisconnected(const QString &connectionName);
 
+    virtual void nameLost(const QString &name);
+
     virtual void cancel();
 
     static unsigned long connectionPid(const QDBusConnection &connection);
@@ -64,10 +66,10 @@ public:
 
     virtual bool authorizeConnection(const QDBusConnection &connection);
 
-    bool isActiveClient(const QString &connection, const QString &client) const;
+    bool isActiveClient(const QString &connection, const QString &address, const QString &client) const;
     bool isActiveClient(const QString &client) const;
     void setActiveClient(const QString &client);
-    void setActiveClient(const QString &connection, const QString &client);
+    void setActiveClient(const QString &connection, const QString &address, const QString &client);
     void clearActiveClient();
 
 protected:
@@ -79,14 +81,20 @@ protected:
                 const QString &method,
                 Arguments... arguments)
     {
-        return !m_activeConnection.isEmpty()
-                && NemoDBus::send(m_activeConnection, m_activeClient, interface, method, arguments...);
+        if (!m_activeConnection.isEmpty()) {
+            QDBusMessage message = QDBusMessage::createMethodCall(m_activeAddress, m_activeClient, interface, method);
+            message.setArguments(NemoDBus::marshallArguments(arguments...));
+            return QDBusConnection(m_activeConnection).send(message);
+        } else {
+            return false;
+        }
     }
 
 private:
     const QString m_path;
     QStringList m_connections;
     QString m_activeConnection;
+    QString m_activeAddress;
     QString m_activeClient;
 };
 
