@@ -7,7 +7,6 @@ URL:        https://git.sailfishos.org/mer-core/nemo-qml-plugin-devicelock
 Source0:    %{name}-%{version}.tar.bz2
 BuildRequires:  pkgconfig(Qt5DBus)
 BuildRequires:  pkgconfig(Qt5Core)
-BuildRequires:  pkgconfig(Qt5Network)
 BuildRequires:  pkgconfig(Qt5Qml)
 BuildRequires:  pkgconfig(glib-2.0)
 BuildRequires:  pkgconfig(keepalive)
