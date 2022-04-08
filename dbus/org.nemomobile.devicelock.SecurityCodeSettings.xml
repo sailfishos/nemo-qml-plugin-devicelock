@@ -2,8 +2,13 @@
 "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
 <node name="/authenticator">
  <interface name="org.nemomobile.devicelock.SecurityCodeSettings">
-  <property name="SecurityCodeSet" type="b"/>
+  <property name="set" type="b"/>
+  <property name="encryptionSet" type="b"/>
   <method name="Change">
+   <arg name="client" type="o" direction="in"/>
+   <arg name="challenge_code" type="v" direction="in"/>
+  </method>
+  <method name="ChangeEncryption">
    <arg name="client" type="o" direction="in"/>
    <arg name="challenge_code" type="v" direction="in"/>
   </method>

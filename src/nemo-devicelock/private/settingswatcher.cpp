@@ -38,6 +38,7 @@
 #include <QSettings>
 
 #include <glib.h>
+#include <systemd/sd-login.h>
 #include <sys/inotify.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
@@ -99,7 +100,9 @@ SettingsWatcher::SettingsWatcher(QObject *parent)
     , currentCodeIsDigitOnly(true)
     , isHomeEncrypted(false)
     , codeIsMandatory(false)
+    , alphanumericEncryptionSet(false)
     , m_settingsPath(QStringLiteral("/usr/share/lipstick/devicelock/devicelock_settings.conf"))
+    , m_alphanumEncryptionCodeSetFile(getAlphanumEncryptionSetFile())
     , m_watch(-1)
 {
     Q_ASSERT(!sharedInstance);
@@ -111,6 +114,7 @@ SettingsWatcher::SettingsWatcher(QObject *parent)
                 IN_CREATE | IN_MOVED_TO | IN_MOVED_FROM | IN_CLOSE_WRITE | IN_DELETE);
 
     reloadSettings();
+    readAlphanumericEncryptionSet();
 }
 
 SettingsWatcher::~SettingsWatcher()
@@ -142,11 +146,15 @@ bool SettingsWatcher::event(QEvent *event)
         struct inotify_event *pevent = 0;
         for (;at < end; at += sizeof(inotify_event) + pevent->len) {
             pevent = reinterpret_cast<inotify_event *>(at);
+            QLatin1String pname(pevent->name);
 
-            if (pevent->wd == m_watch
-                    && pevent->len > 0
-                    && QLatin1String(pevent->name) == QLatin1String("devicelock_settings.conf")) {
-                reloadSettings();
+            if (pevent->wd == m_watch && pevent->len > 0) {
+                if (pname == QLatin1String("devicelock_settings.conf")) {
+                    reloadSettings();
+                }
+                if (pname == m_alphanumEncryptionCodeSetFile.toLatin1()) {
+                    readAlphanumericEncryptionSet();
+                }
             }
         }
 
@@ -275,6 +283,23 @@ void SettingsWatcher::reloadSettings()
     read(settings, this, "code_generation", AuthenticationInput::NoCodeGeneration, &codeGeneration, &SettingsWatcher::codeGenerationChanged);
 
     g_key_file_free(settings);
+}
+
+void SettingsWatcher::readAlphanumericEncryptionSet()
+{
+    bool exists = QFile(m_alphanumEncryptionCodeSetFile).exists();
+
+    if (exists != alphanumericEncryptionSet) {
+        alphanumericEncryptionSet = exists;
+        emit alphanumericEncryptionSetChanged();
+    }
+}
+
+QString SettingsWatcher::getAlphanumEncryptionSetFile()
+{
+    uid_t uid;
+    sd_seat_get_active("seat0", nullptr, &uid);
+    return alphanumEncryptionCodeSetFile.arg(uid);
 }
 
 }

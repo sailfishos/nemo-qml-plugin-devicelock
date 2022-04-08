@@ -13,6 +13,8 @@ CONFIG += \
         c++11 \
         link_pkgconfig
 
+PKGCONFIG += sailfish-minui
+
 INCLUDEPATH += \
         $$PWD/../ \
         $$PWD/../nemo-devicelock

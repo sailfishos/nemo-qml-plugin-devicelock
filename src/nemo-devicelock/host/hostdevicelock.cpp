@@ -214,6 +214,9 @@ void HostDeviceLock::enterSecurityCode(const QString &code)
         break;
     case Unlocking:
     case ChangingSecurityCode:
+    case ChangingEncryptionCode:
+    case EnteringNewEncryptionCode:
+    case RepeatingNewEncryptionCode:
     case Canceled:
     case AuthenticationError:
         break;
@@ -437,6 +440,17 @@ void HostDeviceLock::lockedChanged()
     stateChanged();
 }
 
+void HostDeviceLock::encAvailabilityChanged()
+{
+    QVariantMap data;
+    const auto availability = this->encAvailability(&data);
+
+    propertyChanged(
+                QStringLiteral("org.nemomobile.devicelock.DeviceLock"),
+                QStringLiteral("EncrypionEnabled"),
+                availability != AuthenticationNotRequired);
+}
+
 void HostDeviceLock::availabilityChanged()
 {
     QVariantMap data;
@@ -504,6 +518,8 @@ void HostDeviceLock::availabilityChanged()
         case Authenticating:
         case EnteringNewSecurityCode:
         case RepeatingNewSecurityCode:
+        case EnteringNewEncryptionCode:
+        case RepeatingNewEncryptionCode:
         case AuthenticationError:
             lockedOut(availability, &HostAuthenticationInput::abortAuthentication, data);
             break;

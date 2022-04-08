@@ -136,6 +136,13 @@ void AuthenticationInputAdaptor::Error(uint error)
     \value SecurityCodeExpired Inform the user that their current code has expired.
     \value SecurityCodeDueToExpire Inform the user that their current code is due to expire.  The
     expiration date is provided as the \c expirationDate member of the feedback data.
+    \value EnterEncryptionCode Instruct the user to enter their current encryption code.
+    \value EnterNewEncryptionCode Instruct the user to enter a new encryption code.
+    \value RepeatNewEncryptionCode Instruct the user to repeat the new encryption code.
+    \value EncryptionCodesDoNotMatch Inform the user the user that they entered a different code when
+    repeating their new encryption code.
+    \value EncryptionCodeBad Inform the user that the entered new encryption code contains
+    unallowed characters.
     \value PartialPrint Inform the user that the fingerprint reader wasn't able to capture a full
     print.
     \value PrintIsUnclear Inform the user that fingerprint reader wasn't able to capture a clear
@@ -149,6 +156,7 @@ void AuthenticationInputAdaptor::Error(uint error)
     \value IncorrectSecurityCode Inform the user that the entered security code is incorrect. The
     number of times the user may attempt to enter another cod is passed as the \c attemptsRemaining
     member of the feedback data.
+    \value IncorrectEncryptionCode Inform the user that the entered encryption code is incorrect.
     \value ContactSupport Inform the user to contact support for help with the preceding error.
     \value TemporarilyLocked Inform the user that the device has been temporarily locked.
     \value PermanentlyLocked Inform the user that the device has been permanently locked.

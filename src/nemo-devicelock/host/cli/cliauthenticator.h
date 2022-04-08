@@ -52,9 +52,12 @@ public:
 
     Authenticator::Methods availableMethods() const override;
     Availability availability(QVariantMap *feedbackData) const override;
+    Availability encAvailability(QVariantMap *feedbackData) const override;
 
     int checkCode(const QString &code) override;
+    int checkEncryptionCode(const QString &code) override;
     int setCode(const QString &oldCode, const QString &newCode) override;
+    int setEncryptionCode(const QString &oldCode, const QString &newCode) override;
     bool clearCode(const QString &code) override;
 
     void enterSecurityCode(const QString &code);

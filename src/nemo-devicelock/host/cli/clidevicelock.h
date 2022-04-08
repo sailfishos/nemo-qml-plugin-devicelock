@@ -50,8 +50,10 @@ public:
     ~CliDeviceLock();
 
     Availability availability(QVariantMap *data) const override;
+    Availability encAvailability(QVariantMap *data) const override;
 
     int checkCode(const QString &code) override;
+    int checkEncryptionCode(const QString &code) override;
     int setCode(const QString &oldCode, const QString &newCode) override;
     int unlockWithCode(const QString &code) override;
 

@@ -98,6 +98,13 @@ bool LockCodeWatcher::securityCodeSet() const
     return m_securityCodeSet;
 }
 
+bool LockCodeWatcher::encryptionCodeSet() const
+{
+    return (runPlugin(QStringList()
+            << QStringLiteral("--is-encryption-set")
+            << QStringLiteral("lockcode")) == HostAuthenticationInput::Success);
+}
+
 void LockCodeWatcher::invalidateSecurityCodeSet()
 {
     if (!m_codeSetInvalidated) {

@@ -32,6 +32,7 @@
 
 #include "securitycodesettings.h"
 #include "settingswatcher.h"
+#include <QFileInfo>
 
 namespace NemoDeviceLock
 {
@@ -45,6 +46,11 @@ SecurityCodeSettingsAdaptor::SecurityCodeSettingsAdaptor(SecurityCodeSettings *s
 void SecurityCodeSettingsAdaptor::Changed(const QDBusVariant &authenticationToken)
 {
     m_settings->handleChanged(authenticationToken.variant());
+}
+
+void SecurityCodeSettingsAdaptor::EncryptionChanged(const QDBusVariant &authenticationToken)
+{
+    m_settings->handleEncryptionChanged(authenticationToken.variant());
 }
 
 void SecurityCodeSettingsAdaptor::ChangeAborted()
@@ -80,11 +86,15 @@ SecurityCodeSettings::SecurityCodeSettings(QObject *parent)
     , m_adaptor(this)
     , m_settings(SettingsWatcher::instance())
     , m_set(false)
+    , m_encryptionSet(false)
     , m_changing(false)
     , m_clearing(false)
 {
     connect(m_settings.data(), &SettingsWatcher::codeIsMandatoryChanged,
             this, &SecurityCodeSettings::mandatoryChanged);
+
+    connect(m_settings.data(), &SettingsWatcher::alphanumericEncryptionSetChanged,
+            this, &SecurityCodeSettings::alphanumericEncryptionSetChanged);
 
     m_connection->onConnected(this, [this] {
         connected();
@@ -119,9 +129,20 @@ bool SecurityCodeSettings::isSet() const
     return m_set;
 }
 
+bool SecurityCodeSettings::isEncryptionSet() const
+{
+    return m_encryptionSet;
+}
+
 bool SecurityCodeSettings::isMandatory() const
 {
     return m_settings->codeIsMandatory;
+}
+
+
+bool SecurityCodeSettings::isAlphanumericEncryptionSet() const
+{
+    return m_settings->alphanumericEncryptionSet;
 }
 
 /*!
@@ -133,8 +154,26 @@ bool SecurityCodeSettings::isMandatory() const
     to enter a new security code and then edit their security settings or also add a fingerprint
     without being prompted for the new code immediately.
 */
-
 void SecurityCodeSettings::change(const QVariant &challengeCode)
+{
+    handleChange(challengeCode, false);
+}
+
+/*!
+    Requests a change of the user's LUKS encryption code.
+
+    The security daemon will bring up a dialog prompting the user to change their code.
+
+    This will also authorize a \a challengeCode similar to an Authentication allowing the user
+    to enter a new security code and then edit their security settings or also add a fingerprint
+    without being prompted for the new code immediately.
+*/
+void SecurityCodeSettings::changeEncryption(const QVariant &challengeCode)
+{
+    handleChange(challengeCode, true);
+}
+
+void SecurityCodeSettings::handleChange(const QVariant &challengeCode, bool encryption)
 {
     if (m_changing) {
         return;
@@ -144,7 +183,9 @@ void SecurityCodeSettings::change(const QVariant &challengeCode)
 
     m_changing = true;
 
-    auto response = call(QStringLiteral("Change"), m_localPath, challengeCode);
+    auto response = encryption ?
+        call(QStringLiteral("ChangeEncryption"), m_localPath, challengeCode) :
+        call(QStringLiteral("Change"), m_localPath, challengeCode);
 
     response->onError([this](const QDBusError &) {
         handleChangeAborted();
@@ -166,6 +207,22 @@ void SecurityCodeSettings::handleChanged(const QVariant &authenticationToken)
         m_changing = false;
 
         emit changed(authenticationToken);
+        emit changingChanged();
+    }
+}
+
+/*!
+    \signal NemoDeviceLock::SecurityCodeSettings::encryptionChanged(const QVariant &authenticationToken)
+
+    Signals that the user's encryption code has been changed and the provided challenge code
+    has been authenticated as proven by the \a authenticationToken.
+*/
+
+void SecurityCodeSettings::handleEncryptionChanged(const QVariant &authenticationToken)
+{
+    if (m_changing) {
+        m_changing = false;
+        emit encryptionChanged(authenticationToken);
         emit changingChanged();
     }
 }
@@ -270,6 +327,13 @@ void SecurityCodeSettings::connected()
         if (m_set != set) {
             m_set = set;
             emit setChanged();
+        }
+    });
+
+    subscribeToProperty<bool>(QStringLiteral("EncryptionCodeSet"), [this](bool encryptionSet) {
+        if (m_encryptionSet != encryptionSet) {
+            m_encryptionSet = encryptionSet;
+            emit encryptionSetChanged();
         }
     });
 }

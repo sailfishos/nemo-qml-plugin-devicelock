@@ -12,6 +12,7 @@ QT += dbus
 PKGCONFIG += \
         dbus-1 \
         keepalive \
+        sailfish-minui \
         libsystemd
 
 INCLUDEPATH += \

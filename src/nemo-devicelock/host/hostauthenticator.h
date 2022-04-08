@@ -75,21 +75,27 @@ class HostSecurityCodeSettingsAdaptor : public QDBusAbstractAdaptor
 {
     Q_OBJECT
     Q_PROPERTY(bool SecurityCodeSet READ isSet NOTIFY setChanged)
+    Q_PROPERTY(bool EncryptionCodeSet READ isEncryptionSet NOTIFY encryptionSetChanged)
     Q_CLASSINFO("D-Bus Interface", "org.nemomobile.devicelock.SecurityCodeSettings")
 public:
     explicit HostSecurityCodeSettingsAdaptor(HostAuthenticator *authenticator);
 
     bool isSet() const;
+    bool isEncryptionSet() const;
 
 public slots:
     void Change(const QDBusObjectPath &client, const QDBusVariant &challengeCode);
     void CancelChange(const QDBusObjectPath &client);
+
+    void ChangeEncryption(const QDBusObjectPath &client, const QDBusVariant &challengeCode);
+    void CancelChangeEncryption(const QDBusObjectPath &client);
 
     void Clear(const QDBusObjectPath &client);
     void CancelClear(const QDBusObjectPath &client);
 
 signals:
     void setChanged();
+    void encryptionSetChanged();
 
 private:
     HostAuthenticator * const m_authenticator;
@@ -107,6 +113,7 @@ public:
     virtual Authenticator::Methods availableMethods() const = 0;
     virtual QVariant authenticateChallengeCode(
             const QVariant &challengeCode, Authenticator::Method method, uint authenticatingPid) = 0;
+    virtual int setEncryptionCode(const QString &oldCode, const QString &newCode) = 0;
 
     // SecurityCodeSettings
     virtual bool authorizeSecurityCodeSettings(unsigned long pid);
@@ -115,7 +122,9 @@ public:
 
     // AuthenticationInput
     Availability availability(QVariantMap *feedbackData = nullptr) const override = 0;
+    Availability encAvailability(QVariantMap *feedbackData = nullptr) const override = 0;
     int checkCode(const QString &code) override = 0;
+    int checkEncryptionCode(const QString &code) override = 0;
     int setCode(const QString &oldCode, const QString &newCode) override = 0;
 
     void enterSecurityCode(const QString &code) override;
@@ -130,13 +139,16 @@ public:
     void authenticationEnded(bool confirmed) override;
 
     void checkCodeFinished(int result);
+    void setFinished(int result, bool encryption);
     void setCodeFinished(int result);
+    void setEncryptionFinished(int result);
 
     // Signals
     void authenticated(const QVariant &authenticationToken);
     void aborted();
 
     void securityCodeChanged(const QVariant &authenticationToken);
+    void encryptionCodeChanged(const QVariant &authenticationToken);
     void securityCodeChangeAborted();
 
     void securityCodeCleared();
@@ -144,6 +156,7 @@ public:
 
     void availableMethodsChanged();
     void availabilityChanged();
+    void encAvailabilityChanged();
 
 private:
     enum StateFlag {
@@ -156,12 +169,17 @@ private:
     enum State {
         Idle,
         Authenticating,
+        AuthenticatingEncryption,
         AuthenticatingForChange,
+        AuthenticatingForEncryptionChange,
         RequestingPermission,
         EnteringNewSecurityCode,
         RepeatingNewSecurityCode,
         ExpectingGeneratedSecurityCode,
+        EnteringNewEncryptionCode,
+        RepeatingNewEncryptionCode,
         Changing,
+        ChangingEncryption,
         ChangeCanceled,
         AuthenticatingForClear,
 
@@ -170,11 +188,16 @@ private:
         AuthenticationCanceled      = Authenticating | CanceledFlag,
         AuthenticationCompleted     = Authenticating | CompletedFlag,
 
+        EncryptionAuthenticationEvaluating    = AuthenticatingEncryption | EvaluatingFlag,
+
         PermissionEvaluating = RequestingPermission | EvaluatingFlag, // The error and cancel states are shared with authenticating.
 
         ChangeError                         = AuthenticatingForChange | ErrorFlag,
         AuthenticationForChangeEvaluating   = AuthenticatingForChange | EvaluatingFlag,
         AuthenticationForChangeCanceled     = AuthenticatingForChange | CanceledFlag,
+
+        AuthenticationForEnryptionChangeEvaluating    = AuthenticatingForEncryptionChange | EvaluatingFlag,
+        AuthenticationForEncryptionChangeCanceled     = AuthenticatingForEncryptionChange | CanceledFlag,
 
         ClearError                          = AuthenticatingForClear | ErrorFlag,
         AuthenticationForClearEvaluating    = AuthenticatingForClear | EvaluatingFlag,
@@ -190,6 +213,7 @@ private:
     };
 
     inline bool isSecurityCodeSet() const;
+    inline bool isEncryptionCodeSet() const;
     inline void authenticate(
             const QString &authenticator, const QVariant &challengeCode, Authenticator::Methods methods);
     inline void beginAuthenticate(uint pid, const QVariant &challengeCode, Authenticator::Methods methods);
@@ -203,10 +227,20 @@ private:
             const QString &message,
             const QVariantMap &properties,
             Authenticator::Methods methods);
+    inline void handleChangeCode(const QString &client, const QVariant &challengeCode, bool encryption);
+    inline void beginChangeCode(uint pid, const QVariant &challengeCode, bool encryption);
+    // Affects both security and encryption codes
+    inline void handleClearCodes(const QString &client);
+    inline void beginClearCodes(uint pid);
+    // Security code
     inline void handleChangeSecurityCode(const QString &client, const QVariant &challengeCode);
     inline void beginChangeSecurityCode(uint pid, const QVariant &challengeCode);
-    inline void handleClearSecurityCode(const QString &client);
-    inline void beginClearSecurityCode(uint pid);
+    // Encryption code
+    inline void handleChangeEncryptionCode(const QString &client, const QVariant &challengeCode);
+    inline void beginChangeEncryptionCode(uint pid, const QVariant &challengeCode);
+    inline void writeAlphanumericSetInfo();
+    inline void clearAlphanumericSetInfo();
+
     inline void handleCancel(const QString &client);
     inline void cancelPending();
     inline void beginPending();
