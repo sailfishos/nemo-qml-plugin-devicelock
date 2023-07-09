@@ -60,7 +60,7 @@ headers.path = /usr/include/nemo-devicelock/host
 # the auto generated pkgconfig file includes paths from the build tree, use a .prf to
 # publish dependencies in a maintainable way instead.
 prf.files = nemo-devicelock-host.prf
-prf.path = $$[QT_INSTALL_DATA]/mkspecs/features
+prf.path = $$[QT_INSTALL_ARCHDATA]/mkspecs/features
 
 target.path = $$[QT_INSTALL_LIBS]
 
