@@ -10,7 +10,7 @@ QT += dbus qml
 CONFIG += \
         plugin \
         hide_symbols \
-        c++11 \
+        c++17 \
         link_pkgconfig
 
 INCLUDEPATH += \

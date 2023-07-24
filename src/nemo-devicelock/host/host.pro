@@ -3,11 +3,11 @@ TARGET  = nemodevicelock-host
 
 CONFIG += \
         static \
-        c++11 \
+        c++17 \
         link_pkgconfig
 
 QT -= gui
-QT += dbus
+QT += core dbus
 
 PKGCONFIG += \
         dbus-1 \
