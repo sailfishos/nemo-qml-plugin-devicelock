@@ -254,6 +254,10 @@ bool MceDeviceLock::needLockTimer()
     if (automaticLocking() <= 0)
         return false;
 
+    /* Must not be in manual-only mode */
+    if (automaticLocking() >= 254)
+        return false;
+
     /* Must not have active call */
     if (m_callActive)
         return false;
