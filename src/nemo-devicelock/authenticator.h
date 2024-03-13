@@ -71,8 +71,11 @@ public:
         NoAuthentication    = 0x000,
         SecurityCode        = 0x0001,
         Fingerprint         = 0x0002,
+        Reserved1           = 0x0004,
+        Reserved2           = 0x0008,
+        Reserved3           = 0x0010,
         Confirmation        = 0x1000,
-        AllAvailable = SecurityCode | Fingerprint | Confirmation
+        AllAvailable = SecurityCode | Fingerprint | Confirmation | Reserved1 | Reserved2 | Reserved3
     };
 
     Q_DECLARE_FLAGS(Methods, Method)
