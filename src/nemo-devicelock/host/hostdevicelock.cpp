@@ -122,7 +122,7 @@ void HostDeviceLock::unlock()
         startAuthentication(
                     AuthenticationInput::EnterSecurityCode,
                     QVariantMap(),
-                    Authenticator::SecurityCode | Authenticator::Fingerprint);
+                    Authenticator::SecurityCode | Authenticator::Fingerprint | Authenticator::Reserved1 | Authenticator::Reserved2 | Authenticator::Reserved3);
         break;
     case CanAuthenticateSecurityCode:
         startAuthentication(AuthenticationInput::EnterSecurityCode, QVariantMap(), Authenticator::SecurityCode);
