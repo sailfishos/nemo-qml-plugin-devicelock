@@ -22,6 +22,8 @@ DEFINES += \
         NEMODEVICELOCK_BUILD_LIBRARY
 
 PUBLIC_HEADERS += \
+        authenticatorinterface.h \
+        abstractauthenticator.h \
         authenticationinput.h \
         authenticator.h \
         authorization.h \
@@ -34,6 +36,7 @@ PUBLIC_HEADERS += \
         securitycodesettings.h
 
 SOURCES += \
+        abstractauthenticator.cc \
         authenticationinput.cpp \
         authenticator.cpp \
         authorization.cpp \
