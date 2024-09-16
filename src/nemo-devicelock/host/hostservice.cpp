@@ -53,7 +53,9 @@ namespace NemoDeviceLock
 
 class ConnectionMonitor : public QObject
 {
+#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
     Q_OBJECT
+#endif
 public:
     ConnectionMonitor(HostService *service, const QString &connectionName)
         : QObject(service)
@@ -201,4 +203,4 @@ void HostService::nameLost(const QString &name)
 
 }
 
-#include "hostservice.moc"
+//#include "hostservice.moc"
