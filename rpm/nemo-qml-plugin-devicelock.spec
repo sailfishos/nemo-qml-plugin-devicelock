@@ -1,9 +1,9 @@
 Name:       nemo-qml-plugin-devicelock
 Summary:    Device lock plugin for Nemo Mobile
-Version:    0.2.22
+Version:    0.4.1
 Release:    1
 License:    BSD and LGPLv2
-URL:        https://git.sailfishos.org/mer-core/nemo-qml-plugin-devicelock
+URL:        https://github.com/sailfishos/nemo-qml-plugin-devicelock/
 Source0:    %{name}-%{version}.tar.bz2
 BuildRequires:  pkgconfig(Qt5DBus)
 BuildRequires:  pkgconfig(Qt5Core)
@@ -51,10 +51,9 @@ Requires:   pkgconfig(nemodbus)
 
 %build
 %qmake5 "VERSION=%{version}"
-make %{?_smp_mflags}
+%make_build
 
 %install
-rm -rf %{buildroot}
 %qmake5_install
 
 mkdir -p %{buildroot}%{_unitdir}/multi-user.target.wants
@@ -65,7 +64,6 @@ ln -sf ../nemo-devicelock.socket %{buildroot}%{_unitdir}/multi-user.target.wants
 %postun -p /sbin/ldconfig
 
 %files
-%defattr(-,root,root,-)
 %{_libdir}/libnemodevicelock.so.*
 %dir %{_libdir}/qt5/qml/org/nemomobile/devicelock
 %{_libdir}/qt5/qml/org/nemomobile/devicelock/libnemodevicelockplugin.so
@@ -77,12 +75,10 @@ ln -sf ../nemo-devicelock.socket %{buildroot}%{_unitdir}/multi-user.target.wants
 %license LICENSE.LGPL
 
 %files -n nemo-devicelock-daemon-cli
-%defattr(-,root,root,-)
 %{_libexecdir}/nemo-devicelock
 %{_unitdir}/nemo-devicelock.service
 
 %files devel
-%defattr(-,root,root,-)
 %dir %{_includedir}/nemo-devicelock
 %{_includedir}/nemo-devicelock/*.h
 %{_includedir}/nemo-devicelock/private/*.h
@@ -91,7 +87,6 @@ ln -sf ../nemo-devicelock.socket %{buildroot}%{_unitdir}/multi-user.target.wants
 %{_libdir}/pkgconfig/nemodevicelock.pc
 
 %files host-devel
-%defattr(-,root,root,-)
 %dir %{_includedir}/nemo-devicelock/host
 %{_includedir}/nemo-devicelock/host/*.h
 %{_libdir}/libnemodevicelock-host.a
