@@ -81,7 +81,6 @@ namespace NemoDeviceLock
 /*!
     Constructs a new fingerprint model which is a child of \a parent.
 */
-
 FingerprintModel::FingerprintModel(QObject *parent)
     : QAbstractListModel(parent)
     , ConnectionClient(
@@ -103,7 +102,6 @@ FingerprintModel::FingerprintModel(QObject *parent)
 /*!
     Destroys a fingerprint model.
 */
-
 FingerprintModel::~FingerprintModel()
 {
 }
@@ -125,7 +123,6 @@ Authorization *FingerprintModel::authorization()
     The fingerprint authorization challenge code must be authenticated before this is called and the
     \a authenticationToken produced passed as an argument.
 */
-
 void FingerprintModel::remove(const QVariant &authenticationToken, const QVariant &id)
 {
     if (m_authorization.status() == Authorization::ChallengeIssued) {
@@ -136,7 +133,6 @@ void FingerprintModel::remove(const QVariant &authenticationToken, const QVarian
 /*!
     Changes the user friendly name of the fingerprint \a id to \a name.
 */
-
 void FingerprintModel::rename(const QVariant &id, const QString &name)
 {
     if (m_authorization.status() == Authorization::ChallengeIssued) {
@@ -263,7 +259,6 @@ void FingerprintSensorAdaptor::AcquisitionError(uint error)
 /*!
     Constructs a new instance of the fingerprint sensor interface which is a child of \a parent.
 */
-
 FingerprintSensor::FingerprintSensor(QObject *parent)
     : QObject(parent)
     , ConnectionClient(
@@ -300,7 +295,6 @@ FingerprintSensor::FingerprintSensor(QObject *parent)
 /*!
     Destroys an instance of the fingerprint sensor interface.
 */
-
 FingerprintSensor::~FingerprintSensor()
 {
 }
@@ -372,7 +366,6 @@ int FingerprintSensor::samplesRequired() const
     The sensor authorization challenge code must be authenticated before this is called and the
     \a authenticationToken produced passed as an argument.
 */
-
 void FingerprintSensor::acquireFinger(const QVariant &authenticationToken)
 {
     if (m_authorization.status() == Authorization::ChallengeIssued) {
@@ -402,7 +395,6 @@ void FingerprintSensor::acquireFinger(const QVariant &authenticationToken)
 /*!
     Cancels an ongoing fingerprint acquisition.
 */
-
 void FingerprintSensor::cancelAcquisition()
 {
     if (m_isAcquiring) {

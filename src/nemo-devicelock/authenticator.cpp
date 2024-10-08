@@ -72,7 +72,6 @@ void AuthenticatorAdaptor::Aborted()
 /*!
     Constructs a new authenticator which is a child of \a parent.
 */
-
 Authenticator::Authenticator(QObject *parent)
     : QObject(parent)
     , ConnectionClient(
@@ -100,7 +99,6 @@ Authenticator::Authenticator(QObject *parent)
 /*!
     Destroys an authenticator.
 */
-
 Authenticator::~Authenticator()
 {
 }
@@ -110,7 +108,6 @@ Authenticator::~Authenticator()
 
     This property holds the authentication methods that may currently be utilized.
 */
-
 Authenticator::Methods Authenticator::availableMethods() const
 {
     return m_availableMethods;
@@ -121,7 +118,6 @@ Authenticator::Methods Authenticator::availableMethods() const
 
     This property holds whether the the authenticator is currently authenticating a challenge code.
 */
-
 bool Authenticator::isAuthenticating() const
 {
     return m_authenticating;
@@ -130,7 +126,6 @@ bool Authenticator::isAuthenticating() const
 /*!
     Requests the authentication of a \a challengeCode using any of the supplied \a methods.
 */
-
 void Authenticator::authenticate(const QVariant &challengeCode, Methods methods)
 {
     const auto response = call(QStringLiteral("Authenticate"), m_localPath, challengeCode, uint(methods));
@@ -162,7 +157,6 @@ void Authenticator::authenticate(const QVariant &challengeCode, Methods methods)
     \li The PID of the application permissions are being requested for.
     \endtable
 */
-
 void Authenticator::requestPermission(
         const QString &message, const QVariantMap &properties, Methods methods)
 {
@@ -184,7 +178,6 @@ void Authenticator::requestPermission(
 /*!
     Cancels an active authentication request.
 */
-
 void Authenticator::cancel()
 {
     if (m_authenticating) {

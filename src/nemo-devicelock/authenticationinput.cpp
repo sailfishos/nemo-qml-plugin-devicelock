@@ -419,7 +419,6 @@ void AuthenticationInput::setRegistered(bool registered)
 /*!
     Sends an entered security \a code to the security daemon to be verified.
 */
-
 void AuthenticationInput::enterSecurityCode(const QString &code)
 {
     call(QStringLiteral("EnterSecurityCode"), m_localPath, code);
@@ -428,7 +427,6 @@ void AuthenticationInput::enterSecurityCode(const QString &code)
 /*!
     Sends a request for the security daemon to suggest a new security code.
 */
-
 void AuthenticationInput::requestSecurityCode()
 {
     call(QStringLiteral("RequestSecurityCode"), m_localPath);
@@ -437,7 +435,6 @@ void AuthenticationInput::requestSecurityCode()
 /*!
     Informs the security dialog that an action was authorized without authenticating.
 */
-
 void AuthenticationInput::authorize()
 {
     call(QStringLiteral("Authorize"), m_localPath);
@@ -446,7 +443,6 @@ void AuthenticationInput::authorize()
 /*!
     Sends a request to cancel authentication to the security daemon.
 */
-
 void AuthenticationInput::cancel()
 {
     if (m_status != Idle) {
@@ -530,7 +526,6 @@ void AuthenticationInput::handleAuthenticationUnavailable(int pid, Error error)
         emit statusChanged();
     }
 }
-
 
 void AuthenticationInput::handleAuthenticationResumed(
         Authenticator::Methods utilizedMethods, Feedback feedback, const QVariantMap &data)

@@ -198,7 +198,6 @@ void DeviceLock::unlock()
 /*!
     Cancels a request for user authentication to unlock the device.
 */
-
 void DeviceLock::cancel()
 {
     if (m_unlocking) {

@@ -48,7 +48,6 @@ namespace NemoDeviceLock
 /*!
     Constructs an authorization instance which is a child of \a parent.
 */
-
 Authorization::Authorization(QObject *parent)
     : QObject(parent)
 {
@@ -57,7 +56,6 @@ Authorization::Authorization(QObject *parent)
 /*!
     Destroys an authorization instance.
 */
-
 Authorization::~Authorization()
 {
 }
