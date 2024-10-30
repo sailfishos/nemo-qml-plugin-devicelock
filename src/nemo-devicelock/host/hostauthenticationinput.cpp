@@ -321,6 +321,16 @@ int HostAuthenticationInput::currentAttempts() const
     return m_settings->currentAttempts;
 }
 
+int HostAuthenticationInput::minimumCodeLength() const
+{
+    return m_settings->minimumLength;
+}
+
+int HostAuthenticationInput::maximumCodeLength() const
+{
+    return m_settings->maximumLength;
+}
+
 AuthenticationInput::CodeGeneration HostAuthenticationInput::codeGeneration() const
 {
     return m_settings->codeGeneration;

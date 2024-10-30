@@ -106,6 +106,9 @@ public:
     virtual int maximumAttempts() const;
     virtual int currentAttempts() const;
 
+    virtual int minimumCodeLength() const;
+    virtual int maximumCodeLength() const;
+
     virtual AuthenticationInput::CodeGeneration codeGeneration() const;
     virtual QString generateCode() const;
 

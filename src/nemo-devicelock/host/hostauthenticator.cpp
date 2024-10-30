@@ -408,10 +408,16 @@ void HostAuthenticator::enterSecurityCode(const QString &code)
     }
     case EnteringNewSecurityCode:
         qCDebug(daemon, "New security code entered.");
-        m_newCode = code;
-        m_state = RepeatingNewSecurityCode;
-        m_repeatsRequired = 1;
-        feedback(AuthenticationInput::RepeatNewSecurityCode, -1);
+        if (code.length() < minimumCodeLength()) {
+            feedback(AuthenticationInput::NewSecurityCodeTooShort, -1);
+        } else if (code.length() > maximumCodeLength()) {
+            feedback(AuthenticationInput::NewSecurityCodeTooLong, -1);
+        } else {
+            m_newCode = code;
+            m_state = RepeatingNewSecurityCode;
+            m_repeatsRequired = 1;
+            feedback(AuthenticationInput::RepeatNewSecurityCode, -1);
+        }
         return;
     case ExpectingGeneratedSecurityCode:
         if (m_generatedCode == code) {

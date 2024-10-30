@@ -97,7 +97,9 @@ public:
         PermanentlyLocked,
         UnlockToPerformOperation,
         SecurityCodeRequiredAfterReboot,
-        UnrecognizedFingerLimitExceeded
+        UnrecognizedFingerLimitExceeded,
+        NewSecurityCodeTooShort,
+        NewSecurityCodeTooLong
     };
     Q_ENUM(Feedback)
 
