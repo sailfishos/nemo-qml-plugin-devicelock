@@ -70,7 +70,6 @@ void SecurityCodeSettingsAdaptor::ClearAborted()
 /*!
     Constructs a new security code settings interface which is a child of \a parent.
 */
-
 SecurityCodeSettings::SecurityCodeSettings(QObject *parent)
     : QObject(parent)
     , ConnectionClient(
@@ -103,7 +102,6 @@ SecurityCodeSettings::SecurityCodeSettings(QObject *parent)
 /*!
     Destroys a security code settings interface.
 */
-
 SecurityCodeSettings::~SecurityCodeSettings()
 {
 }
@@ -133,7 +131,6 @@ bool SecurityCodeSettings::isMandatory() const
     to enter a new security code and then edit their security settings or also add a fingerprint
     without being prompted for the new code immediately.
 */
-
 void SecurityCodeSettings::change(const QVariant &challengeCode)
 {
     if (m_changing) {
@@ -192,7 +189,6 @@ void SecurityCodeSettings::handleChangeAborted()
     The security daemon will display a prompt asking the user to authenticate themselves before
     proceeding with clearing the security code.
 */
-
 void SecurityCodeSettings::clear()
 {
     if (m_changing) {
@@ -213,7 +209,6 @@ void SecurityCodeSettings::clear()
 /*!
     Cancels an ongoing attempt to change or clear the user's security code.
 */
-
 void SecurityCodeSettings::cancel()
 {
     if (m_changing) {

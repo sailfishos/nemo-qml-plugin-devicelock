@@ -2,7 +2,6 @@ TEMPLATE = lib
 TARGET  = nemodevicelock
 
 CONFIG += \
-        c++11 \
         hide_symbols \
         link_pkgconfig \
         create_pc \

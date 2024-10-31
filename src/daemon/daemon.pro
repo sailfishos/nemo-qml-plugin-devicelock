@@ -5,7 +5,6 @@ QT -= gui
 QT += dbus
 
 CONFIG += \
-        c++11 \
         link_pkgconfig
 
 PKGCONFIG += \

@@ -88,7 +88,6 @@ DeviceReset::~DeviceReset()
     \property NemoDeviceLock::DeviceReset::authorization
 
     This property provides a means of acquiring authorization to reset the device.
-
 */
 
 Authorization *DeviceReset::authorization()

@@ -44,7 +44,6 @@ namespace NemoDeviceLock
 /*!
     Constructs a new instance of the encryption settings interface which is a child of \a parent.
 */
-
 EncryptionSettings::EncryptionSettings(QObject *parent)
     : QObject(parent)
     , ConnectionClient(
@@ -68,7 +67,6 @@ EncryptionSettings::EncryptionSettings(QObject *parent)
 /*!
     Destroys an encryption settings instance.
 */
-
 EncryptionSettings::~EncryptionSettings()
 {
 }

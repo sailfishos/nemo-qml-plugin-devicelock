@@ -148,7 +148,8 @@ void HostDeviceLock::enterSecurityCode(const QString &code)
     case Idle:
         break;
     case Authenticating: {
-        switch (const int result = unlockWithCode(code)) {
+        const int result = unlockWithCode(code);
+        switch (result) {
         case SecurityCodeExpired:
             m_state = EnteringNewSecurityCode;
             m_currentCode = code;
@@ -278,7 +279,8 @@ void HostDeviceLock::unlockFinished(int result, Authenticator::Method method)
 
         if (m_state == Unlocking) {
             m_state = Authenticating;
-            authenticationResumed(AuthenticationInput::IncorrectSecurityCode, {{ QStringLiteral("attemptsRemaining"), attemptsRemaining }});
+            authenticationResumed(AuthenticationInput::IncorrectSecurityCode,
+                                  {{ QStringLiteral("attemptsRemaining"), attemptsRemaining }});
         } else {
             feedback(AuthenticationInput::IncorrectSecurityCode, attemptsRemaining);
         }

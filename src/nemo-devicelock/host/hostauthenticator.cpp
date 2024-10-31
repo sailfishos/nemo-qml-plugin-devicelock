@@ -308,15 +308,18 @@ void HostAuthenticator::beginChangeSecurityCode(uint pid, const QVariant &challe
         // because we need to pass the extra pid argument to startAuthentication().
         if (codeGeneration() == AuthenticationInput::MandatoryCodeGeneration) {
             m_state = ExpectingGeneratedSecurityCode;
-            startAuthentication(AuthenticationInput::SuggestSecurityCode, pid, generatedCodeData(), Authenticator::SecurityCode);
+            startAuthentication(AuthenticationInput::SuggestSecurityCode, pid, generatedCodeData(),
+                                Authenticator::SecurityCode);
         } else {
             m_state = EnteringNewSecurityCode;
-            startAuthentication(AuthenticationInput::EnterNewSecurityCode, pid, QVariantMap(), Authenticator::SecurityCode);
+            startAuthentication(AuthenticationInput::EnterNewSecurityCode, pid, QVariantMap(),
+                                Authenticator::SecurityCode);
         }
         break;
     case CanAuthenticateSecurityCode:
     case CanAuthenticate:
-        startAuthentication(AuthenticationInput::EnterSecurityCode, pid, QVariantMap(), Authenticator::SecurityCode);
+        startAuthentication(AuthenticationInput::EnterSecurityCode, pid, QVariantMap(),
+                            Authenticator::SecurityCode);
         break;
     case CodeEntryLockedRecoverable:
     case CodeEntryLockedPermanent:
@@ -405,10 +408,16 @@ void HostAuthenticator::enterSecurityCode(const QString &code)
     }
     case EnteringNewSecurityCode:
         qCDebug(daemon, "New security code entered.");
-        m_newCode = code;
-        m_state = RepeatingNewSecurityCode;
-        m_repeatsRequired = 1;
-        feedback(AuthenticationInput::RepeatNewSecurityCode, -1);
+        if (code.length() < minimumCodeLength()) {
+            feedback(AuthenticationInput::NewSecurityCodeTooShort, -1);
+        } else if (code.length() > maximumCodeLength()) {
+            feedback(AuthenticationInput::NewSecurityCodeTooLong, -1);
+        } else {
+            m_newCode = code;
+            m_state = RepeatingNewSecurityCode;
+            m_repeatsRequired = 1;
+            feedback(AuthenticationInput::RepeatNewSecurityCode, -1);
+        }
         return;
     case ExpectingGeneratedSecurityCode:
         if (m_generatedCode == code) {
@@ -498,7 +507,9 @@ void HostAuthenticator::checkCodeFinished(int result)
 {
     const FeedbackFunction feebackFunction = (m_state & EvaluatingFlag)
         ? &HostAuthenticationInput::authenticationResumed
-        : static_cast<void (HostAuthenticationInput::*)(AuthenticationInput::Feedback, const QVariantMap &, Authenticator::Methods)>(&HostAuthenticationInput::feedback);
+        : static_cast<void (HostAuthenticationInput::*)(AuthenticationInput::Feedback,
+                                                        const QVariantMap &,
+                                                        Authenticator::Methods)>(&HostAuthenticationInput::feedback);
 
     m_state = State(m_state & ~EvaluatingFlag);
 
@@ -641,7 +652,8 @@ void HostAuthenticator::confirmAuthentication(Authenticator::Method method)
         authenticated(authenticateChallengeCode(m_challengeCode, method, m_authenticatingPid));
         break;
     case AuthenticationEvaluating:
-        sendToActiveClient(authenticatorInterface, QStringLiteral("Authenticated"), authenticateChallengeCode(m_challengeCode, method, m_authenticatingPid));
+        sendToActiveClient(authenticatorInterface, QStringLiteral("Authenticated"),
+                           authenticateChallengeCode(m_challengeCode, method, m_authenticatingPid));
         m_state = AuthenticationCompleted;
         authenticationInactive();
         break;
