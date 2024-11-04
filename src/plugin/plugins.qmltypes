@@ -135,8 +135,11 @@ Module {
                 "NoAuthentication": 0,
                 "SecurityCode": 1,
                 "Fingerprint": 2,
+                "Reserved1": 4,
+                "Reserved2": 8,
+                "Reserved3": 16,
                 "Confirmation": 4096,
-                "AllAvailable": 4099
+                "AllAvailable": 4127
             }
         }
         Enum {
@@ -145,8 +148,11 @@ Module {
                 "NoAuthentication": 0,
                 "SecurityCode": 1,
                 "Fingerprint": 2,
+                "Reserved1": 4,
+                "Reserved2": 8,
+                "Reserved3": 16,
                 "Confirmation": 4096,
-                "AllAvailable": 4099
+                "AllAvailable": 4127
             }
         }
         Property { name: "availableMethods"; type: "Methods"; isReadonly: true }
