@@ -45,7 +45,9 @@ Module {
                 "PermanentlyLocked": 18,
                 "UnlockToPerformOperation": 19,
                 "SecurityCodeRequiredAfterReboot": 20,
-                "UnrecognizedFingerLimitExceeded": 21
+                "UnrecognizedFingerLimitExceeded": 21,
+                "NewSecurityCodeTooShort": 22,
+                "NewSecurityCodeTooLong": 23
             }
         }
         Enum {
