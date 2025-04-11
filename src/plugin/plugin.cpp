@@ -75,7 +75,11 @@ public:
         qDBusRegisterMetaType<NemoDeviceLock::Fingerprint>();
         qDBusRegisterMetaType<QVector<NemoDeviceLock::Fingerprint>>();
 
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+        qmlRegisterAnonymousType<NemoDeviceLock::FingerprintModel>(uri, 1);
+#else
         qmlRegisterType<NemoDeviceLock::FingerprintModel>();
+#endif
 
         qmlRegisterSingletonType<NemoDeviceLock::DeviceLock>(uri, 1, 0, "DeviceLock", createDeviceLock);
 
