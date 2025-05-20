@@ -75,6 +75,7 @@ HostDeviceLock::HostDeviceLock(Authenticator::Methods supportedMethods, QObject 
     , m_repeatsRequired(0)
     , m_state(Idle)
     , m_lockState(DeviceLock::Undefined)
+    , m_temporaryLockState(false)
 {
     connect(m_settings.data(), &SettingsWatcher::automaticLockingChanged,
             this, &HostDeviceLock::automaticLockingChanged);
@@ -87,6 +88,11 @@ HostDeviceLock::~HostDeviceLock()
 DeviceLock::LockState HostDeviceLock::state() const
 {
     return m_lockState;
+}
+
+bool HostDeviceLock::temporaryLockState() const
+{
+    return m_temporaryLockState;
 }
 
 int HostDeviceLock::automaticLocking() const
@@ -407,6 +413,7 @@ void HostDeviceLock::notice(DeviceLock::Notice notice, const QVariantMap &data)
 void HostDeviceLock::stateChanged()
 {
     const auto previousState = m_lockState;
+    const auto previousTemporaryLockState = m_temporaryLockState;
 
     switch (availability()) {
     case CodeEntryLockedRecoverable:
@@ -426,11 +433,20 @@ void HostDeviceLock::stateChanged()
                 : DeviceLock::Unlocked;
     }
 
+    m_temporaryLockState = temporaryLockActive();
+
     if (m_lockState != previousState) {
         propertyChanged(
                     QStringLiteral("org.nemomobile.devicelock.DeviceLock"),
                     QStringLiteral("State"),
                     QVariant::fromValue(uint(m_lockState)));
+    }
+
+    if (m_temporaryLockState != previousTemporaryLockState) {
+        propertyChanged(
+                    QStringLiteral("org.nemomobile.devicelock.DeviceLock"),
+                    QStringLiteral("TemporaryLockState"),
+                    QVariant::fromValue(m_temporaryLockState));
     }
 }
 

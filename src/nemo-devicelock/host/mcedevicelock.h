@@ -59,8 +59,19 @@ class MceDeviceLockAdaptor : public QDBusAbstractAdaptor
 "    <method name=\"setState\">\n"
 "      <arg direction=\"in\" type=\"i\" name=\"state\"/>\n"
 "    </method>\n"
+"    <method name=\"setTemporaryLock\">\n"
+"      <arg direction=\"in\" type=\"i\" name=\"duration\"/>\n"
+"    </method>\n"
+"    <method name=\"temporaryLock\">\n"
+"      <arg direction=\"out\" type=\"b\" name=\"enabled\"/>\n"
+"    <method name=\"temporaryLockDuration\">\n"
+"      <arg direction=\"out\" type=\"i\" name=\"duration\"/>\n"
+"    </method>\n"
 "    <signal name=\"stateChanged\">\n"
 "      <arg type=\"i\" name=\"state\"/>\n"
+"    </signal>\n"
+"    <signal name=\"temporaryLockStateChanged\">\n"
+"      <arg type=\"b\" name=\"temporaryLockState\"/>\n"
 "    </signal>\n"
 "  </interface>\n"
         "")
@@ -70,9 +81,13 @@ public:
 public slots:
     int state();
     void setState(int state);
+    bool temporaryLock();
+    int temporaryLockDuration(); /* in minutes */
+    void setTemporaryLock(int duration);
 
 signals:
     void stateChanged(int state);
+    void temporaryLockstateChanged(bool temporaryLockState);
 
 private:
     MceDeviceLock * const m_deviceLock;
@@ -87,11 +102,17 @@ public:
 
     bool isLocked() const override;
     void setLocked(bool locked) override;
+    /* TODO needed in hostdevicelock? */
+    bool temporaryLockActive() const override;
+    bool setTemporaryLock(int duration);
+    int temporaryLockDuration() const;
 
 protected:
     void init();
     void automaticLockingChanged() override;
     void stateChanged() override;
+    /* TODO needed in hostdevicelock? */
+    void temporaryLockstateChanged();
 
 protected slots:
     void lock();
@@ -110,13 +131,18 @@ private:
             void (MceDeviceLock::*replySlot)(const QString &));
 
     void setStateAndSetupLockTimer();
+    void setupTemporaryLockTimer();
     bool getRequiredLockState();
     bool needLockTimer();
+    bool needTemporaryLockTimer();
+    bool allowUserToCall();
+    qint64 getCurrentTimeMSec() const;
 
     MceDeviceLockAdaptor m_adaptor;
     NemoDBus::Interface m_mceRequest;
 
     BackgroundActivity m_hbTimer;
+    BackgroundActivity m_temporaryLockTimer;
 
     bool m_locked;
     bool m_callActive;
@@ -124,6 +150,9 @@ private:
     bool m_tklockActive;
     bool m_userActivity;
     bool m_lpmMode;
+    bool m_temporaryLockActive;
+    qint64 m_temporaryLockDuration;
+    qint64 m_temporaryLockStart;
 
     friend class MceDeviceLockAdaptor;
 

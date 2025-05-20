@@ -39,6 +39,7 @@
 #include <QDBusPendingReply>
 #include <QDebug>
 #include <QFileInfo>
+#include <QDateTime>
 
 #include <sys/time.h>
 #include <mce/dbus-names.h>
@@ -71,6 +72,7 @@ MceDeviceLock::MceDeviceLock(Authenticator::Methods allowedMethods, QObject *par
     , m_lpmMode(false)
 {
     connect(&m_hbTimer, &BackgroundActivity::running, this, &MceDeviceLock::lock);
+    connect(&m_temporaryLockTimer, &BackgroundActivity::running, this, &MceDeviceLock::lock);
 
     trackMceProperty(
                 QStringLiteral(MCE_CALL_STATE_SIG),
@@ -304,6 +306,69 @@ void MceDeviceLock::setStateAndSetupLockTimer()
     }
 }
 
+bool MceDeviceLock::needTemporaryLockTimer()
+{
+    if (m_temporaryLockActive && m_temporaryLockDuration > 0)
+        return true;
+
+    return false;
+}
+
+bool MceDeviceLock::allowUserToCall()
+{
+    // TODO check if the caller has privileges - how?
+    return true;
+}
+
+qint64 MceDeviceLock::getCurrentTimeMSec() const
+{
+    QDateTime dateTime = QDateTime::currentDateTimeUtc();
+    return dateTime.toMSecsSinceEpoch();
+}
+
+bool MceDeviceLock::temporaryLockActive() const
+{
+    qint64 diff = getCurrentTimeMSec() - m_temporaryLockStart;
+
+    return m_temporaryLockActive && diff <= m_temporaryLockDuration;
+}
+
+int MceDeviceLock::temporaryLockDuration() const
+{
+    return static_cast<int>(m_temporaryLockDuration);
+}
+
+// TODO this could just call setupTemporaryLockTimer() and have all handled there..
+bool MceDeviceLock::setTemporaryLock(int duration)
+{
+    if (!duration) {
+        qCDebug(daemon, "disable temporary lock");
+
+        m_temporaryLockActive = false;
+        m_temporaryLockDuration = 0;
+        m_temporaryLockStart = 0;
+
+        temporaryLockstateChanged();
+
+        return true;
+    }
+
+    if (temporaryLockActive()) {
+        qCDebug(daemon, "lock timer already running, not setting new");
+        return false;
+    }
+
+    m_temporaryLockActive = true;
+    m_temporaryLockDuration = duration * 60 * 1000; /* to milliseconds */
+    m_temporaryLockStart = getCurrentTimeMSec();
+
+    qCDebug(daemon, "setup new temporary lock with duration %llx s", m_temporaryLockDuration);
+
+    temporaryLockstateChanged();
+
+    return true;
+}
+
 /** Slot for locking device on timer trigger
  */
 void MceDeviceLock::lock()
@@ -324,7 +389,7 @@ void MceDeviceLock::lock()
 
 bool MceDeviceLock::isLocked() const
 {
-    return m_locked;
+    return m_locked && temporaryLockActive();
 }
 
 /** Explicitly set devicelock state
@@ -348,6 +413,12 @@ void MceDeviceLock::stateChanged()
 
     emit HostDeviceLock::stateChanged();
     emit m_adaptor.stateChanged(state());
+}
+
+void MceDeviceLock::temporaryLockstateChanged()
+{
+    emit HostDeviceLock::stateChanged();
+    emit m_adaptor.temporaryLockstateChanged(temporaryLockActive());
 }
 
 void MceDeviceLock::automaticLockingChanged()
@@ -377,6 +448,38 @@ void MceDeviceLockAdaptor::setState(int state)
     } else {
         m_deviceLock->setLocked(true);
     }
+}
+
+bool MceDeviceLockAdaptor::temporaryLock()
+{
+    return m_deviceLock->temporaryLockActive();
+}
+
+int MceDeviceLockAdaptor::temporaryLockDuration()
+{
+    return m_deviceLock->temporaryLockDuration();
+}
+
+void MceDeviceLockAdaptor::setTemporaryLock(int duration)
+{
+    int lockDuration;
+
+    if (!m_deviceLock->allowUserToCall())
+        m_deviceLock->sendErrorReply(QDBusError::AccessDenied);
+
+    /* Disable temp lock with negative values */
+    if (duration < 0) {
+        lockDuration = 0;
+    /* Use default when 0 */
+    } else if (duration == 0) {
+        // TODO use own value for this, readable from/written to conf
+        lockDuration = m_deviceLock->automaticLocking();
+    /* Set new duration */
+    } else {
+        lockDuration = duration;
+    }
+
+    m_deviceLock->setTemporaryLock(lockDuration);
 }
 
 }

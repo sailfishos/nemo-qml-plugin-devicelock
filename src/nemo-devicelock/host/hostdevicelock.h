@@ -75,6 +75,7 @@ public:
     ~HostDeviceLock();
 
     DeviceLock::LockState state() const;
+    bool temporaryLockState() const;
 
     bool isUnlocking() const;
 
@@ -93,6 +94,7 @@ public:
 
     virtual bool isLocked() const = 0;
     virtual void setLocked(bool locked) = 0;
+    virtual bool temporaryLockActive() const = 0;
 
     void confirmAuthentication(Authenticator::Method method) override;
     void abortAuthentication(AuthenticationInput::Error error) override;
@@ -140,6 +142,7 @@ private:
     int m_repeatsRequired;
     State m_state;
     DeviceLock::LockState m_lockState;
+    bool m_temporaryLockState;
 };
 
 }
