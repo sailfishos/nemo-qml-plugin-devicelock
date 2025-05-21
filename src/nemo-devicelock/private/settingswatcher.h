@@ -81,6 +81,7 @@ public:
     int showNotifications;
     int maximumAutomaticLocking;
     int absoluteMaximumAttempts;
+    qint64 temporaryLockTimeout;
     DeviceReset::Options supportedDeviceResetOptions;
     AuthenticationInput::CodeGeneration codeGeneration;
     bool inputIsKeyboard;
@@ -120,6 +121,7 @@ signals:
     void currentCodeIsDigitOnlyChanged();
     void codeIsMandatoryChanged();
     void codeGenerationChanged();
+    void temporaryLockTimeoutChanged();
 
 private:
     explicit SettingsWatcher(QObject *parent = nullptr);

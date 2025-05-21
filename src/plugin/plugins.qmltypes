@@ -285,6 +285,7 @@ Module {
         Property { name: "homeEncrypted"; type: "bool"; isReadonly: true }
         Property { name: "maximumAutomaticLocking"; type: "int"; isReadonly: true }
         Property { name: "absoluteMaximumAttempts"; type: "int"; isReadonly: true }
+        Property { name: "temporaryLockTimeout"; type: "qint64"; isReadonly: true }
         Method {
             name: "setAutomaticLocking"
             Parameter { name: "authenticationToken"; type: "QVariant" }

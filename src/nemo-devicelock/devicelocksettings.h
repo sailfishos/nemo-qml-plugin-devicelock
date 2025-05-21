@@ -57,6 +57,7 @@ class NEMODEVICELOCK_EXPORT DeviceLockSettings : public QObject, private Connect
     Q_PROPERTY(bool homeEncrypted READ isHomeEncrypted CONSTANT)
     Q_PROPERTY(int maximumAutomaticLocking READ maximumAutomaticLocking NOTIFY maximumAutomaticLockingChanged)
     Q_PROPERTY(int absoluteMaximumAttempts READ absoluteMaximumAttempts NOTIFY absoluteMaximumAttemptsChanged)
+    Q_PROPERTY(qint64 temporaryLockTimeout READ temporaryLockTimeout NOTIFY temporaryLockTimeoutChanged)
 public:
     explicit DeviceLockSettings(QObject *parent = nullptr);
     ~DeviceLockSettings();
@@ -91,6 +92,8 @@ public:
     int maximumAutomaticLocking() const;
     int absoluteMaximumAttempts() const;
 
+    qint64 temporaryLockTimeout() const;
+
 signals:
     void automaticLockingChanged();
     void maximumAttemptsChanged();
@@ -104,6 +107,7 @@ signals:
     void maximumCodeLengthChanged();
     void maximumAutomaticLockingChanged();
     void absoluteMaximumAttemptsChanged();
+    void temporaryLockTimeoutChanged();
 
 private:
     inline void changeSetting(
