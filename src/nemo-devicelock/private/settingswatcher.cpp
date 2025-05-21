@@ -152,9 +152,8 @@ bool SettingsWatcher::event(QEvent *event)
         }
 
         return true;
-    } else {
-        return QSocketNotifier::event(event);
     }
+    return QSocketNotifier::event(event);
 }
 
 template <typename T> T readConfigValue(GKeyFile *config, const char *group, const char *key, T defaultValue)
@@ -169,13 +168,11 @@ template <typename T> T readConfigValue(GKeyFile *config, const char *group, con
         g_error_free(error);
 
         return defaultValue;
-    } else {
-        const T value = settingsValueFromString<T>(string);
-
-        g_free(string);
-
-        return value;
     }
+
+    const T value = settingsValueFromString<T>(string);
+    g_free(string);
+    return value;
 }
 
 template <> int readConfigValue<int>(GKeyFile *config, const char *group, const char *key, int defaultValue)
@@ -190,9 +187,8 @@ template <> int readConfigValue<int>(GKeyFile *config, const char *group, const 
         g_error_free(error);
 
         return defaultValue;
-    } else {
-        return value;
     }
+    return value;
 }
 
 template <> qint64 readConfigValue<qint64>(GKeyFile *config, const char *group, const char *key, qint64 defaultValue)
@@ -207,9 +203,8 @@ template <> qint64 readConfigValue<qint64>(GKeyFile *config, const char *group, 
         g_error_free(error);
 
         return defaultValue;
-    } else {
-        return value;
     }
+    return value;
 }
 
 template <> bool readConfigValue<bool>(
