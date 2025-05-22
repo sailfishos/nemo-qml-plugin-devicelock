@@ -80,6 +80,8 @@ DeviceLockSettings::DeviceLockSettings(QObject *parent)
             this, &DeviceLockSettings::maximumAutomaticLockingChanged);
     connect(m_settings.data(), &SettingsWatcher::absoluteMaximumAttemptsChanged,
             this, &DeviceLockSettings::absoluteMaximumAttemptsChanged);
+    connect(m_settings.data(), &SettingsWatcher::temporaryLockTimeoutChanged,
+            this, &DeviceLockSettings::temporaryLockTimeoutChanged);
 
     m_connection->onConnected(this, [this] {
         connected();
@@ -321,6 +323,17 @@ int DeviceLockSettings::maximumAutomaticLocking() const
 int DeviceLockSettings::absoluteMaximumAttempts() const
 {
     return m_settings->absoluteMaximumAttempts;
+}
+
+/*!
+    \property NemoDeviceLockSettings::temporaryLockTimeout
+
+    This property holds the device lock temporary lock timeout seconds. If theres is no temporary
+    lock timeout this will be -1.
+*/
+qint64 DeviceLockSettings::temporaryLockTimeout() const
+{
+    return m_settings->temporaryLockTimeout;
 }
 
 void DeviceLockSettings::changeSetting(

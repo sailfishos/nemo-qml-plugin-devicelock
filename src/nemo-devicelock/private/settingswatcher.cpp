@@ -93,6 +93,7 @@ SettingsWatcher::SettingsWatcher(QObject *parent)
     , showNotifications(1)
     , maximumAutomaticLocking(-1)
     , absoluteMaximumAttempts(-1)
+    , temporaryLockTimeout(-1)
     , supportedDeviceResetOptions(DeviceReset::Reboot)
     , codeGeneration(AuthenticationInput::NoCodeGeneration)
     , inputIsKeyboard(false)
@@ -151,9 +152,8 @@ bool SettingsWatcher::event(QEvent *event)
         }
 
         return true;
-    } else {
-        return QSocketNotifier::event(event);
     }
+    return QSocketNotifier::event(event);
 }
 
 template <typename T> T readConfigValue(GKeyFile *config, const char *group, const char *key, T defaultValue)
@@ -168,13 +168,11 @@ template <typename T> T readConfigValue(GKeyFile *config, const char *group, con
         g_error_free(error);
 
         return defaultValue;
-    } else {
-        const T value = settingsValueFromString<T>(string);
-
-        g_free(string);
-
-        return value;
     }
+
+    const T value = settingsValueFromString<T>(string);
+    g_free(string);
+    return value;
 }
 
 template <> int readConfigValue<int>(GKeyFile *config, const char *group, const char *key, int defaultValue)
@@ -189,9 +187,24 @@ template <> int readConfigValue<int>(GKeyFile *config, const char *group, const 
         g_error_free(error);
 
         return defaultValue;
-    } else {
-        return value;
     }
+    return value;
+}
+
+template <> qint64 readConfigValue<qint64>(GKeyFile *config, const char *group, const char *key, qint64 defaultValue)
+{
+    GError *error = nullptr;
+    const qint64 value = g_key_file_get_int64(config, group, key, &error);
+    if (error) {
+        if (error->code != G_KEY_FILE_ERROR_KEY_NOT_FOUND
+                && error->code != G_KEY_FILE_ERROR_GROUP_NOT_FOUND) {
+            qCWarning(devicelock) << "Error reading" << group << key << error->message;
+        }
+        g_error_free(error);
+
+        return defaultValue;
+    }
+    return value;
 }
 
 template <> bool readConfigValue<bool>(
@@ -207,9 +220,8 @@ template <> bool readConfigValue<bool>(
         g_error_free(error);
 
         return defaultValue;
-    } else {
-        return value;
     }
+    return value;
 }
 
 template <typename T>
@@ -277,6 +289,8 @@ void SettingsWatcher::reloadSettings()
     read(settings, this, "code_is_mandatory", false, &codeIsMandatory, &SettingsWatcher::codeIsMandatoryChanged);
     read(settings, this, "code_generation", AuthenticationInput::NoCodeGeneration,
          &codeGeneration, &SettingsWatcher::codeGenerationChanged);
+    read(settings, this, "temporary_lock_timeout", static_cast<qint64>(-1), &temporaryLockTimeout,
+         &SettingsWatcher::temporaryLockTimeoutChanged);
 
     g_key_file_free(settings);
 }
