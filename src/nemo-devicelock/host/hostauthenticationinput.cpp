@@ -321,6 +321,11 @@ int HostAuthenticationInput::currentAttempts() const
     return m_settings->currentAttempts;
 }
 
+qint64 HostAuthenticationInput::temporaryLockTimeout() const
+{
+    return m_settings->temporaryLockTimeout;
+}
+
 int HostAuthenticationInput::minimumCodeLength() const
 {
     return m_settings->minimumLength;
