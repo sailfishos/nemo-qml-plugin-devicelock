@@ -59,6 +59,8 @@ class MceDeviceLockAdaptor : public QDBusAbstractAdaptor
 "    <method name=\"setState\">\n"
 "      <arg direction=\"in\" type=\"i\" name=\"state\"/>\n"
 "    </method>\n"
+"    <method name=\"activateTemporaryLockout\">\n"
+"    </method>\n"
 "    <signal name=\"stateChanged\">\n"
 "      <arg type=\"i\" name=\"state\"/>\n"
 "    </signal>\n"
@@ -70,7 +72,7 @@ public:
 public slots:
     int state();
     void setState(int state);
-
+    void activateTemporaryLockout();
 signals:
     void stateChanged(int state);
 
@@ -101,6 +103,9 @@ protected slots:
     void handleDisplayStateChanged(const QString &state);
     void handleInactivityStateChanged(const bool state);
     void handleLpmModeChanged(const QString &state);
+
+signals:
+    void temporaryLockoutRequest();
 
 private:
     void trackMceProperty(

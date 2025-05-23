@@ -105,6 +105,7 @@ public:
 
     virtual int maximumAttempts() const;
     virtual int currentAttempts() const;
+    virtual qint64 temporaryLockTimeout() const;
 
     virtual int minimumCodeLength() const;
     virtual int maximumCodeLength() const;

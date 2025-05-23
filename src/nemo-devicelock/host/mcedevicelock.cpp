@@ -379,4 +379,41 @@ void MceDeviceLockAdaptor::setState(int state)
     }
 }
 
+void MceDeviceLockAdaptor::activateTemporaryLockout()
+{
+    if (m_deviceLock->automaticLocking() == -1) {
+        m_deviceLock->sendErrorReply(QDBusError::AccessDenied, QStringLiteral("Device lock not in use"));
+        return;
+    }
+
+    uint callerServicePid(m_deviceLock->connection().interface()->servicePid(m_deviceLock->message().service()).value());
+    QFileInfo info(QString("/proc/%1").arg(callerServicePid));
+    bool callerIsRoot(info.owner() == "root");
+    if (!callerIsRoot) {
+        m_deviceLock->sendErrorReply(QDBusError::AccessDenied, QString("PID %1 euid is not root").arg(callerServicePid));
+        return;
+    }
+
+    qint64 temporaryLockTimeout = m_deviceLock->temporaryLockTimeout();
+    if (temporaryLockTimeout <= 0) {
+        m_deviceLock->sendErrorReply(QDBusError::AccessDenied, QStringLiteral("Invalid temporaryLockTimeout setting"));
+        return;
+    }
+
+    int maximumAttempts = m_deviceLock->maximumAttempts();
+    if (maximumAttempts <= 0) {
+        m_deviceLock->sendErrorReply(QDBusError::AccessDenied, QStringLiteral("Invalid maximumAttempts setting"));
+        return;
+    }
+
+    int currentAttempts = m_deviceLock->currentAttempts();
+    if (currentAttempts < 0) {
+        m_deviceLock->sendErrorReply(QDBusError::AccessDenied, QStringLiteral("Invalid currentAttempts setting"));
+        return;
+    }
+
+    if (currentAttempts != maximumAttempts)
+        emit m_deviceLock->temporaryLockoutRequest();
+}
+
 }
