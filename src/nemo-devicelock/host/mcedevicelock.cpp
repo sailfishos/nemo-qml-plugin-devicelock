@@ -350,6 +350,11 @@ void MceDeviceLock::stateChanged()
     emit m_adaptor.stateChanged(state());
 }
 
+void MceDeviceLock::authenticationChecked(bool success)
+{
+    emit m_adaptor.authenticationChecked(success);
+}
+
 void MceDeviceLock::automaticLockingChanged()
 {
     setStateAndSetupLockTimer();

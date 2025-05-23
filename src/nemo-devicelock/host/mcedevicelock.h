@@ -64,6 +64,9 @@ class MceDeviceLockAdaptor : public QDBusAbstractAdaptor
 "    <signal name=\"stateChanged\">\n"
 "      <arg type=\"i\" name=\"state\"/>\n"
 "    </signal>\n"
+"    <signal name=\"authenticationChecked\">\n"
+"      <arg type=\"b\" name=\"success\"/>\n"
+"    </signal>\n"
 "  </interface>\n"
         "")
 public:
@@ -75,6 +78,7 @@ public slots:
     void activateTemporaryLockout();
 signals:
     void stateChanged(int state);
+    void authenticationChecked(bool success);
 
 private:
     MceDeviceLock * const m_deviceLock;
@@ -103,6 +107,9 @@ protected slots:
     void handleDisplayStateChanged(const QString &state);
     void handleInactivityStateChanged(const bool state);
     void handleLpmModeChanged(const QString &state);
+
+public slots:
+    void authenticationChecked(bool success);
 
 signals:
     void temporaryLockoutRequest();
