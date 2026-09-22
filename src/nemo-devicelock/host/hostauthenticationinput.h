@@ -165,6 +165,8 @@ public:
     void clientDisconnected(const QString &connectionName) override;
 
 protected:
+    bool hasAuthenticationInput() const;
+
     void lockedOut();
     void lockedOut(
             Availability availability,

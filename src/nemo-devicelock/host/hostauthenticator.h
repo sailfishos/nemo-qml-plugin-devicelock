@@ -107,6 +107,17 @@ public:
     virtual Authenticator::Methods availableMethods() const = 0;
     virtual QVariant authenticateChallengeCode(
             const QVariant &challengeCode, Authenticator::Method method, uint authenticatingPid) = 0;
+    virtual QVariant trustedAuthenticationProof(
+            const QVariant &challengeCode, Authenticator::Method method, uint authenticatingPid);
+    virtual void rememberAuthenticatedCode(const QString &code);
+    virtual void clearAuthenticatedCode();
+
+    bool authenticateTrusted(
+            quint64 requestId,
+            const QVariant &challengeCode,
+            Authenticator::Methods methods,
+            uint authenticatingPid);
+    bool cancelTrustedAuthentication(quint64 requestId);
 
     // SecurityCodeSettings
     virtual bool authorizeSecurityCodeSettings(unsigned long pid);
@@ -144,6 +155,17 @@ public:
 
     void availableMethodsChanged();
     void availabilityChanged();
+
+Q_SIGNALS:
+    void trustedAuthenticationFinished(
+            quint64 requestId,
+            uint method,
+            const QVariant &proof);
+    void trustedAuthenticationAborted(quint64 requestId);
+
+protected:
+    QVariant authenticationChallengeCode() const;
+    bool trustedAuthenticationPending() const;
 
 private:
     enum StateFlag {
@@ -239,6 +261,7 @@ private:
     QString m_generatedCode;
     int m_repeatsRequired;
     int m_authenticatingPid;
+    quint64 m_trustedRequestId;
     State m_state;
 };
 
