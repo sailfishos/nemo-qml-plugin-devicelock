@@ -37,6 +37,7 @@
 #include <QDBusArgument>
 #include <QDBusConnection>
 #include <QDBusMetaType>
+#include "permissionprompt_p.h"
 
 #include <unistd.h>
 
@@ -314,9 +315,7 @@ void HostAuthenticator::beginRequestPermission(
     const uint authenticatingPid = properties.value(
                 QStringLiteral("authenticatingPid"), QVariant::fromValue(pid)).toUInt();
 
-    QVariantMap data = {
-        { QStringLiteral("message"), message }
-    };
+    QVariantMap data = permissionPromptData(pid, message, properties);
 
     const auto availability = this->availability(&data);
     switch (availability) {
