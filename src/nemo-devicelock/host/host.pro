@@ -51,6 +51,7 @@ SOURCES += \
 include (cli/cli.pri)
 
 HEADERS += \
+        $$PWD/permissionprompt_p.h \
         $$PUBLIC_HEADERS
 
 headers.files = $$PUBLIC_HEADERS

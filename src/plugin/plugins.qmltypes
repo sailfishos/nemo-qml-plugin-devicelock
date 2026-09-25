@@ -78,6 +78,7 @@ Module {
             }
         }
         Property { name: "utilizedMethods"; type: "Authenticator::Methods"; isReadonly: true }
+        Property { name: "utilizedMethodFlags"; type: "uint"; isReadonly: true }
         Property { name: "status"; type: "Status"; isReadonly: true }
         Property { name: "authenticatingProcess"; type: "int"; isReadonly: true }
         Property { name: "active"; type: "bool" }
