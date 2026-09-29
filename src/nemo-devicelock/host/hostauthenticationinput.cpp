@@ -93,6 +93,11 @@ HostAuthenticationInput::~HostAuthenticationInput()
 {
 }
 
+bool HostAuthenticationInput::hasAuthenticationInput() const
+{
+    return !m_inputStack.isEmpty();
+}
+
 void HostAuthenticationInput::authorize()
 {
 }
@@ -176,7 +181,7 @@ void HostAuthenticationInput::authenticationResumed(
     qCDebug(daemon, "Authentication resumed");
 
     if (!m_inputStack.isEmpty()) {
-        if (utilizedMethods != 0) { // Utilized methods can be empty if there is no change.
+        if (utilizedMethods == 0) { // Utilized methods can be empty if there is no change.
             utilizedMethods = m_activeMethods;
         }
         m_activeMethods = utilizedMethods & m_supportedMethods;
@@ -358,7 +363,7 @@ void HostAuthenticationInput::feedback(
         Authenticator::Methods utilizedMethods)
 {
     if (!m_inputStack.isEmpty()) {
-        if (utilizedMethods != 0) { // Utilized methods can be empty if there is no change.
+        if (utilizedMethods == 0) { // Utilized methods can be empty if there is no change.
             utilizedMethods = m_activeMethods;
         }
         m_activeMethods = utilizedMethods & m_supportedMethods;

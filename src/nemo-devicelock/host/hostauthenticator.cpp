@@ -122,6 +122,14 @@ HostAuthenticator::~HostAuthenticator()
 {
 }
 
+void HostAuthenticator::rememberAuthenticatedCode(const QString &)
+{
+}
+
+void HostAuthenticator::clearAuthenticatedCode()
+{
+}
+
 bool HostAuthenticator::authorizeSecurityCodeSettings(unsigned long)
 {
     return true;
@@ -143,6 +151,7 @@ void HostAuthenticator::authenticate(
 {
     const auto pid = connectionPid(QDBusContext::connection());
 
+    clearAuthenticatedCode();
     cancelPending();
 
     if (m_state == Idle) {
@@ -178,7 +187,7 @@ void HostAuthenticator::beginAuthenticate(
             authenticated(authenticateChallengeCode(
                               challengeCode,
                               Authenticator::NoAuthentication,
-                              connectionPid(QDBusContext::connection())));
+                              pid));
         }
         break;
     case CanAuthenticateSecurityCode:
@@ -215,6 +224,7 @@ void HostAuthenticator::requestPermission(
 {
     const auto pid = connectionPid(QDBusContext::connection());
 
+    clearAuthenticatedCode();
     cancelPending();
 
     if (m_state == Idle) {
@@ -281,6 +291,7 @@ void HostAuthenticator::handleChangeSecurityCode(const QString &client, const QV
         return;
     }
 
+    clearAuthenticatedCode();
     cancelPending();
 
     if (m_state == Idle) {
@@ -339,6 +350,7 @@ void HostAuthenticator::handleClearSecurityCode(const QString &client)
         return;
     }
 
+    clearAuthenticatedCode();
     cancelPending();
 
     if (m_state == Idle) {
@@ -385,11 +397,13 @@ void HostAuthenticator::enterSecurityCode(const QString &code)
     case Authenticating:
         qCDebug(daemon, "Security code entered for authentication.");
         m_state = AuthenticationEvaluating;
+        m_currentCode = code;
         checkCodeFinished(checkCode(code));
         return;
     case RequestingPermission:
         qCDebug(daemon, "Security code entered for authentication.");
         m_state = PermissionEvaluating;
+        m_currentCode = code;
         checkCodeFinished(checkCode(code));
         return;
     case AuthenticatingForChange: {
@@ -450,8 +464,6 @@ void HostAuthenticator::enterSecurityCode(const QString &code)
         } else if (--m_repeatsRequired > 0) {
             feedback(AuthenticationInput::RepeatNewSecurityCode, -1);
         } else {
-            m_newCode.clear();
-
             setCodeFinished(setCode(m_currentCode, code));
         }
         return;
@@ -523,9 +535,12 @@ void HostAuthenticator::checkCodeFinished(int result)
             return;
         case Success:
         case SecurityCodeExpired:
+            rememberAuthenticatedCode(m_currentCode);
+            m_currentCode.clear();
             confirmAuthentication(Authenticator::SecurityCode);
             return;
         case LockedOut:
+            m_currentCode.clear();
             lockedOut();
             return;
         }
@@ -537,8 +552,11 @@ void HostAuthenticator::checkCodeFinished(int result)
             // a success condition over IPC in the interval between when the client sent a cancel
             // and we were able to process it.
             m_state = Authenticating;
+            rememberAuthenticatedCode(m_currentCode);
+            m_currentCode.clear();
             confirmAuthentication(Authenticator::SecurityCode);
         } else {
+            m_currentCode.clear();
             aborted();
         }
         return;
@@ -556,6 +574,7 @@ void HostAuthenticator::checkCodeFinished(int result)
             enterCodeChangeState(feebackFunction, Authenticator::SecurityCode);
             return;
         case LockedOut:
+            m_currentCode.clear();
             lockedOut();
             return;
         }
@@ -581,11 +600,14 @@ void HostAuthenticator::checkCodeFinished(int result)
         break;
     }
     case AuthenticationForClearCanceled:
+        m_currentCode.clear();
         securityCodeClearAborted();
         return;
     default:
         return;
     }
+
+    m_currentCode.clear();
 
     const int attempts = result;
     const int maximum = maximumAttempts();
@@ -609,7 +631,9 @@ void HostAuthenticator::setCodeFinished(int result)
 {
     switch (result) {
     case Success:
+        rememberAuthenticatedCode(m_newCode);
         m_currentCode.clear();
+        m_newCode.clear();
 
         qCDebug(daemon, "Security code changed.");
         securityCodeChanged(authenticateChallengeCode(
@@ -617,8 +641,10 @@ void HostAuthenticator::setCodeFinished(int result)
         break;
     case SecurityCodeInHistory:
         if (m_state == ChangeCanceled) {
+            m_newCode.clear();
             securityCodeChangeAborted();
         } else {
+            m_newCode.clear();
             qCDebug(daemon, "Security code disallowed.");
             feedback(AuthenticationInput::SecurityCodeInHistory, -1);
             if (m_state == Changing) {
@@ -638,6 +664,7 @@ void HostAuthenticator::setCodeFinished(int result)
         break;
     default:
         m_currentCode.clear();
+        m_newCode.clear();
         qCDebug(daemon, "Security code change failed.");
 
         abortAuthentication(AuthenticationInput::SoftwareError);
@@ -705,6 +732,7 @@ void HostAuthenticator::authenticationStarted(
 void HostAuthenticator::authenticationEnded(bool confirmed)
 {
     clearActiveClient();
+    clearAuthenticatedCode();
 
     m_authenticatingPid = 0;
     m_challengeCode.clear();

@@ -107,6 +107,9 @@ public:
     virtual Authenticator::Methods availableMethods() const = 0;
     virtual QVariant authenticateChallengeCode(
             const QVariant &challengeCode, Authenticator::Method method, uint authenticatingPid) = 0;
+    virtual void rememberAuthenticatedCode(const QString &code);
+    virtual void clearAuthenticatedCode();
+
 
     // SecurityCodeSettings
     virtual bool authorizeSecurityCodeSettings(unsigned long pid);
