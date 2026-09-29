@@ -144,7 +144,8 @@ bool HostAuthenticator::authenticateTrusted(
         quint64 requestId,
         const QVariant &challengeCode,
         Authenticator::Methods methods,
-        uint authenticatingPid)
+        uint authenticatingPid,
+        const QVariantMap &promptData)
 {
     methods &= availableMethods() | Authenticator::Confirmation;
 
@@ -181,7 +182,7 @@ bool HostAuthenticator::authenticateTrusted(
     clearAuthenticatedCode();
     cancelPending();
     m_trustedRequestId = requestId;
-    beginAuthenticate(authenticatingPid, challengeCode, methods);
+    beginAuthenticate(authenticatingPid, challengeCode, methods, promptData);
     return true;
 }
 
@@ -235,18 +236,19 @@ void HostAuthenticator::authenticate(
 }
 
 void HostAuthenticator::beginAuthenticate(
-            uint pid, const QVariant &challengeCode, Authenticator::Methods methods)
+            uint pid, const QVariant &challengeCode, Authenticator::Methods methods,
+            const QVariantMap &promptData)
 {
     m_state = Authenticating;
     m_challengeCode = challengeCode;
 
-    QVariantMap feedbackData;
+    QVariantMap feedbackData = promptData;
     const auto availability = this->availability(&feedbackData);
     switch (availability) {
     case AuthenticationNotRequired:
         if (methods & Authenticator::Confirmation) {
             qCDebug(daemon, "Authentication requested. Requesting simple confirmation.");
-            startAuthentication(AuthenticationInput::Authorize, pid, QVariantMap(), Authenticator::Confirmation);
+            startAuthentication(AuthenticationInput::Authorize, pid, feedbackData, Authenticator::Confirmation);
         } else {
             qCDebug(daemon, "Authentication requested. Unsecured, authenticating immediately.");
             authenticated(authenticateChallengeCode(
@@ -261,9 +263,9 @@ void HostAuthenticator::beginAuthenticate(
     case CanAuthenticate:
         qCDebug(daemon, "Authentication requested using methods %i.", int(methods));
         if (methods == Authenticator::Confirmation) {
-            startAuthentication(AuthenticationInput::Authorize, pid, QVariantMap(), Authenticator::Confirmation);
+            startAuthentication(AuthenticationInput::Authorize, pid, feedbackData, Authenticator::Confirmation);
         } else {
-            startAuthentication(AuthenticationInput::EnterSecurityCode, pid, QVariantMap(), methods);
+            startAuthentication(AuthenticationInput::EnterSecurityCode, pid, feedbackData, methods);
         }
         break;
     case SecurityCodeRequired:

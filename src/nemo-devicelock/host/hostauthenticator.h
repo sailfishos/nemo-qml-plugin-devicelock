@@ -116,7 +116,8 @@ public:
             quint64 requestId,
             const QVariant &challengeCode,
             Authenticator::Methods methods,
-            uint authenticatingPid);
+            uint authenticatingPid,
+            const QVariantMap &promptData = QVariantMap());
     bool cancelTrustedAuthentication(quint64 requestId);
 
     // SecurityCodeSettings
@@ -214,7 +215,8 @@ private:
     inline bool isSecurityCodeSet() const;
     inline void authenticate(
             const QString &authenticator, const QVariant &challengeCode, Authenticator::Methods methods);
-    inline void beginAuthenticate(uint pid, const QVariant &challengeCode, Authenticator::Methods methods);
+    inline void beginAuthenticate(uint pid, const QVariant &challengeCode, Authenticator::Methods methods,
+                                  const QVariantMap &promptData = QVariantMap());
     inline void requestPermission(
             const QString &client,
             const QString &message,
