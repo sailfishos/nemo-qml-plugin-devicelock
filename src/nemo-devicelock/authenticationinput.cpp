@@ -334,6 +334,18 @@ Authenticator::Methods AuthenticationInput::utilizedMethods() const
 }
 
 /*!
+    \property NemoDeviceLock::AuthenticationInput::utilizedMethodFlags
+
+    This property exposes the currently active authentication methods as an
+    integer bitmask.
+*/
+
+uint AuthenticationInput::utilizedMethodFlags() const
+{
+    return uint(m_utilizedMethods);
+}
+
+/*!
     \property NemoDeviceLock::AuthenticationInput::status
 
     This property holds the current status of the authentication input.

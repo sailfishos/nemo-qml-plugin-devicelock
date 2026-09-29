@@ -45,6 +45,7 @@
 #include <QQmlEngine>
 
 #include <QDBusMetaType>
+#include <QMetaType>
 
 static QObject *createDeviceLock(QQmlEngine *, QJSEngine *)
 {
@@ -74,6 +75,10 @@ public:
     {
         qDBusRegisterMetaType<NemoDeviceLock::Fingerprint>();
         qDBusRegisterMetaType<QVector<NemoDeviceLock::Fingerprint>>();
+        qRegisterMetaType<NemoDeviceLock::Authenticator::Methods>(
+                "Authenticator::Methods");
+        qRegisterMetaType<NemoDeviceLock::Authenticator::Methods>(
+                "NemoDeviceLock::Authenticator::Methods");
 
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
         qmlRegisterAnonymousType<NemoDeviceLock::FingerprintModel>(uri, 1);

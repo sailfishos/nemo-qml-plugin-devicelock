@@ -35,6 +35,7 @@
 
 #include <QDBusAbstractAdaptor>
 #include <QDBusObjectPath>
+#include <QMetaType>
 #include <QSharedDataPointer>
 
 #include <nemo-devicelock/global.h>
@@ -117,6 +118,7 @@ private:
 
 }
 
+Q_DECLARE_METATYPE(NemoDeviceLock::Authenticator::Methods)
 Q_DECLARE_OPERATORS_FOR_FLAGS(NemoDeviceLock::Authenticator::Methods)
 
 #endif

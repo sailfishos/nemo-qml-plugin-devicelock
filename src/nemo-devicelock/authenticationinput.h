@@ -65,6 +65,7 @@ class NEMODEVICELOCK_EXPORT AuthenticationInput : public QObject, private Connec
 {
     Q_OBJECT
     Q_PROPERTY(Authenticator::Methods utilizedMethods READ utilizedMethods NOTIFY utilizedMethodsChanged)
+    Q_PROPERTY(uint utilizedMethodFlags READ utilizedMethodFlags NOTIFY utilizedMethodsChanged)
     Q_PROPERTY(Status status READ status NOTIFY statusChanged)
     Q_PROPERTY(int authenticatingProcess READ authenticatingPid NOTIFY authenticatingPidChanged)
     Q_PROPERTY(bool active READ isActive WRITE setActive NOTIFY activeChanged)
@@ -138,6 +139,7 @@ public:
     Status status() const;
     int authenticatingPid() const;
     Authenticator::Methods utilizedMethods() const;
+    uint utilizedMethodFlags() const;
 
     bool isActive() const;
     void setActive(bool active);
